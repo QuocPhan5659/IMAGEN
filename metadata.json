@@ -1,0 +1,7 @@
+{
+  "name": "IMAGEN QP",
+  "description": "Sample from Imagen models to generate images",
+  "requestFramePermissions": [
+    "clipboard-read"
+  ]
+}

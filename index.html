@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architectural AI Analyst</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel:wght@400;700&family=Courier+Prime&family=Dancing+Script:wght@400;700&family=Great+Vibes&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@300;400;700&family=Oswald:wght@300;400;500&family=Permanent+Marker&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
+        "path": "https://esm.sh/path@^0.12.7",
+        "vite": "https://esm.sh/vite@^7.3.1",
+        "url": "https://esm.sh/url@^0.11.4"
+      }
+    }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .font-mono { font-family: 'Courier Prime', monospace; }
+        .font-hand { font-family: 'Permanent Marker', cursive; }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .drag-active { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.1); }
+        .analysis-card { transition: all 0.2s; }
+        .analysis-card:hover { transform: translateY(-2px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #18181a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #444; }
+
+        /* New Gold Button Style */
+        .gold-btn {
+            background-color: #0f0f10;
+            border: 1px solid #7c5e10;
+            color: #fbbf24; /* amber-400 */
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-shadow: 2px 2px 0px #b91c1c; /* red-700 */
+            transition: all 0.2s;
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 0.75rem 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .gold-btn:hover {
+            background-color: #2e2000;
+            border-color: #f59e0b;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .gold-btn.active {
+            background-color: #3f2e00;
+            border-color: #fbbf24;
+            color: #fffbeb; /* amber-50 */
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+            text-shadow: 2px 2px 0px #991b1b;
+        }
+        
+        /* Collapsible Utility */
+        .chevron-icon { transition: transform 0.3s ease; }
+        .card-collapsed .chevron-icon { transform: rotate(-90deg); }
+        .card-collapsed .card-content { display: none; }
+    </style>
+    <link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-[#121212] text-gray-200 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-gray-800 bg-[#1E1F20] px-6 py-4 flex justify-between items-center sticky top-0 z-40 shadow-lg">
+        <div>
+            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent" id="app-title">Architectural AI Analyst</h1>
+            <p class="text-xs text-gray-400 mt-1" id="app-subtitle">Deep analysis powered by Gemini Vision</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <!-- Language Toggle -->
+            <button id="lang-toggle-btn" class="flex items-center gap-2 text-xs font-medium bg-gray-800 px-3 py-1.5 rounded-full border border-gray-700 hover:border-gray-500 transition-colors">
+                <span id="lang-en" class="text-blue-400 font-bold">EN</span>
+                <span class="text-gray-600">|</span>
+                <span id="lang-vi" class="text-gray-400">VI</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex overflow-hidden">
+        
+        <!-- Left Sidebar: Controls & Upload -->
+        <aside class="w-[400px] flex-shrink-0 border-r border-gray-800 bg-[#18181a] flex flex-col overflow-y-auto custom-scrollbar">
+            <div class="p-6 space-y-6">
+                
+                <!-- 1. ANALYSIS MODE: Reference Images Upload -->
+                <div id="panel-upload-analysis">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-bold text-blue-400 uppercase tracking-wider" id="lbl-upload">Upload Images</label>
+                        <button id="clear-btn" class="text-xs text-red-400 hover:text-red-300 hidden">Clear All</button>
+                    </div>
+                    
+                    <!-- Drop Zone (Reduced Height) -->
+                    <div id="drop-zone" class="min-h-[140px] flex flex-col justify-center border-2 border-dashed border-gray-700 rounded-xl p-4 text-center hover:border-gray-500 hover:bg-gray-800/50 transition-all cursor-pointer group relative">
+                        <input type="file" id="file-input" multiple accept="image/*" class="hidden">
+                        
+                        <div id="empty-state">
+                            <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-gray-700 transition-colors shadow-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <p class="text-xs font-medium text-gray-300 group-hover:text-white transition-colors" id="lbl-drag">Drag & Drop or Click</p>
+                            <p class="text-[10px] text-gray-500 mt-1">Supports JPG, PNG (Max 10)</p>
+                        </div>
+
+                        <!-- Previews Grid -->
+                        <div id="preview-container" class="hidden flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x h-full items-center justify-center">
+                            <!-- JS will populate -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sketch Upload Container (Visible in Analysis Mode) -->
+                <div id="sketch-container">
+                     <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-bold text-blue-400 uppercase tracking-wider" id="lbl-upload-sketch">Upload Sketch (Optional)</label>
+                        <button id="sketch-clear-btn" class="text-xs text-red-400 hover:text-red-300 hidden">Clear</button>
+                    </div>
+                    <div id="sketch-drop-zone" class="h-[120px] flex flex-col justify-center border-2 border-dashed border-gray-700 rounded-xl p-4 text-center hover:border-gray-500 hover:bg-gray-800/50 transition-all cursor-pointer relative overflow-hidden group">
+                        <input type="file" id="sketch-input" accept="image/*" class="hidden">
+                        <div id="sketch-empty-state">
+                            <p class="text-xs text-gray-400 group-hover:text-white transition-colors">Drag Sketch Here</p>
+                        </div>
+                        <img id="sketch-preview-img" class="absolute inset-0 w-full h-full object-contain bg-[#18181a] hidden" />
+                    </div>
+                </div>
+
+                <!-- Context Menu for MultiView (Visible in MultiView Mode) -->
+                <div id="multiview-context-container" class="hidden space-y-6">
+                    <div>
+                         <label class="text-xs font-bold text-green-400 uppercase tracking-wider mb-2 block" id="lbl-obj-analysis">Detailed Object Analysis</label>
+                         <p class="text-[10px] text-gray-400 mb-3 leading-relaxed" id="lbl-obj-desc">Analyze uploaded images to establish a unified reference (DNA) for consistent angle generation.</p>
+                         <button id="btn-run-obj-analysis" class="w-full text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 font-bold py-2.5 px-4 rounded-lg transition-all hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wide">
+                             <span id="btn-obj-analysis-text">Analyze Object DNA</span>
+                         </button>
+                         <div id="obj-analysis-result" class="mt-3 p-3 bg-gray-900 rounded-lg border border-gray-700 text-xs text-gray-300 h-32 overflow-y-auto hidden whitespace-pre-line font-mono"></div>
+                    </div>
+                    
+                    <hr class="border-gray-700" />
+                    
+                    <div>
+                        <label class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2 block" id="lbl-custom-angle">Custom Angle Request</label>
+                        <textarea id="custom-angle-input" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none h-20 placeholder-gray-500" placeholder="e.g., 'Low angle shot looking up at the entrance...'"></textarea>
+                        <button id="btn-custom-angle" class="w-full mt-2 text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 font-bold py-2 px-4 rounded-lg transition-all hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white active:scale-95 text-xs uppercase tracking-wide">
+                             <span id="btn-custom-angle-text">Generate Custom Angle</span>
+                        </button>
+                    </div>
+
+                    <hr class="border-gray-700" />
+                </div>
+
+                <!-- 4. TEXT OVERLAY MODE: Settings Panel (In Sidebar) -->
+                <div id="panel-text-overlay-settings" class="hidden space-y-6">
+                    <div>
+                        <label class="text-xs font-bold text-yellow-500 uppercase tracking-wider mb-2 block">Global Settings</label>
+                        
+                        <div class="space-y-2">
+                            <label class="text-[10px] text-gray-500 block uppercase font-bold">Actions</label>
+                            <button id="btn-add-slot" class="w-full text-xs text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                                Add New Slot (Alt+N)
+                            </button>
+                             <button id="btn-embed-all" class="w-full text-xs text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                                Embed All (Alt+Enter)
+                            </button>
+                            <button id="btn-download-all-embeds" class="w-full text-xs text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                Download All Embeds
+                            </button>
+                            <button id="btn-reset-overlay" class="w-full text-xs text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                Reset All Slots (Alt+R)
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-800" />
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] text-gray-500 block uppercase font-bold">Typography</label>
+                        <select id="global-font-select" class="w-full bg-gray-900 border border-gray-700 text-xs rounded px-2 py-2.5 text-white outline-none focus:border-yellow-500 cursor-pointer">
+                            <option value="Inter" style="font-family: 'Inter', sans-serif;">Inter (Sans-Serif)</option>
+                            <option value="Montserrat" style="font-family: 'Montserrat', sans-serif;">Montserrat (Modern)</option>
+                            <option value="Cinzel" style="font-family: 'Cinzel', serif;">Cinzel (Classic)</option>
+                            <option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair (Serif)</option>
+                            <option value="Permanent Marker" style="font-family: 'Permanent Marker', cursive;">Marker (Hand)</option>
+                            <option value="Courier Prime" style="font-family: 'Courier Prime', monospace;">Courier (Mono)</option>
+                            <option value="Oswald" style="font-family: 'Oswald', sans-serif;">Oswald (Condensed)</option>
+                            <option value="Dancing Script" style="font-family: 'Dancing Script', cursive;">Dancing Script (Cursive)</option>
+                            <option value="Great Vibes" style="font-family: 'Great Vibes', cursive;">Great Vibes (Elegant)</option>
+                            <option value="Anton" style="font-family: 'Anton', sans-serif;">Anton (Bold)</option>
+                         </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] text-gray-500 block uppercase font-bold">Signature / Footer <span class="text-[9px] text-gray-600 ml-1">(Drop .txt)</span></label>
+                        <div class="relative group">
+                            <input type="text" id="global-signature" placeholder="e.g. © Architectural AI" class="w-full bg-gray-900 border border-gray-700 text-xs rounded px-2 py-2.5 text-white outline-none focus:border-yellow-500 transition-colors group-hover:border-gray-500 pr-8" />
+                            <div id="signature-drop-indicator" class="absolute inset-0 border-2 border-dashed border-yellow-500/50 bg-yellow-500/10 rounded pointer-events-none hidden flex items-center justify-center backdrop-blur-sm">
+                                <span class="text-[10px] text-yellow-500 font-bold bg-black/80 px-2 py-1 rounded">Drop .txt Here</span>
+                            </div>
+                            <input type="file" id="signature-file-input" accept=".txt" class="hidden" />
+                            <button id="btn-upload-sig" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white p-1" title="Upload .txt">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            </button>
+                        </div>
+                        <!-- Signature Background Color Picker -->
+                        <div class="flex items-center justify-between pt-1">
+                            <label class="text-[9px] text-gray-500 uppercase font-bold">Badge Color</label>
+                            <div id="sig-bg-options" class="flex gap-2">
+                                <button class="w-5 h-5 rounded-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#FFD700] hover:scale-110 transition-transform sig-color-btn active" data-color="#FFD700" title="Gold"></button>
+                                <button class="w-5 h-5 rounded-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#FFFFFF] hover:scale-110 transition-transform sig-color-btn" data-color="#FFFFFF" title="White"></button>
+                                <button class="w-5 h-5 rounded-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#000000] hover:scale-110 transition-transform sig-color-btn" data-color="#000000" title="Black"></button>
+                                <button class="w-5 h-5 rounded-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#EF4444] hover:scale-110 transition-transform sig-color-btn" data-color="#EF4444" title="Red"></button>
+                                <button class="w-5 h-5 rounded-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#3B82F6] hover:scale-110 transition-transform sig-color-btn" data-color="#3B82F6" title="Blue"></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- NEW LOGO UI -->
+                    <div class="space-y-2">
+                        <label class="text-[10px] text-gray-500 block uppercase font-bold">Logo / Branding (Image)</label>
+                        <div id="logo-drop-zone" class="relative h-20 border border-dashed border-gray-700 rounded-lg hover:border-gray-500 hover:bg-gray-800/30 flex items-center justify-center cursor-pointer transition-all overflow-hidden group bg-gray-900/20">
+                            <input type="file" id="logo-file-input" accept="image/*" class="hidden" />
+                            <div id="logo-empty" class="text-center flex flex-col items-center gap-1">
+                                <div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-gray-700 transition-colors shadow-sm border border-gray-700">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 group-hover:text-yellow-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <span class="text-[9px] text-gray-500 group-hover:text-gray-300 uppercase tracking-wide font-medium">Drop Logo Here</span>
+                            </div>
+                            <img id="logo-preview" class="hidden h-full w-full object-contain p-2" />
+                            <button id="btn-clear-logo" class="hidden absolute top-1 right-1 bg-red-900/80 text-white w-4 h-4 rounded-full flex items-center justify-center text-[10px] hover:bg-red-600 z-10" title="Remove Logo">×</button>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-800 text-[10px] text-gray-600">
+                        <p class="font-bold mb-1">Quick Tips:</p>
+                        <ul class="list-disc pl-3 space-y-1">
+                            <li><strong>Ctrl+Enter:</strong> Embed Focused Slot</li>
+                            <li><strong>Alt+Enter:</strong> Embed All Slots</li>
+                            <li><strong>Alt+N:</strong> Add New Slot</li>
+                            <li><strong>Alt+R:</strong> Reset All Slots</li>
+                            <li>Text box occupies bottom 1/3.</li>
+                            <li>Font size auto-scales to fit.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div id="panel-analysis" class="space-y-3">
+                    <button id="analyze-btn" class="w-full bg-[#0f0f10] border border-yellow-500 text-yellow-500 font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:bg-yellow-900/20 hover:shadow-yellow-500/20 active:scale-95 flex items-center justify-center gap-2 group">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 group-hover:animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                        <span id="btn-analyze-text">Analyze Images</span>
+                    </button>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="download-all-btn" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-xs">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            <span id="btn-download-all-text">Download All</span>
+                        </button>
+
+                         <div class="flex gap-1">
+                            <!-- Download PNG Info -->
+                            <button id="btn-png-info-prompt" class="flex-1 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/50 text-blue-200 font-medium py-2 px-2 rounded-lg transition-colors flex items-center justify-center gap-1 text-xs" title="Download PNG with Data">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                <span id="btn-load-png-info-text" class="truncate">PNG Info</span>
+                            </button>
+
+                            <!-- Copy Banana Data (Image or Text) -->
+                            <button id="btn-paste-banana" class="w-10 bg-yellow-600/20 hover:bg-yellow-500/30 border border-yellow-600/50 text-yellow-500 font-medium py-2 rounded-lg transition-colors flex items-center justify-center" title="Paste Data (Image/JSON)">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                </svg>
+                            </button>
+                            
+                            <!-- Copy Banana JSON -->
+                            <button id="btn-send-banana" class="w-10 bg-yellow-600 hover:bg-yellow-500 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center" title="Copy Data (JSON)">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="panel-multiview" class="hidden space-y-3">
+                     <div class="flex items-center gap-3 mb-2">
+                        <label class="text-xs text-gray-400" id="lbl-angle-count">Angle Count</label>
+                        <input type="number" id="angle-input" min="1" max="8" value="4" class="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm w-16 text-center focus:ring-1 focus:ring-blue-500 outline-none">
+                    </div>
+                    <button id="multiview-btn" class="w-full text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 font-bold py-3 px-6 rounded-xl transition-all hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wide">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        <span id="btn-multiview-text">Generate Multi-View</span>
+                    </button>
+                </div>
+                
+                 <div id="panel-notes" class="hidden space-y-3">
+                     <button id="analyze-notes-btn" class="w-full bg-[#0f0f10] border border-yellow-500 text-yellow-500 font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:bg-yellow-900/20 hover:shadow-yellow-500/20 active:scale-95 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span id="btn-analyze-notes-text">Extract & Translate Notes</span>
+                    </button>
+                 </div>
+                
+                <p id="status-msg" class="text-center text-xs text-gray-500 h-4 truncate"></p>
+
+            </div>
+        </aside>
+
+        <!-- Right Content: Results -->
+        <section class="flex-1 bg-[#121212] flex flex-col relative overflow-hidden">
+            
+            <!-- Result Tabs -->
+            <div class="flex items-center justify-start border-b border-gray-800 bg-[#1E1F20] px-6 gap-4 py-3 sticky top-0 z-30 shadow-md">
+                <button id="tab-analysis" class="gold-btn">Analysis</button>
+                <button id="tab-multiview" class="gold-btn">Multi-View</button>
+                <button id="tab-notes" class="gold-btn">Notes</button>
+                <button id="tab-text-overlay" class="gold-btn border-yellow-700/50 text-yellow-500/80 hover:text-yellow-400">Text Overlay</button>
+            </div>
+            
+            <!-- Global Action Bar (Visible when Results exist) -->
+            <div id="global-actions-bar" class="px-6 py-2 bg-[#18181a] border-b border-gray-800 flex justify-between items-center hidden">
+                <div class="flex gap-2">
+                    <button id="btn-expand-all" class="text-[10px] text-gray-400 hover:text-white uppercase font-bold flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13l-7 7-7-7m14-8l-7 7-7-7" /></svg>
+                        Expand All
+                    </button>
+                    <button id="btn-collapse-all" class="text-[10px] text-gray-400 hover:text-white uppercase font-bold flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11l7-7 7 7M5 19l7-7 7 7" /></svg>
+                        Collapse All
+                    </button>
+                </div>
+                <button id="btn-clear-results" class="text-[10px] text-red-500 hover:text-red-400 uppercase font-bold flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    Clear Results
+                </button>
+            </div>
+
+            <!-- Loader -->
+            <div id="loader" class="hidden absolute inset-0 z-50 bg-[#121212]/90 flex flex-col items-center justify-center backdrop-blur-sm">
+                <div class="relative w-24 h-24 mb-4">
+                    <div class="absolute inset-0 border-4 border-blue-500/20 rounded-full animate-ping"></div>
+                    <div class="absolute inset-0 border-4 border-t-blue-500 border-r-cyan-400 border-b-purple-500 border-l-transparent rounded-full animate-spin"></div>
+                    <div class="absolute inset-4 bg-[#18181a] rounded-full flex items-center justify-center shadow-inner">
+                         <svg class="w-8 h-8 text-blue-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="text-xl font-bold text-white tracking-widest animate-pulse" id="loader-title">ANALYZING...</h3>
+                <p class="text-sm text-gray-400 mt-2" id="loader-subtitle">Gemini is analyzing architectural details...</p>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div id="results-container" class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                
+                <!-- 1. ANALYSIS TAB -->
+                <div id="analysis-cards-wrapper" class="space-y-4 pb-20">
+                     <!-- Helper: Card Generator -->
+                     <!-- We construct these cards statically for better control, but data is dynamic -->
+                     
+                     <!-- Prompt Card (Highlighted) -->
+                     <div class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group">
+                        <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                             <div class="flex items-center gap-2">
+                                <span class="chevron-icon text-yellow-500 mr-1">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </span>
+                                <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-prompt">Generation Prompt</h3>
+                             </div>
+                             <div class="flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                                 <button id="btn-run-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition" title="Re-run"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                 <button id="btn-copy-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition" title="Copy"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                 <button id="btn-dl-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition" title="Download"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                             </div>
+                        </div>
+                        <div class="card-content p-4">
+                            <p id="res-prompt" class="text-sm text-gray-300 whitespace-pre-line font-mono leading-relaxed pl-2 border-l-2 border-yellow-500/30">Waiting for analysis...</p>
+                        </div>
+                     </div>
+
+                     <!-- Sketch Prompt Card (Hidden by default until needed) -->
+                     <div id="card-sketch-prompt" class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group">
+                        <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                             <div class="flex items-center gap-2">
+                                <span class="chevron-icon text-yellow-500 mr-1">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </span>
+                                <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-sketch-prompt">Sketch Prompt</h3>
+                             </div>
+                             <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                                 <button id="btn-run-sketch-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                 <button id="btn-copy-sketch-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                 <button id="btn-dl-sketch-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                             </div>
+                        </div>
+                        <div class="card-content p-4">
+                            <p id="res-sketch-prompt" class="text-sm text-gray-400 whitespace-pre-line font-mono leading-relaxed">Waiting for analysis...</p>
+                        </div>
+                     </div>
+
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Style -->
+                        <div class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group">
+                            <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                                <div class="flex items-center gap-2">
+                                    <span class="chevron-icon text-yellow-500 mr-1">
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </span>
+                                    <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-style">Architectural Style</h3>
+                                </div>
+                                 <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                                     <button id="btn-run-style" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                     <button id="btn-copy-style" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                     <button id="btn-dl-style" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                 </div>
+                            </div>
+                            <div class="card-content p-4">
+                                <p id="res-style" class="text-sm text-gray-400">Waiting for analysis...</p>
+                            </div>
+                        </div>
+                        <!-- Materials -->
+                        <div class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group">
+                            <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                                <div class="flex items-center gap-2">
+                                    <span class="chevron-icon text-yellow-500 mr-1">
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </span>
+                                    <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-material">Materials & Textures</h3>
+                                </div>
+                                 <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                                     <button id="btn-run-material" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                     <button id="btn-copy-material" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                     <button id="btn-dl-material" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                 </div>
+                            </div>
+                            <div class="card-content p-4">
+                                <p id="res-material" class="text-sm text-gray-400">Waiting for analysis...</p>
+                            </div>
+                        </div>
+                         <!-- Lighting -->
+                        <div class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group">
+                            <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                                <div class="flex items-center gap-2">
+                                    <span class="chevron-icon text-yellow-500 mr-1">
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </span>
+                                    <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-lighting">Lighting & Atmosphere</h3>
+                                </div>
+                                 <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                                     <button id="btn-run-lighting" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                     <button id="btn-copy-lighting" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                     <button id="btn-dl-lighting" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                 </div>
+                            </div>
+                            <div class="card-content p-4">
+                                <p id="res-lighting" class="text-sm text-gray-400">Waiting for analysis...</p>
+                            </div>
+                        </div>
+                         <!-- Context -->
+                        <div class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group">
+                            <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                                <div class="flex items-center gap-2">
+                                    <span class="chevron-icon text-yellow-500 mr-1">
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </span>
+                                    <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-context">Context & Environment</h3>
+                                </div>
+                                 <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                                     <button id="btn-run-context" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                     <button id="btn-copy-context" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                     <button id="btn-dl-context" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                 </div>
+                            </div>
+                            <div class="card-content p-4">
+                                <p id="res-context" class="text-sm text-gray-400">Waiting for analysis...</p>
+                            </div>
+                        </div>
+                         <!-- Composition -->
+                        <div class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group col-span-1 md:col-span-2">
+                            <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                                <div class="flex items-center gap-2">
+                                    <span class="chevron-icon text-yellow-500 mr-1">
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </span>
+                                    <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-composition">Composition & Camera</h3>
+                                </div>
+                                 <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                                     <button id="btn-run-composition" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                     <button id="btn-copy-composition" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                     <button id="btn-dl-composition" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                 </div>
+                            </div>
+                            <div class="card-content p-4">
+                                <p id="res-composition" class="text-sm text-gray-400">Waiting for analysis...</p>
+                            </div>
+                        </div>
+                     </div>
+                </div>
+
+                <!-- 2. MULTI-VIEW TAB -->
+                <div id="multiview-results" class="hidden pb-20">
+                    <!-- JS Injected -->
+                </div>
+                
+                 <!-- 3. NOTES TAB -->
+                <div id="notes-results" class="hidden pb-20 space-y-4">
+                    <!-- JS Injected -->
+                </div>
+
+                <!-- 4. TEXT OVERLAY MODE (Grid) -->
+                <div id="overlay-grid" class="hidden pb-20 space-y-6">
+                    <!-- Slots injected here -->
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal for Fullscreen Image (Arrows) -->
+    <div id="image-modal" class="fixed inset-0 z-[100] bg-black/90 hidden flex items-center justify-center">
+        <div class="relative w-full h-full p-10 flex items-center justify-center">
+             <button id="btn-close-modal" class="absolute top-4 right-4 text-white hover:text-gray-300 z-50">
+                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+             </button>
+             <button id="btn-clear-draw" class="absolute top-4 left-4 text-red-400 hover:text-red-300 font-bold border border-red-500/50 rounded px-3 py-1 bg-black/50 z-50 text-xs">Clear Arrows</button>
+             <div class="relative max-w-full max-h-full">
+                 <img id="modal-img" class="max-w-full max-h-full object-contain select-none" />
+                 <canvas id="modal-canvas" class="absolute inset-0 cursor-crosshair touch-none"></canvas>
+             </div>
+        </div>
+    </div>
+
+    <!-- Modal for Zoom View (Text Overlay) -->
+    <div id="zoom-modal" class="fixed inset-0 z-[110] bg-black hidden overflow-hidden">
+        <!-- Controls Overlay -->
+        <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-50 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+            <div class="pointer-events-auto">
+                 <button id="zoom-dl-btn" class="bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors" title="Download Image">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                </button>
+            </div>
+            <div class="pointer-events-auto">
+                <button id="zoom-close-btn" class="bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors" title="Close (ESC)">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Zoom Container -->
+        <div id="zoom-pan-container" class="w-full h-full flex items-center justify-center cursor-move touch-none">
+            <img id="zoom-img" class="max-w-none origin-center transition-transform duration-75 ease-out select-none" />
+        </div>
+        
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 px-4 py-2 rounded-full text-xs text-gray-300 pointer-events-none">
+            Scroll to Zoom • Drag to Pan • ESC to Close
+        </div>
+    </div>
+
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
