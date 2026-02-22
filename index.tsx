@@ -1332,8 +1332,35 @@ function renderOverlaySlots() {
             e.preventDefault();
             e.stopPropagation();
             imgZone.classList.remove('border-blue-500');
-            const f = e.dataTransfer?.files[0];
-            if (f && f.type.startsWith('image/')) await handleSlotFile(index, f);
+            
+            const files = Array.from(e.dataTransfer?.files || []).filter(f => f.type.startsWith('image/'));
+            if (files.length === 0) return;
+
+            // Handle the first file for the current slot
+            await handleSlotFile(index, files[0]);
+
+            // Handle remaining files by filling subsequent empty slots or creating new ones
+            if (files.length > 1) {
+                let currentFileIdx = 1;
+                let currentSlotIdx = index + 1;
+
+                while (currentFileIdx < files.length) {
+                    // Check if we need to create a new slot
+                    if (currentSlotIdx >= overlaySlots.length) {
+                        overlaySlots.push(createEmptySlot());
+                    }
+
+                    // Check if current slot is empty (no file)
+                    if (!overlaySlots[currentSlotIdx].file) {
+                        await handleSlotFile(currentSlotIdx, files[currentFileIdx]);
+                        currentFileIdx++;
+                    }
+                    
+                    currentSlotIdx++;
+                }
+                // Re-render to show all new slots/images
+                renderOverlaySlots();
+            }
         };
 
         colUpload.appendChild(imgZone);
@@ -2145,6 +2172,25 @@ function renderPreview(files: File[]) {
 function handleFiles(fileList: FileList | null) {
     if (!fileList) return;
     const newFiles = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+    
+    if (activeTab === 'textOverlay') {
+        // Handle multiple files for Text Overlay
+        (async () => {
+            for (const file of newFiles) {
+                const emptyIndex = overlaySlots.findIndex(s => !s.file);
+                if (emptyIndex !== -1) {
+                    await handleSlotFile(emptyIndex, file);
+                } else {
+                    overlaySlots.push(createEmptySlot());
+                    await handleSlotFile(overlaySlots.length - 1, file);
+                }
+            }
+            renderOverlaySlots();
+            showStatus(`Loaded ${newFiles.length} images into Text Overlay`);
+        })();
+        return;
+    }
+
     currentFiles = [...currentFiles, ...newFiles].slice(0, 10);
     renderPreview(currentFiles);
 }
@@ -2200,7 +2246,12 @@ if(dropZone) {
     dropZone.addEventListener('click', (e) => { if((e.target as HTMLElement).tagName !== 'BUTTON') fileInput?.click(); });
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); addClass(dropZone, 'drag-active'); });
     dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); removeClass(dropZone, 'drag-active'); });
-    dropZone.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); removeClass(dropZone, 'drag-active'); handleFiles(e.dataTransfer?.files || null); });
+    dropZone.addEventListener('drop', (e) => { 
+        e.preventDefault(); 
+        e.stopPropagation(); 
+        removeClass(dropZone, 'drag-active'); 
+        handleFiles(e.dataTransfer?.files || null); 
+    });
 }
 if(fileInput) fileInput.addEventListener('change', (e) => handleFiles((e.target as HTMLInputElement).files));
 if(clearBtn) clearBtn.addEventListener('click', (e) => { e.stopPropagation(); currentFiles = []; renderPreview([]); });
