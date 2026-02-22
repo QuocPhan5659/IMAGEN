@@ -42,10 +42,12 @@
             letter-spacing: 0.05em;
             text-shadow: 2px 2px 0px #b91c1c; /* red-700 */
             transition: all 0.2s;
-            border-radius: 0.75rem; /* rounded-xl */
-            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            padding: 0.35rem 0.75rem;
+            font-size: 0.7rem;
             position: relative;
             overflow: hidden;
+            white-space: nowrap;
         }
         .gold-btn:hover {
             background-color: #2e2000;
@@ -70,15 +72,28 @@
 </head>
 <body class="bg-[#121212] text-gray-200 min-h-screen flex flex-col">
 
-    <!-- Header -->
-    <header class="border-b border-gray-800 bg-[#1E1F20] px-6 py-4 flex justify-between items-center sticky top-0 z-40 shadow-lg">
-        <div>
-            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent" id="app-title">Architectural AI Analyst</h1>
-            <p class="text-xs text-gray-400 mt-1" id="app-subtitle">Deep analysis powered by Gemini Vision</p>
+    <!-- Header with Integrated Tabs -->
+    <header class="border-b border-gray-800 bg-[#1E1F20] px-4 py-2 flex items-center gap-4 sticky top-0 z-50 shadow-lg h-14">
+        <div class="flex items-center gap-3 shrink-0">
+            <div>
+                <h1 class="text-sm font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent leading-none" id="app-title">Architectural AI Analyst</h1>
+                <p class="text-[10px] text-gray-400" id="app-subtitle">Deep analysis powered by Gemini Vision</p>
+            </div>
         </div>
-        <div class="flex items-center gap-4">
+        
+        <div class="h-6 w-px bg-gray-700 mx-2 hidden md:block"></div>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex items-center gap-2 flex-1 overflow-x-auto scrollbar-hide">
+            <button id="tab-analysis" class="gold-btn">Analysis</button>
+            <button id="tab-multiview" class="gold-btn">Multi-View</button>
+            <button id="tab-notes" class="gold-btn">Notes</button>
+            <button id="tab-text-overlay" class="gold-btn border-yellow-700/50 text-yellow-500/80 hover:text-yellow-400">Text Overlay</button>
+        </nav>
+
+        <div class="flex items-center gap-3 shrink-0">
             <!-- Language Toggle -->
-            <button id="lang-toggle-btn" class="flex items-center gap-2 text-xs font-medium bg-gray-800 px-3 py-1.5 rounded-full border border-gray-700 hover:border-gray-500 transition-colors">
+            <button id="lang-toggle-btn" class="flex items-center gap-2 text-[10px] font-medium bg-gray-800 px-2 py-1 rounded-full border border-gray-700 hover:border-gray-500 transition-colors">
                 <span id="lang-en" class="text-blue-400 font-bold">EN</span>
                 <span class="text-gray-600">|</span>
                 <span id="lang-vi" class="text-gray-400">VI</span>
@@ -182,6 +197,10 @@
                             <button id="btn-reset-overlay" class="w-full text-xs text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                 Reset All Slots (Alt+R)
+                            </button>
+                            <button id="btn-toggle-all-bg" class="w-full text-xs text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                                Toggle All BG
                             </button>
                         </div>
                     </div>
@@ -333,13 +352,8 @@
         <!-- Right Content: Results -->
         <section class="flex-1 bg-[#121212] flex flex-col relative overflow-hidden">
             
-            <!-- Result Tabs -->
-            <div class="flex items-center justify-start border-b border-gray-800 bg-[#1E1F20] px-6 gap-4 py-3 sticky top-0 z-30 shadow-md">
-                <button id="tab-analysis" class="gold-btn">Analysis</button>
-                <button id="tab-multiview" class="gold-btn">Multi-View</button>
-                <button id="tab-notes" class="gold-btn">Notes</button>
-                <button id="tab-text-overlay" class="gold-btn border-yellow-700/50 text-yellow-500/80 hover:text-yellow-400">Text Overlay</button>
-            </div>
+            <!-- Result Tabs (Removed - Moved to Header) -->
+            <!-- <div class="hidden"></div> -->
             
             <!-- Global Action Bar (Visible when Results exist) -->
             <div id="global-actions-bar" class="px-6 py-2 bg-[#18181a] border-b border-gray-800 flex justify-between items-center hidden">

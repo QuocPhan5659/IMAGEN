@@ -7,9 +7,11 @@ interface OverlaySlot {
     imgSrc: string | null;
     text: string;
     isDarkText: boolean;
+    hasBackground: boolean;
     resultSrc: string | null;
     isTranslating: boolean;
     originalName: string | null;
+    isCollapsed: boolean;
 }
 
 let overlaySlots: OverlaySlot[] = [];
@@ -210,6 +212,7 @@ const btnClearResults = getEl<HTMLButtonElement>('btn-clear-results');
 
 // Text Overlay Global
 const btnResetOverlay = getEl<HTMLButtonElement>('btn-reset-overlay');
+const btnToggleAllBg = getEl<HTMLButtonElement>('btn-toggle-all-bg');
 const btnAddSlot = getEl<HTMLButtonElement>('btn-add-slot');
 const btnEmbedAll = getEl<HTMLButtonElement>('btn-embed-all');
 const btnDownloadAllEmbeds = getEl<HTMLButtonElement>('btn-download-all-embeds');
@@ -545,15 +548,16 @@ async function getTextFromImage(blob: Blob): Promise<string> {
         if (metadata) {
             try {
                 const data = JSON.parse(metadata);
-                // Priority: mega -> lighting+scene+view -> parameters
-                if (data.mega) return data.mega;
-                if (data.generationPrompt?.en) return data.generationPrompt.en;
-                // Construct from pieces
                 let parts = [];
-                if(data.view) parts.push(data.view);
-                if(data.scene) parts.push(data.scene);
-                if(data.lighting) parts.push(data.lighting);
-                if(parts.length > 0) return parts.join('\n\n');
+                if (data.mega) parts.push(`[PROMPT]:\n${data.mega}`);
+                else if (data.generationPrompt?.en) parts.push(`[PROMPT]:\n${data.generationPrompt.en}`);
+                else if (data.prompt) parts.push(`[PROMPT]:\n${data.prompt}`);
+                
+                if (data.lighting) parts.push(`[LIGHTING]:\n${data.lighting}`);
+                if (data.scene) parts.push(`[SCENE]:\n${data.scene}`);
+                if (data.view) parts.push(`[VIEW]:\n${data.view}`);
+                
+                if (parts.length > 0) return parts.join('\n\n');
             } catch(e) {
                 // Not JSON, return raw text (WebUI params usually raw)
                 return metadata;
@@ -1222,9 +1226,11 @@ function createEmptySlot(): OverlaySlot {
         imgSrc: null,
         text: "",
         isDarkText: false,
+        hasBackground: true,
         resultSrc: null,
         isTranslating: false,
-        originalName: null
+        originalName: null,
+        isCollapsed: false
     };
 }
 
@@ -1235,6 +1241,9 @@ function renderOverlaySlots() {
     overlaySlots.forEach((slot, index) => {
         const slotEl = document.createElement('div');
         slotEl.className = "w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group";
+        if (slot.isCollapsed) {
+            slotEl.classList.add('card-collapsed');
+        }
         
         // Header
         const header = document.createElement('div');
@@ -1264,7 +1273,10 @@ function renderOverlaySlots() {
              header.appendChild(delBtn);
         }
         
-        header.onclick = () => slotEl.classList.toggle('card-collapsed');
+        header.onclick = () => {
+            slot.isCollapsed = !slot.isCollapsed;
+            slotEl.classList.toggle('card-collapsed', slot.isCollapsed);
+        };
         slotEl.appendChild(header);
 
         // Content
@@ -1354,6 +1366,11 @@ function renderOverlaySlots() {
         themeBtn.innerText = slot.isDarkText ? "Dark Text" : "Light Text";
         themeBtn.onclick = () => updateSlot(index, { isDarkText: !slot.isDarkText });
 
+        const bgBtn = document.createElement('button');
+        bgBtn.className = `flex-1 rounded border text-[10px] font-bold transition-colors ${slot.hasBackground ? 'bg-gray-700 text-white border-gray-500' : 'bg-transparent text-gray-500 border-gray-700'}`;
+        bgBtn.innerText = slot.hasBackground ? "BG: ON" : "BG: OFF";
+        bgBtn.onclick = () => updateSlot(index, { hasBackground: !slot.hasBackground });
+
         const translateBtn = document.createElement('button');
         translateBtn.className = "w-10 rounded border border-blue-600 bg-blue-900/30 text-blue-400 hover:bg-blue-800 hover:text-white flex items-center justify-center transition-colors";
         translateBtn.title = "Translate (VN/EN)";
@@ -1368,6 +1385,7 @@ function renderOverlaySlots() {
         embedBtn.onclick = () => processSlotEmbed(index);
 
         controls.appendChild(themeBtn);
+        controls.appendChild(bgBtn);
         controls.appendChild(translateBtn);
         controls.appendChild(embedBtn);
         colEdit.appendChild(textArea);
@@ -1495,13 +1513,15 @@ function processSlotEmbed(index: number) {
         // Helper for asynchronous drawing steps (logo loading)
         const drawContent = () => {
             // Draw Text Box Background (More Transparent: 0.3 - 0.7)
-            const grad = ctx.createLinearGradient(0, boxY, 0, canvas.height);
-            const bgColor = slot.isDarkText ? "255, 255, 255" : "0, 0, 0";
-            grad.addColorStop(0, `rgba(${bgColor}, 0.3)`); 
-            grad.addColorStop(1, `rgba(${bgColor}, 0.7)`);
-            
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, boxY, canvas.width, boxHeight);
+            if (slot.hasBackground) {
+                const grad = ctx.createLinearGradient(0, boxY, 0, canvas.height);
+                const bgColor = slot.isDarkText ? "255, 255, 255" : "0, 0, 0";
+                grad.addColorStop(0, `rgba(${bgColor}, 0.3)`); 
+                grad.addColorStop(1, `rgba(${bgColor}, 0.7)`);
+                
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, boxY, canvas.width, boxHeight);
+            }
 
             // Text Drawing with Auto-Scaling 
             const text = slot.text.trim();
@@ -1747,10 +1767,22 @@ function openZoomModal(src: string) {
     if (!zoomModal || !zoomImg) return;
     zoomImg.src = src;
     setHidden(zoomModal, false);
+    
+    // Reset zoom state
     zoomScale = 1;
     zoomTranslateX = 0;
     zoomTranslateY = 0;
+    
+    // Ensure image fits within viewport initially
+    zoomImg.style.maxWidth = '100%';
+    zoomImg.style.maxHeight = '100%';
+    zoomImg.style.objectFit = 'contain';
     zoomImg.style.transform = `translate(0px, 0px) scale(1)`;
+    
+    // Allow zooming to expand beyond container
+    // We need to wait for image load to know dimensions if we want precise control,
+    // but CSS max-width/height handles "fit to screen" well.
+    // The transform will handle the actual zooming.
 }
 
 function handleSignatureFile(file: File) {
@@ -1790,6 +1822,17 @@ if (btnResetOverlay) {
         initOverlaySlots();
         renderOverlaySlots();
         showStatus('All slots reset.');
+    });
+}
+if (btnToggleAllBg) {
+    btnToggleAllBg.addEventListener('click', () => {
+        // Toggle based on the first slot's state or default to true if mixed
+        const allOn = overlaySlots.every(s => s.hasBackground);
+        const newState = !allOn;
+        
+        overlaySlots.forEach(s => s.hasBackground = newState);
+        renderOverlaySlots();
+        showStatus(`All Backgrounds: ${newState ? 'ON' : 'OFF'}`);
     });
 }
 if (btnAddSlot) {
@@ -1849,6 +1892,7 @@ if (btnExpandAll) {
         if (visibleContainer) {
             visibleContainer.querySelectorAll('.collapsible-card').forEach(c => c.classList.remove('card-collapsed'));
         }
+        overlaySlots.forEach(s => s.isCollapsed = false);
     });
 }
 if (btnCollapseAll) {
@@ -1858,6 +1902,7 @@ if (btnCollapseAll) {
         if (visibleContainer) {
             visibleContainer.querySelectorAll('.collapsible-card').forEach(c => c.classList.add('card-collapsed'));
         }
+        overlaySlots.forEach(s => s.isCollapsed = true);
     });
 }
 if (btnClearResults) {
