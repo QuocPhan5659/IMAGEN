@@ -26,6 +26,7 @@ let currentLang: Lang = 'en';
 let activeTab: 'analysis' | 'multiview' | 'notes' | 'textOverlay' = 'analysis';
 let currentSketchFile: File | null = null;
 let currentFiles: File[] = [];
+let customApiKey: string | null = localStorage.getItem('gemini_custom_api_key');
 
 interface AnalysisResult {
     style?: { en: string; vi: string };
@@ -72,6 +73,13 @@ let zoomTranslateY = 0;
 let isPanning = false;
 let panStartX = 0;
 let panStartY = 0;
+
+// API Key Modal
+const btnSettings = getEl<HTMLButtonElement>('btn-settings');
+const apiKeyModal = getEl<HTMLDivElement>('api-key-modal');
+const apiKeyInput = getEl<HTMLInputElement>('api-key-input');
+const btnCloseApiModal = getEl<HTMLButtonElement>('btn-close-api-modal');
+const btnSaveApiKey = getEl<HTMLButtonElement>('btn-save-api-key');
 
 // --- Helper Functions ---
 function getEl<T extends HTMLElement>(id: string): T | null {
@@ -1493,7 +1501,7 @@ async function handleTranslate(index: number) {
     updateSlot(index, { isTranslating: true });
     
     try {
-        const apiKey = process.env.API_KEY;
+        const apiKey = customApiKey || process.env.API_KEY;
         if (!apiKey) { await openApiKeyDialog(); updateSlot(index, { isTranslating: false }); return; }
         const ai = new GoogleGenAI({ apiKey });
         
@@ -1833,6 +1841,36 @@ function handleSignatureFile(file: File) {
 
 
 // --- Event Listeners ---
+
+// API Key Modal Listeners
+if (btnSettings) {
+    btnSettings.addEventListener('click', () => {
+        if (apiKeyInput) apiKeyInput.value = customApiKey || '';
+        setHidden(apiKeyModal, false);
+    });
+}
+if (btnCloseApiModal) {
+    btnCloseApiModal.addEventListener('click', () => {
+        setHidden(apiKeyModal, true);
+    });
+}
+if (btnSaveApiKey) {
+    btnSaveApiKey.addEventListener('click', () => {
+        if (apiKeyInput) {
+            const val = apiKeyInput.value.trim();
+            if (val) {
+                customApiKey = val;
+                localStorage.setItem('gemini_custom_api_key', val);
+                showStatus('API Key saved locally.');
+            } else {
+                customApiKey = null;
+                localStorage.removeItem('gemini_custom_api_key');
+                showStatus('API Key removed.');
+            }
+        }
+        setHidden(apiKeyModal, true);
+    });
+}
 
 if (langToggleBtn) langToggleBtn.addEventListener('click', () => {
     currentLang = currentLang === 'en' ? 'vi' : 'en';
@@ -2450,7 +2488,7 @@ if (analyzeNotesBtn) {
         notesHistory = [];
         
         try {
-            const apiKey = process.env.API_KEY;
+            const apiKey = customApiKey || process.env.API_KEY;
             if (!apiKey) { await openApiKeyDialog(); setLoading(false); return; }
             const ai = new GoogleGenAI({ apiKey });
 
