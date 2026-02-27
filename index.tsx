@@ -1,5 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
+let customApiKey: string | null = localStorage.getItem('gemini_custom_api_key');
+
 // --- Text Overlay State (Grid) ---
 interface OverlaySlot {
     id: string;
@@ -26,7 +28,6 @@ let currentLang: Lang = 'en';
 let activeTab: 'analysis' | 'multiview' | 'notes' | 'textOverlay' = 'analysis';
 let currentSketchFile: File | null = null;
 let currentFiles: File[] = [];
-let customApiKey: string | null = localStorage.getItem('gemini_custom_api_key');
 
 interface AnalysisResult {
     style?: { en: string; vi: string };
@@ -160,6 +161,14 @@ const translations = {
             sketchPrompt: "Sketch Prompt",
             generationPrompt: "Generation Prompt",
             multiViewPrompts: "Multi-View Prompts"
+        },
+        apiModal: {
+            title: "Gemini API Key",
+            desc: "Enter your personal Gemini API Key to use the application without limits. Your key is stored locally in your browser.",
+            placeholder: "AIzaSy...",
+            btnCancel: "Cancel",
+            btnSave: "Save Key",
+            link: "Get an API key from Google AI Studio"
         }
     },
     vi: {
@@ -196,6 +205,14 @@ const translations = {
             sketchPrompt: "Prompt Phác Thảo",
             generationPrompt: "Prompt Tạo Ảnh",
             multiViewPrompts: "Prompt Đa Góc Nhìn"
+        },
+        apiModal: {
+            title: "Gemini API Key",
+            desc: "Nhập Gemini API Key cá nhân của bạn để sử dụng ứng dụng không giới hạn. Key của bạn được lưu trữ cục bộ trên trình duyệt.",
+            placeholder: "Nhập API Key...",
+            btnCancel: "Hủy",
+            btnSave: "Lưu Key",
+            link: "Lấy API key từ Google AI Studio"
         }
     }
 };
@@ -726,11 +743,13 @@ function createMultiViewCardHTML(id: string, title: string, content: string, com
 // --- API & Core Functions ---
 
 async function openApiKeyDialog() {
-  if (window.aistudio?.openSelectKey) {
-    await window.aistudio.openSelectKey();
-  } else {
-    showStatus('API key selection is not available.', true);
-  }
+    if (window.aistudio?.openSelectKey) {
+        await window.aistudio.openSelectKey();
+    } else {
+        // Fallback to custom modal if aistudio is not available
+        if (apiKeyInput) apiKeyInput.value = customApiKey || '';
+        setHidden(apiKeyModal, false);
+    }
 }
 
 function showStatus(message: string, isError = false) {
@@ -883,7 +902,7 @@ async function generateContentWithRetry(ai: GoogleGenAI, params: any, retries = 
 }
 
 async function callGemini(prompt: string, files: File[]): Promise<string> {
-    const apiKey = process.env.API_KEY;
+    const apiKey = customApiKey || process.env.API_KEY;
     if (!apiKey) { await openApiKeyDialog(); return "{}"; }
 
     const ai = new GoogleGenAI({ apiKey });
@@ -942,6 +961,14 @@ function updateLanguageUI() {
     setText(titleComposition, t.titles.composition);
     setText(titlePrompt, t.titles.generationPrompt);
     setText(titleSketchPrompt, t.titles.sketchPrompt);
+
+    // API Modal
+    setText(getEl('api-modal-title'), t.apiModal.title);
+    setText(getEl('api-modal-desc'), t.apiModal.desc);
+    if (apiKeyInput) apiKeyInput.placeholder = t.apiModal.placeholder;
+    setText(getEl('btn-close-api-modal'), t.apiModal.btnCancel);
+    setText(getEl('btn-save-api-key'), t.apiModal.btnSave);
+    setText(getEl('api-modal-link'), t.apiModal.link);
 
     // Tab Logic
     setHidden(panelAnalysis, true);
@@ -2535,15 +2562,42 @@ if(multiViewBtn) {
          setLoading(true);
          try {
              const count = angleInput ? angleInput.value : "4";
-             const prompt = `Generate ${count} distinct camera angle prompts for this project.
-             Output JSON: { "multiViewPrompts": { "en": [{ "angle": "Title", "content": "...", "composition": "...", "lighting": "..." }], "vi": [...] } }`;
+             const prompt = `
+                Role: Senior Architectural Photographer.
+                Task: Generate EXACTLY ${count} distinct and creative camera angle prompts for this architectural project.
+                
+                Requirements:
+                - Each angle must be unique (e.g., Aerial, Eye-level, Worm's eye, Interior, Detail shot, etc.)
+                - Provide both English and Vietnamese versions.
+                - Output MUST be strictly valid JSON with exactly ${count} items in each language array.
+
+                JSON Structure:
+                {
+                  "multiViewPrompts": {
+                    "en": [
+                      { "angle": "Angle Title", "content": "Visual description...", "composition": "Camera settings...", "lighting": "Light setup..." }
+                    ],
+                    "vi": [
+                      { "angle": "Tiêu đề góc", "content": "Mô tả hình ảnh...", "composition": "Thiết lập camera...", "lighting": "Thiết lập ánh sáng..." }
+                    ]
+                  }
+                }
+             `;
              
              const txt = await callGemini(prompt, currentFiles);
              const raw = JSON.parse(txt);
+             
+             if (!raw.multiViewPrompts || !raw.multiViewPrompts.en || !raw.multiViewPrompts.vi) {
+                 throw new Error("Invalid response format from AI");
+             }
+
              const fmt = (arr: any[]) => arr.map(i => `===ANGLE: ${i.angle}===\n[CONTENT]: ${i.content}\n[COMPOSITION]: ${i.composition}\n[LIGHTING]: ${i.lighting}`).join('\n\n');
              
              if(!lastAnalysisData) lastAnalysisData = {};
-             lastAnalysisData.multiViewPrompts = { en: fmt(raw.multiViewPrompts.en), vi: fmt(raw.multiViewPrompts.vi) };
+             lastAnalysisData.multiViewPrompts = { 
+                 en: fmt(raw.multiViewPrompts.en), 
+                 vi: fmt(raw.multiViewPrompts.vi) 
+             };
              updateLanguageUI(); showStatus('');
          } catch(e) { handleApiError(e, 'Error generating views'); } finally { setLoading(false); }
     });
