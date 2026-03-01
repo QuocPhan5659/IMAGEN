@@ -28,6 +28,7 @@ let currentLang: Lang = 'en';
 let activeTab: 'analysis' | 'multiview' | 'notes' | 'textOverlay' = 'analysis';
 let currentSketchFile: File | null = null;
 let currentFiles: File[] = [];
+let currentModel = localStorage.getItem('gemini_selected_model') || 'gemini-3-flash-preview';
 
 interface AnalysisResult {
     style?: { en: string; vi: string };
@@ -81,8 +82,47 @@ const apiKeyModal = getEl<HTMLDivElement>('api-key-modal');
 const apiKeyInput = getEl<HTMLInputElement>('api-key-input');
 const btnCloseApiModal = getEl<HTMLButtonElement>('btn-close-api-modal');
 const btnSaveApiKey = getEl<HTMLButtonElement>('btn-save-api-key');
+const modelSelect = getEl<HTMLSelectElement>('model-select');
 
 // --- Helper Functions ---
+async function copyToClipboard(text: string, btnEl?: HTMLElement, successIcon?: string, originalIcon?: string): Promise<boolean> {
+    if (!text) return false;
+    let successful = false;
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            successful = true;
+        }
+    } catch (err) {
+        console.error("Clipboard API failed, trying fallback:", err);
+    }
+
+    if (!successful) {
+        // Fallback for non-secure contexts or failed API
+        try {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+        } catch (err) {
+            console.error("Fallback copy failed:", err);
+        }
+    }
+
+    if (successful && btnEl && successIcon && originalIcon) {
+        btnEl.innerHTML = successIcon;
+        setTimeout(() => { btnEl.innerHTML = originalIcon; }, 2000);
+    }
+
+    return successful;
+}
+
 function getEl<T extends HTMLElement>(id: string): T | null {
     return document.getElementById(id) as T | null;
 }
@@ -169,7 +209,8 @@ const translations = {
             btnCancel: "Cancel",
             btnSave: "Save Key",
             link: "Get an API key from Google AI Studio"
-        }
+        },
+        modelSwitched: "Model switched to "
     },
     vi: {
         appTitle: "Trợ Lý Kiến Trúc AI",
@@ -213,7 +254,8 @@ const translations = {
             btnCancel: "Hủy",
             btnSave: "Lưu Key",
             link: "Lấy API key từ Google AI Studio"
-        }
+        },
+        modelSwitched: "Đã chuyển sang model "
     }
 };
 
@@ -367,23 +409,25 @@ const langViLabel = getEl('lang-vi');
 // --- Icons & UI Generators ---
 
 const iconCopy = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>`;
+const iconCheck = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
 const iconDl = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>`;
 const iconDlAll = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>`;
 const iconCopyAll = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>`;
+const iconCheckAll = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>`;
 const iconTrash = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>`;
 const iconTriangle = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>`;
 const iconRemove = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
 const iconPngInfo = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>`;
 
 // Helper: Create mini button
-const createMiniBtn = (iconSvg: string, onClick: () => void, tooltip: string) => {
+const createMiniBtn = (iconSvg: string, onClick: (btn: HTMLButtonElement) => void, tooltip: string) => {
     const btn = document.createElement('button');
     btn.className = "p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors flex items-center justify-center";
     btn.title = tooltip;
     btn.innerHTML = iconSvg;
     btn.onclick = (e) => {
         e.stopPropagation();
-        onClick();
+        onClick(btn);
     };
     return btn;
 };
@@ -635,7 +679,13 @@ function createMultiViewCardHTML(id: string, title: string, content: string, com
     btnCopy.onclick = async (e) => {
         e.stopPropagation();
         const fullText = `[DETAILED CONTENT]:\n${content}\n\n[COMPOSITION & ANGLE]:\n${composition}\n\n[LIGHTING]:\n${lighting}`;
-        try { await navigator.clipboard.writeText(fullText); showStatus("Copied all 3 sections!"); setTimeout(() => showStatus(''), 2000); } catch(e) { showStatus("Copy failed", true); }
+        const success = await copyToClipboard(fullText, btnCopy, iconCheckAll, iconCopyAll);
+        if (success) {
+            showStatus("Copied all 3 sections!");
+            setTimeout(() => showStatus(''), 2000);
+        } else {
+            showStatus("Copy failed", true);
+        }
     };
 
     // PNG Info Button
@@ -654,11 +704,13 @@ function createMultiViewCardHTML(id: string, title: string, content: string, com
             inpaintEnabled: false,
             cameraProjection: false
         };
-        try {
-            await navigator.clipboard.writeText(JSON.stringify(bananaData, null, 2));
+        const success = await copyToClipboard(JSON.stringify(bananaData, null, 2));
+        if (success) {
             showStatus("Copied PNG Info (JSON)!");
             setTimeout(() => showStatus(''), 2000);
-        } catch(e) { showStatus("Copy failed", true); }
+        } else {
+            showStatus("Copy failed", true);
+        }
     };
 
     // Download Button
@@ -711,7 +763,15 @@ function createMultiViewCardHTML(id: string, title: string, content: string, com
         secH.textContent = sectionTitle;
         const actions = document.createElement('div');
         actions.className = "flex gap-1";
-        actions.appendChild(createMiniBtn(iconCopy, async () => { await navigator.clipboard.writeText(sectionText); showStatus(`Copied ${sectionTitle}`); setTimeout(() => showStatus(''), 2000); }, "Copy"));
+        actions.appendChild(createMiniBtn(iconCopy, async (btn) => { 
+            const success = await copyToClipboard(sectionText, btn, iconCheck, iconCopy);
+            if (success) {
+                showStatus(`Copied ${sectionTitle}`);
+                setTimeout(() => showStatus(''), 2000);
+            } else {
+                showStatus(`Copy failed`, true);
+            }
+        }, "Copy"));
         secHeader.appendChild(secH); secHeader.appendChild(actions);
         const p = document.createElement('p');
         p.className = "text-gray-300 text-sm whitespace-pre-line font-mono mt-1";
@@ -917,7 +977,7 @@ async function callGemini(prompt: string, files: File[]): Promise<string> {
 
     // Use retry wrapper
     const response = await generateContentWithRetry(ai, {
-        model: 'gemini-3-flash-preview',
+        model: currentModel,
         contents: { parts: parts },
         config: { responseMimeType: "application/json" }
     });
@@ -1200,7 +1260,13 @@ function renderNotesResults() {
             copyBtn.innerHTML = iconCopy;
             copyBtn.onclick = async (e) => {
                  e.stopPropagation();
-                 try { await navigator.clipboard.writeText(text); showStatus('Copied!'); setTimeout(()=>showStatus(''), 2000); } catch(e){}
+                 const success = await copyToClipboard(text, copyBtn, iconCheck, iconCopy);
+                 if (success) {
+                     showStatus('Copied!');
+                     setTimeout(()=>showStatus(''), 2000);
+                 } else {
+                     showStatus('Copy failed', true);
+                 }
             };
             
             // Download Btn
@@ -1534,7 +1600,7 @@ async function handleTranslate(index: number) {
         
         // Use retry wrapper
         const response = await generateContentWithRetry(ai, {
-            model: "gemini-3-flash-preview",
+            model: currentModel,
             contents: `Translate the following text to English if it is Vietnamese, or to Vietnamese if it is English. Maintain the tone and style. Return ONLY the translated text.\n\nText: ${text}`,
         });
         
@@ -1868,6 +1934,17 @@ function handleSignatureFile(file: File) {
 
 
 // --- Event Listeners ---
+
+// Model Selector Listener
+if (modelSelect) {
+    modelSelect.value = currentModel;
+    modelSelect.addEventListener('change', () => {
+        currentModel = modelSelect.value;
+        localStorage.setItem('gemini_selected_model', currentModel);
+        const t = translations[currentLang];
+        showStatus(`${t.modelSwitched}${modelSelect.options[modelSelect.selectedIndex].text}`);
+    });
+}
 
 // API Key Modal Listeners
 if (btnSettings) {
@@ -2529,7 +2606,7 @@ if (analyzeNotesBtn) {
                 try {
                     // Use retry wrapper
                     const response = await generateContentWithRetry(ai, {
-                        model: 'gemini-3-flash-preview',
+                        model: currentModel,
                         contents: { parts: parts },
                         config: { responseMimeType: "application/json" }
                     });
@@ -2658,11 +2735,11 @@ function setupCardActions(
             e.stopPropagation();
             const text = resEl.textContent;
             if (text && text !== "Waiting for analysis...") {
-                try {
-                    await navigator.clipboard.writeText(text);
+                const success = await copyToClipboard(text, copyBtn, iconCheck, iconCopy);
+                if (success) {
                     showStatus('Copied to clipboard!');
                     setTimeout(() => showStatus(''), 2000);
-                } catch (err) {
+                } else {
                     showStatus('Failed to copy', true);
                 }
             } else {
@@ -2779,11 +2856,10 @@ if (btnSendBanana) {
             inpaintEnabled: false,
             cameraProjection: false
         };
-        try {
-            await navigator.clipboard.writeText(JSON.stringify(bananaData, null, 2));
+        const success = await copyToClipboard(JSON.stringify(bananaData, null, 2));
+        if (success) {
             showStatus('Copied Data JSON!');
-        } catch (err) {
-            console.error("Failed to copy:", err);
+        } else {
             showStatus('Failed to copy.', true);
         }
         setTimeout(() => showStatus(''), 2000);
