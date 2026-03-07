@@ -78,10 +78,12 @@ let panStartY = 0;
 
 // API Key Modal
 const btnSettings = getEl<HTMLButtonElement>('btn-settings');
+const btnProBadge = getEl<HTMLButtonElement>('btn-pro-badge');
 const apiKeyModal = getEl<HTMLDivElement>('api-key-modal');
 const apiKeyInput = getEl<HTMLInputElement>('api-key-input');
 const btnCloseApiModal = getEl<HTMLButtonElement>('btn-close-api-modal');
 const btnSaveApiKey = getEl<HTMLButtonElement>('btn-save-api-key');
+const btnRemoveApiKey = getEl<HTMLButtonElement>('btn-remove-api-key');
 const modelSelect = getEl<HTMLSelectElement>('model-select');
 
 // --- Helper Functions ---
@@ -203,12 +205,13 @@ const translations = {
             multiViewPrompts: "Multi-View Prompts"
         },
         apiModal: {
-            title: "Gemini API Key",
-            desc: "Enter your personal Gemini API Key to use the application without limits. Your key is stored locally in your browser.",
-            placeholder: "AIzaSy...",
+            title: "ENTER API KEY",
+            desc: "To unlock Pro/Ultra models (2K/4K), please enter a valid Google Gemini API Key.",
+            placeholder: "Paste your API Key...",
             btnCancel: "Cancel",
-            btnSave: "Save Key",
-            link: "Get an API key from Google AI Studio"
+            btnSave: "SAVE KEY",
+            btnRemove: "Remove API Key",
+            link: "Get API Key Here"
         },
         modelSwitched: "Model switched to "
     },
@@ -248,12 +251,13 @@ const translations = {
             multiViewPrompts: "Prompt Đa Góc Nhìn"
         },
         apiModal: {
-            title: "Gemini API Key",
-            desc: "Nhập Gemini API Key cá nhân của bạn để sử dụng ứng dụng không giới hạn. Key của bạn được lưu trữ cục bộ trên trình duyệt.",
-            placeholder: "Nhập API Key...",
+            title: "NHẬP API KEY",
+            desc: "Để mở khóa các model Pro/Ultra (2K/4K), vui lòng nhập Google Gemini API Key hợp lệ.",
+            placeholder: "Dán API Key của bạn...",
             btnCancel: "Hủy",
-            btnSave: "Lưu Key",
-            link: "Lấy API key từ Google AI Studio"
+            btnSave: "LƯU KEY",
+            btnRemove: "Xóa API Key",
+            link: "Lấy API Key tại đây"
         },
         modelSwitched: "Đã chuyển sang model "
     }
@@ -448,7 +452,10 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 
 // Helper: Trigger Download
 function triggerDownload(content: string, filename: string) {
-    if(!content) return;
+    if(!content || content === "Waiting for analysis...") {
+        showStatus('Nothing to download', true);
+        return;
+    }
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -986,6 +993,13 @@ async function callGemini(prompt: string, files: File[]): Promise<string> {
 
 // --- UI Logic ---
 
+function updateApiUI() {
+    const hasKey = !!customApiKey;
+    setHidden(btnSettings, hasKey);
+    setHidden(btnProBadge, !hasKey);
+    setHidden(btnRemoveApiKey, !hasKey);
+}
+
 function updateLanguageUI() {
     const t = translations[currentLang];
     
@@ -1026,9 +1040,11 @@ function updateLanguageUI() {
     setText(getEl('api-modal-title'), t.apiModal.title);
     setText(getEl('api-modal-desc'), t.apiModal.desc);
     if (apiKeyInput) apiKeyInput.placeholder = t.apiModal.placeholder;
-    setText(getEl('btn-close-api-modal'), t.apiModal.btnCancel);
     setText(getEl('btn-save-api-key'), t.apiModal.btnSave);
+    setText(getEl('btn-remove-api-key'), t.apiModal.btnRemove);
     setText(getEl('api-modal-link'), t.apiModal.link);
+
+    updateApiUI();
 
     // Tab Logic
     setHidden(panelAnalysis, true);
@@ -1119,15 +1135,12 @@ function updateLanguageUI() {
 function setupCollapsibleCards() {
     const cards = document.querySelectorAll('.collapsible-card');
     cards.forEach(card => {
-        const header = card.querySelector('.card-header');
-        if (header) {
-            // Remove existing listener to prevent duplicates
-            const newHeader = header.cloneNode(true) as HTMLElement;
-            header.parentNode?.replaceChild(newHeader, header);
-            
-            newHeader.addEventListener('click', () => {
+        const header = card.querySelector('.card-header') as HTMLElement;
+        if (header && !header.dataset.hasCollapsibleListener) {
+            header.addEventListener('click', () => {
                 card.classList.toggle('card-collapsed');
             });
+            header.dataset.hasCollapsibleListener = 'true';
         }
     });
 }
@@ -1953,6 +1966,12 @@ if (btnSettings) {
         setHidden(apiKeyModal, false);
     });
 }
+if (btnProBadge) {
+    btnProBadge.addEventListener('click', () => {
+        if (apiKeyInput) apiKeyInput.value = customApiKey || '';
+        setHidden(apiKeyModal, false);
+    });
+}
 if (btnCloseApiModal) {
     btnCloseApiModal.addEventListener('click', () => {
         setHidden(apiKeyModal, true);
@@ -1966,12 +1985,24 @@ if (btnSaveApiKey) {
                 customApiKey = val;
                 localStorage.setItem('gemini_custom_api_key', val);
                 showStatus('API Key saved locally.');
+                updateApiUI();
             } else {
                 customApiKey = null;
                 localStorage.removeItem('gemini_custom_api_key');
                 showStatus('API Key removed.');
+                updateApiUI();
             }
         }
+        setHidden(apiKeyModal, true);
+    });
+}
+if (btnRemoveApiKey) {
+    btnRemoveApiKey.addEventListener('click', () => {
+        customApiKey = null;
+        localStorage.removeItem('gemini_custom_api_key');
+        if (apiKeyInput) apiKeyInput.value = '';
+        showStatus('API Key removed.');
+        updateApiUI();
         setHidden(apiKeyModal, true);
     });
 }
@@ -2700,7 +2731,10 @@ if(btnCustomAngle) {
 
 // Single Run Buttons (Reset/Re-run)
 const runSingle = async (key: keyof AnalysisResult) => {
-    if(currentFiles.length === 0 && !currentSketchFile) return;
+    if(currentFiles.length === 0 && !currentSketchFile) {
+        showStatus('Please upload an image first', true);
+        return;
+    }
     setLoading(true);
     try {
         const prompt = `Analyze ONLY: ${String(key)}. Return JSON: { "${String(key)}": { "en": "...", "vi": "..." } }`;
@@ -2972,3 +3006,4 @@ if (btnPasteBanana) {
 // Init Setup Call
 setupCollapsibleCards();
 updateLanguageUI();
+updateApiUI();

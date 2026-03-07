@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Architectural AI Analyst</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" nonce="76a625aa026c4f12878bbd1f4d9" src="//local.adguard.org?ts=1772841366345&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2Fa30fcdd5-728f-40f5-9842-eceaf2fa7c27%2Ffile%2F954cc8eb8992e36f4cdb420256dfe8786917ce587f7b99b8ab56bd22dc34d1b7&amp;app=msedge.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="76a625aa026c4f12878bbd1f4d9" src="//local.adguard.org?ts=1772841366345&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel:wght@400;700&family=Courier+Prime&family=Dancing+Script:wght@400;700&family=Great+Vibes&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@300;400;700&family=Oswald:wght@300;400;500&family=Permanent+Marker&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
     <script type="importmap">
     {
@@ -113,6 +113,15 @@
             <button id="btn-settings" class="flex items-center gap-1 text-[10px] font-medium bg-gray-800 px-2 py-1 rounded-full border border-gray-700 hover:border-gray-500 transition-colors text-gray-300" title="Set Custom API Key">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
                 <span class="hidden sm:inline">API Key</span>
+            </button>
+            <!-- Pro Badge (Hidden by default) -->
+            <button id="btn-pro-badge" class="hidden flex items-center gap-1.5 px-3 py-1 rounded-full border border-indigo-500 bg-indigo-950/30 hover:bg-indigo-900/40 transition-all group" title="Pro Mode Active - Click to Manage">
+                <div class="w-4 h-4 rounded-full bg-cyan-400 flex items-center justify-center shadow-[0_0_8px_rgba(34,211,238,0.6)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-indigo-950" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <span class="text-[10px] font-black text-white tracking-widest uppercase">PRO</span>
             </button>
             <!-- Language Toggle -->
             <button id="lang-toggle-btn" class="flex items-center gap-2 text-[10px] font-medium bg-gray-800 px-2 py-1 rounded-full border border-gray-700 hover:border-gray-500 transition-colors">
@@ -618,26 +627,37 @@
     </div>
 
     <!-- API Key Modal -->
-    <div id="api-key-modal" class="fixed inset-0 z-[120] bg-black/80 hidden flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-[#18181a] border border-gray-700 rounded-xl p-6 w-full max-w-md shadow-2xl mx-4">
-            <h2 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
-                <span id="api-modal-title">Gemini API Key</span>
+    <div id="api-key-modal" class="fixed inset-0 z-[120] bg-black/90 hidden flex items-center justify-center backdrop-blur-md">
+        <div class="bg-[#0f0f11] border border-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl mx-4 relative">
+            <!-- Close Button -->
+            <button id="btn-close-api-modal" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+
+            <h2 class="text-xl font-black text-white mb-4 italic tracking-tighter uppercase" id="api-modal-title">
+                ENTER API KEY
             </h2>
-            <p class="text-xs text-gray-400 mb-4" id="api-modal-desc">Enter your personal Gemini API Key to use the application without limits. Your key is stored locally in your browser.</p>
             
-            <input type="password" id="api-key-input" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm text-white focus:ring-2 focus:ring-yellow-500 outline-none mb-4" placeholder="AIzaSy...">
+            <p class="text-xs text-gray-400 mb-2 leading-relaxed" id="api-modal-desc">
+                To unlock Pro/Ultra models (2K/4K), please enter a valid Google Gemini API Key.
+            </p>
             
-            <div class="flex justify-end gap-3">
-                <button id="btn-close-api-modal" class="px-4 py-2 text-xs font-bold text-gray-400 hover:text-white transition-colors" id="btn-api-cancel">Cancel</button>
-                <button id="btn-save-api-key" class="px-4 py-2 text-xs font-bold bg-yellow-600 hover:bg-yellow-500 text-black rounded-lg transition-colors" id="btn-api-save">Save Key</button>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-400 hover:text-indigo-300 text-[10px] font-bold flex items-center gap-1 mb-6 transition-colors">
+                <span id="api-modal-link">Get API Key Here</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+            </a>
+            
+            <div class="relative mb-4">
+                <input type="password" id="api-key-input" class="w-full bg-[#09090b] border-2 border-indigo-900/30 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-700" placeholder="Paste your API Key...">
             </div>
             
-            <div class="mt-4 pt-4 border-t border-gray-800 text-[10px] text-gray-500">
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-400 hover:underline flex items-center gap-1 w-fit">
-                    <span id="api-modal-link">Get an API key from Google AI Studio</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                </a>
+            <div class="flex flex-col gap-2">
+                <button id="btn-save-api-key" class="w-full py-3 bg-indigo-700 hover:bg-indigo-600 text-white font-black rounded-xl transition-all uppercase tracking-widest shadow-lg shadow-indigo-900/20 text-xs">
+                    SAVE KEY
+                </button>
+                <button id="btn-remove-api-key" class="w-full py-2 text-gray-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest transition-colors hidden">
+                    Remove API Key
+                </button>
             </div>
         </div>
     </div>
