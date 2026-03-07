@@ -42,6 +42,7 @@ interface AnalysisResult {
     [key: string]: any;
 }
 let lastAnalysisData: AnalysisResult | null = null;
+let downloadDirectoryHandle: any = null;
 
 interface CustomAngleEntry {
     en: { title: string; content: string; composition: string; lighting: string };
@@ -361,7 +362,7 @@ const btnRunContext = getEl<HTMLButtonElement>('btn-run-context');
 const btnRunComposition = getEl<HTMLButtonElement>('btn-run-composition');
 const btnPngInfoPrompt = getEl<HTMLButtonElement>('btn-png-info-prompt');
 const btnSendBanana = getEl<HTMLButtonElement>('btn-send-banana');
-const btnPasteBanana = getEl<HTMLButtonElement>('btn-paste-banana');
+const btnSelectFolder = getEl<HTMLButtonElement>('btn-select-folder');
 
 
 // Sketch Elements
@@ -450,13 +451,20 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.fill();
 }
 
-// Helper: Trigger Download
-function triggerDownload(content: string, filename: string) {
-    if(!content || content === "Waiting for analysis...") {
-        showStatus('Nothing to download', true);
-        return;
+// Helper: Save Blob (Supports Directory Handle)
+async function saveBlob(blob: Blob, filename: string) {
+    if (downloadDirectoryHandle) {
+        try {
+            const fileHandle = await downloadDirectoryHandle.getFileHandle(filename, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            showStatus(`Saved: ${filename}`);
+            return;
+        } catch (err) {
+            console.error("Directory write failed, falling back to standard download", err);
+        }
     }
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -465,6 +473,16 @@ function triggerDownload(content: string, filename: string) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+// Helper: Trigger Download
+async function triggerDownload(content: string, filename: string) {
+    if(!content || content === "Waiting for analysis...") {
+        showStatus('Nothing to download', true);
+        return;
+    }
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    await saveBlob(blob, filename);
 }
 
 // --- PNG Info Utilities ---
@@ -2848,14 +2866,10 @@ if (btnPngInfoPrompt) {
                         const uint8View = new Uint8Array(buffer);
                         const finalPngBuffer = writePngMetadata(uint8View, "BananaProData", JSON.stringify(bananaData));
                         const finalBlob = new Blob([finalPngBuffer], { type: "image/png" });
-                        const url = URL.createObjectURL(finalBlob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `BananaPro_Info_${carrierFile.name.split('.')[0]}.png`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
+                        
+                        const filename = `BananaPro_Info_${carrierFile.name.split('.')[0]}.png`;
+                        await saveBlob(finalBlob, filename);
+                        
                         showStatus('Downloaded PNG for Banana Pro!');
                         setTimeout(() => showStatus(''), 2000);
                     }
@@ -2923,82 +2937,39 @@ if (downloadAllBtn) {
     });
 }
 
-// "Paste Banana" -> Copy Data PNG info (from clipboard image OR text)
-if (btnPasteBanana) {
-    btnPasteBanana.addEventListener('click', async (e) => {
+// "Select Folder" -> Choose a directory for direct downloads
+if (btnSelectFolder) {
+    // Hide button if browser doesn't support the API at all
+    if (!('showDirectoryPicker' in window)) {
+        btnSelectFolder.style.opacity = '0.3';
+        btnSelectFolder.title = 'Folder selection not supported by this browser';
+    }
+
+    btnSelectFolder.addEventListener('click', async (e) => {
         e.stopPropagation();
         
+        // Check if we are in an iframe
+        const isInIframe = window.self !== window.top;
+        
         try {
-            const clipboardItems = await navigator.clipboard.read();
-            let processed = false;
-
-            for (const item of clipboardItems) {
-                if (item.types.includes('image/png')) {
-                    const blob = await item.getType('image/png');
-                    
-                    // If Text Overlay Mode
-                    if (activeTab === 'textOverlay') {
-                         const file = new File([blob], "pasted_image.png", { type: "image/png" });
-                         // Handle Paste for Grid - find empty or add new
-                         const emptyIndex = overlaySlots.findIndex(s => !s.file);
-                         if (emptyIndex !== -1) {
-                             await handleSlotFile(emptyIndex, file);
-                         } else {
-                             overlaySlots.push(createEmptySlot());
-                             await handleSlotFile(overlaySlots.length - 1, file);
-                             renderOverlaySlots();
-                         }
-                         
-                         showStatus('Loaded pasted image into Text Overlay');
-                         processed = true;
-                         break;
-                    }
-
-                    if (await processBlobForMetadata(blob)) {
-                        processed = true;
-                        break;
-                    }
-                }
+            if (isInIframe) {
+                showStatus('Security: Open in a new tab to use folder selection.', true);
+                console.warn("showDirectoryPicker is blocked in cross-origin iframes. Open the app in a new tab.");
+                return;
             }
 
-            if (!processed) {
-                 for (const item of clipboardItems) {
-                    if (item.types.includes('text/plain')) {
-                        const blob = await item.getType('text/plain');
-                        const text = await blob.text();
-                        try {
-                            const data = JSON.parse(text);
-                            if (data.mega || data.lighting || data.scene || data.view) {
-                                populateBananaData(data);
-                                showStatus('Data loaded from clipboard text!');
-                                processed = true;
-                                break;
-                            }
-                        } catch (e) { /* Not JSON */ }
-                    }
-                }
+            // @ts-ignore
+            downloadDirectoryHandle = await window.showDirectoryPicker({
+                mode: 'readwrite'
+            });
+            showStatus('Download folder selected!');
+        } catch (err: any) {
+            console.error("Folder selection failed", err);
+            if (err.name === 'SecurityError' || err.message.includes('frames')) {
+                showStatus('Security Error: Open in a new tab to use this feature.', true);
+            } else if (err.name !== 'AbortError') {
+                showStatus('Folder selection failed', true);
             }
-
-            if (!processed) {
-                 try {
-                    const text = await navigator.clipboard.readText();
-                    const data = JSON.parse(text);
-                    if (data.mega || data.lighting || data.scene || data.view) {
-                        populateBananaData(data);
-                        showStatus('Data loaded from clipboard text!');
-                        processed = true;
-                    }
-                 } catch (e) { /* Not JSON */ }
-            }
-
-            if (!processed) {
-                showStatus('No Banana Data (Image/JSON) found.', true);
-            }
-
-        } catch (err) {
-            console.error(err);
-            alert("Clipboard access denied. Please press Ctrl+V to paste.");
-            showStatus('Clipboard blocked. Press Ctrl+V.', true);
         }
     });
 }
