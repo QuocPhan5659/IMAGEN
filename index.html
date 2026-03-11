@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Architectural AI Analyst</title>
-    <script type="text/javascript" nonce="76a625aa026c4f12878bbd1f4d9" src="//local.adguard.org?ts=1772852166295&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2Fa30fcdd5-728f-40f5-9842-eceaf2fa7c27%2Ffile%2F803c08647f8ee48530a26bf3eac93959f9acd799bc0accb51d9d2dc9776ab84b&amp;app=msedge.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="76a625aa026c4f12878bbd1f4d9" src="//local.adguard.org?ts=1772852166295&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773189817949&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2Fa30fcdd5-728f-40f5-9842-eceaf2fa7c27%2Ffile%2F7113249be681cf23586a0890ced82f046997f92bdfc66699781fd51ca253a9f9&amp;app=msedge.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773189817949&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel:wght@400;700&family=Courier+Prime&family=Dancing+Script:wght@400;700&family=Great+Vibes&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@300;400;700&family=Oswald:wght@300;400;500&family=Permanent+Marker&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
     <script type="importmap">
     {
@@ -101,12 +101,8 @@
             <div class="flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-full border border-gray-700 hover:border-gray-500 transition-colors text-gray-300">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" /></svg>
                 <select id="model-select" class="bg-transparent text-[10px] font-medium outline-none cursor-pointer pr-1 text-purple-400">
-                    <option value="gemini-2.5-flash">2.5</option>
-                    <option value="gemini-3.1-flash-preview">3.1</option>
-                    <option value="gemini-3.2-flash-preview">3.2</option>
-                    <option value="gemini-3-flash-preview">Banana Free</option>
-                    <option value="gemini-flash-latest">Fast</option>
-                    <option value="gemini-3.1-pro-preview">Pro</option>
+                    <option value="gemini-3-flash-preview">Gemini 3 Flash (Free)</option>
+                    <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (API Key)</option>
                 </select>
             </div>
             <!-- Settings / API Key -->
@@ -431,19 +427,38 @@
                      <div class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group">
                         <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
                              <div class="flex items-center gap-2">
-                                <span class="chevron-icon text-yellow-500 mr-1">
-                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                                </span>
-                                <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-prompt">Generation Prompt</h3>
+                                 <span class="chevron-icon text-yellow-500 mr-1">
+                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                 </span>
+                                 <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-prompt">Generation Prompt</h3>
                              </div>
                              <div class="flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
-                                 <button id="btn-run-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition" title="Re-run"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
-                                 <button id="btn-copy-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition" title="Copy"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
-                                 <button id="btn-dl-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition" title="Download"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                  <button id="btn-run-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition" title="Re-run"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                  <button id="btn-copy-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition" title="Copy"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                  <button id="btn-dl-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition" title="Download"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
                              </div>
                         </div>
                         <div class="card-content p-4">
                             <p id="res-prompt" class="text-sm text-gray-300 whitespace-pre-line font-mono leading-relaxed pl-2 border-l-2 border-yellow-500/30">Waiting for analysis...</p>
+                        </div>
+                     </div>
+
+                     <!-- Collage Analysis Card (Hidden by default) -->
+                     <div id="card-collage-analysis" class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group hidden">
+                        <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                             <div class="flex items-center gap-2">
+                                <span class="chevron-icon text-yellow-500 mr-1">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </span>
+                                <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-collage-analysis">Collage & Project Analysis</h3>
+                             </div>
+                             <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                                 <button id="btn-copy-collage-analysis" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                 <button id="btn-dl-collage-analysis" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                             </div>
+                        </div>
+                        <div class="card-content p-4">
+                            <p id="res-collage-analysis" class="text-sm text-blue-300/80 whitespace-pre-line font-mono leading-relaxed italic">Waiting for analysis...</p>
                         </div>
                      </div>
 
@@ -639,7 +654,7 @@
             </h2>
             
             <p class="text-xs text-gray-400 mb-2 leading-relaxed" id="api-modal-desc">
-                To unlock Pro/Ultra models (2K/4K), please enter a valid Google Gemini API Key.
+                Add your own API Key to unlock the high-performance Gemini 3.1 Pro model. Without a key, the app uses Gemini 3 Flash for free.
             </p>
             
             <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-400 hover:text-indigo-300 text-[10px] font-bold flex items-center gap-1 mb-6 transition-colors">

@@ -28,7 +28,7 @@ let currentLang: Lang = 'en';
 let activeTab: 'analysis' | 'multiview' | 'notes' | 'textOverlay' = 'analysis';
 let currentSketchFile: File | null = null;
 let currentFiles: File[] = [];
-let currentModel = localStorage.getItem('gemini_selected_model') || 'gemini-3-flash-preview';
+let currentModel = localStorage.getItem('gemini_selected_model') || (customApiKey ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview');
 
 interface AnalysisResult {
     style?: { en: string; vi: string };
@@ -39,6 +39,7 @@ interface AnalysisResult {
     generationPrompt?: { en: string; vi: string };
     sketchPrompt?: { en: string; vi: string };
     multiViewPrompts?: { en: string; vi: string };
+    collageAnalysis?: { en: string; vi: string };
     [key: string]: any;
 }
 let lastAnalysisData: AnalysisResult | null = null;
@@ -203,11 +204,12 @@ const translations = {
             prompt: "Generation Prompt",
             sketchPrompt: "Sketch Prompt",
             generationPrompt: "Generation Prompt",
-            multiViewPrompts: "Multi-View Prompts"
+            multiViewPrompts: "Multi-View Prompts",
+            collageAnalysis: "Collage & Project Analysis"
         },
         apiModal: {
             title: "ENTER API KEY",
-            desc: "To unlock Pro/Ultra models (2K/4K), please enter a valid Google Gemini API Key.",
+            desc: "Add your own API Key to unlock the high-performance Gemini 3.1 Pro model. Without a key, the app uses Gemini 3 Flash for free.",
             placeholder: "Paste your API Key...",
             btnCancel: "Cancel",
             btnSave: "SAVE KEY",
@@ -249,11 +251,12 @@ const translations = {
             prompt: "Prompt Tạo Ảnh",
             sketchPrompt: "Prompt Phác Thảo",
             generationPrompt: "Prompt Tạo Ảnh",
-            multiViewPrompts: "Prompt Đa Góc Nhìn"
+            multiViewPrompts: "Prompt Đa Góc Nhìn",
+            collageAnalysis: "Phân Tích Ảnh Ghép & Dự Án"
         },
         apiModal: {
             title: "NHẬP API KEY",
-            desc: "Để mở khóa các model Pro/Ultra (2K/4K), vui lòng nhập Google Gemini API Key hợp lệ.",
+            desc: "Thêm API Key của riêng bạn để mở khóa model Gemini 3.1 Pro hiệu năng cao. Nếu không có key, ứng dụng sẽ sử dụng Gemini 3 Flash miễn phí.",
             placeholder: "Dán API Key của bạn...",
             btnCancel: "Hủy",
             btnSave: "LƯU KEY",
@@ -342,6 +345,7 @@ const resContext = getEl<HTMLParagraphElement>('res-context');
 const resComposition = getEl<HTMLParagraphElement>('res-composition');
 const resPrompt = getEl<HTMLParagraphElement>('res-prompt');
 const resSketchPrompt = getEl<HTMLParagraphElement>('res-sketch-prompt');
+const resCollageAnalysis = getEl<HTMLParagraphElement>('res-collage-analysis');
 
 // Titles
 const titleStyle = getEl('title-style');
@@ -351,6 +355,7 @@ const titleContext = getEl('title-context');
 const titleComposition = getEl('title-composition');
 const titlePrompt = getEl('title-prompt');
 const titleSketchPrompt = getEl('title-sketch-prompt');
+const titleCollageAnalysis = getEl('title-collage-analysis');
 
 // Buttons for Single Analysis
 const btnRunPrompt = getEl<HTMLButtonElement>('btn-run-prompt');
@@ -360,6 +365,8 @@ const btnRunMaterial = getEl<HTMLButtonElement>('btn-run-material');
 const btnRunLighting = getEl<HTMLButtonElement>('btn-run-lighting');
 const btnRunContext = getEl<HTMLButtonElement>('btn-run-context');
 const btnRunComposition = getEl<HTMLButtonElement>('btn-run-composition');
+const btnCopyCollageAnalysis = getEl<HTMLButtonElement>('btn-copy-collage-analysis');
+const btnDlCollageAnalysis = getEl<HTMLButtonElement>('btn-dl-collage-analysis');
 const btnPngInfoPrompt = getEl<HTMLButtonElement>('btn-png-info-prompt');
 const btnSendBanana = getEl<HTMLButtonElement>('btn-send-banana');
 const btnSelectFolder = getEl<HTMLButtonElement>('btn-select-folder');
@@ -373,6 +380,7 @@ const sketchEmptyState = getEl<HTMLDivElement>('sketch-empty-state');
 const sketchPreviewImg = getEl<HTMLImageElement>('sketch-preview-img');
 const sketchClearBtn = getEl<HTMLButtonElement>('sketch-clear-btn');
 const sketchPromptCard = getEl<HTMLDivElement>('card-sketch-prompt');
+const collageAnalysisCard = getEl<HTMLDivElement>('card-collage-analysis');
 
 // MultiView Elements
 const multiviewContextContainer = getEl<HTMLDivElement>('multiview-context-container');
@@ -987,7 +995,7 @@ async function generateContentWithRetry(ai: GoogleGenAI, params: any, retries = 
 }
 
 async function callGemini(prompt: string, files: File[]): Promise<string> {
-    const apiKey = customApiKey || process.env.API_KEY;
+    const apiKey = customApiKey || process.env.GEMINI_API_KEY;
     if (!apiKey) { await openApiKeyDialog(); return "{}"; }
 
     const ai = new GoogleGenAI({ apiKey });
@@ -1016,6 +1024,17 @@ function updateApiUI() {
     setHidden(btnSettings, hasKey);
     setHidden(btnProBadge, !hasKey);
     setHidden(btnRemoveApiKey, !hasKey);
+
+    // Automatically switch model based on API key presence
+    if (modelSelect) {
+        const targetModel = hasKey ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview';
+        currentModel = targetModel;
+        modelSelect.value = currentModel;
+        localStorage.setItem('gemini_selected_model', currentModel);
+        
+        // Update model select options visibility or just keep the two
+        // The user wants to remove others, which I did in HTML.
+    }
 }
 
 function updateLanguageUI() {
@@ -1053,6 +1072,7 @@ function updateLanguageUI() {
     setText(titleComposition, t.titles.composition);
     setText(titlePrompt, t.titles.generationPrompt);
     setText(titleSketchPrompt, t.titles.sketchPrompt);
+    setText(titleCollageAnalysis, t.titles.collageAnalysis);
 
     // API Modal
     setText(getEl('api-modal-title'), t.apiModal.title);
@@ -1127,6 +1147,11 @@ function updateLanguageUI() {
         if(resComposition) setText(resComposition, lastAnalysisData.composition?.[currentLang] || "");
         if(resPrompt) setText(resPrompt, lastAnalysisData.generationPrompt?.[currentLang] || "");
         if(resSketchPrompt) setText(resSketchPrompt, lastAnalysisData.sketchPrompt?.[currentLang] || "");
+        if(resCollageAnalysis) {
+            const collageText = lastAnalysisData.collageAnalysis?.[currentLang] || "";
+            setText(resCollageAnalysis, collageText);
+            setHidden(collageAnalysisCard, !collageText);
+        }
     }
 
     // Render Logic for Views and Notes handled in respective functions
@@ -1969,6 +1994,12 @@ function handleSignatureFile(file: File) {
 // Model Selector Listener
 if (modelSelect) {
     modelSelect.value = currentModel;
+    // Fallback if the stored model is no longer in the list
+    if (modelSelect.selectedIndex === -1) {
+        currentModel = customApiKey ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview';
+        modelSelect.value = currentModel;
+        localStorage.setItem('gemini_selected_model', currentModel);
+    }
     modelSelect.addEventListener('change', () => {
         currentModel = modelSelect.value;
         localStorage.setItem('gemini_selected_model', currentModel);
@@ -2464,6 +2495,20 @@ if(sketchDropZone) {
 }
 if(sketchInput) sketchInput.addEventListener('change', (e) => { if((e.target as HTMLInputElement).files?.[0]) handleSketch((e.target as HTMLInputElement).files![0]); });
 
+if(sketchClearBtn) {
+    sketchClearBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentSketchFile = null;
+        if(sketchPreviewImg) {
+            sketchPreviewImg.src = '';
+            addClass(sketchPreviewImg, 'hidden');
+        }
+        if(sketchEmptyState) removeClass(sketchEmptyState, 'hidden');
+        addClass(sketchClearBtn, 'hidden');
+        if(sketchInput) sketchInput.value = '';
+    });
+}
+
 
 // --- Custom Zoom Modal Logic ---
 function updateZoomTransform() {
@@ -2569,9 +2614,26 @@ if(analyzeBtn) {
         setLoading(true);
         try {
             const hasSketch = !!currentSketchFile;
-            let prompt = `Role: Architectural Photographer & Prompt Engineer. Analyze images. Return JSON.`;
+            let prompt = `Role: Architectural Photographer & Prompt Engineer. 
+            Analyze the provided images. 
+            PHOTOREALISM REQUIREMENT: All generated prompts must describe photorealistic, high-quality, real-life images.
+            EXTERIOR CONTEXT: If the project is an EXTERIOR, place it in a realistic setting such as a busy street, a quiet residential neighborhood, a coastal area with ocean views, or a serene riverside.
+            INTERIOR CONTEXT: If the project is an INTERIOR, describe it as a fully finished, professionally designed, and high-end interior space.
+            SPECIAL INSTRUCTION: If you detect any image that is a collage (multiple smaller views or angles combined into one main image), you MUST treat it as a single architectural project or space. 
+            Analyze the relationship between these views to understand the project holistically. 
+            Ensure the 'generationPrompt' captures the essence of the project while allowing for the specific details and camera angles seen in the collage to be preserved in future generations.
+            Return JSON.`;
             if (hasSketch) prompt += ` Create 'sketchPrompt' to render the sketch based on references.`;
-            prompt += ` JSON: { "style": {"en":"", "vi":""}, "materials": {"en":"", "vi":""}, "lighting": {"en":"", "vi":""}, "context": {"en":"", "vi":""}, "composition": {"en":"", "vi":""}, "generationPrompt": {"en":"", "vi":""} ${hasSketch ? ', "sketchPrompt": {"en":"", "vi":""}':''} }`;
+            prompt += ` JSON: { 
+                "style": {"en":"", "vi":""}, 
+                "materials": {"en":"", "vi":""}, 
+                "lighting": {"en":"", "vi":""}, 
+                "context": {"en":"", "vi":""}, 
+                "composition": {"en":"", "vi":""}, 
+                "generationPrompt": {"en":"", "vi":""},
+                "collageAnalysis": {"en":"", "vi":""}
+                ${hasSketch ? ', "sketchPrompt": {"en":"", "vi":""}':''} 
+            }`;
             
             const txt = await callGemini(prompt, currentFiles);
             lastAnalysisData = JSON.parse(txt);
@@ -2599,13 +2661,18 @@ if(btnRunObjAnalysis) {
             const prompt = `
                 Role: Senior Architectural Technical Analyst.
                 Task: Analyze the provided images to extract the "Visual DNA" of the object/building.
+                PHOTOREALISM: The description must emphasize photorealism, high-quality finishes, and realistic textures.
+                SPECIAL INSTRUCTION: If you detect any image that is a collage (multiple smaller views or angles combined into one main image), you MUST treat it as a single architectural project or space. 
+                Analyze the relationship between these views to understand the project holistically.
                 Focus on:
                 1. Architectural Style & Form.
                 2. Material Palette & Textures.
                 3. Key Distinctive Features (Windows, Roof, Ornamentation).
                 4. Color Consistency.
+                5. Spatial relationship between different views if it's a collage.
+                6. Realistic environmental context (street, residential, coastal, or riverside for exteriors; finished spaces for interiors).
 
-                Goal: Create a reference description that ensures future generated angles look exactly like this object.
+                Goal: Create a reference description that ensures future generated angles look exactly like this object, preserving the specific details and character found in the reference views.
 
                 Output strictly valid JSON:
                 {
@@ -2692,6 +2759,13 @@ if(multiViewBtn) {
                 Role: Senior Architectural Photographer.
                 Task: Generate EXACTLY ${count} distinct and creative camera angle prompts for this architectural project.
                 
+                PHOTOREALISM: All prompts must describe photorealistic, high-quality, real-life images.
+                CONTEXTUAL REALISM: For exteriors, use realistic environments (street, residential, coast, river). For interiors, focus on finished, high-end spaces.
+
+                SPECIAL INSTRUCTION: If you detect any image that is a collage (multiple smaller views or angles combined into one main image), you MUST treat it as a single architectural project or space. 
+                Analyze the relationship between these views to understand the project holistically.
+                The generated angles should complement the views already seen in the collage or provide new, interesting perspectives of the same project.
+
                 Requirements:
                 - Each angle must be unique (e.g., Aerial, Eye-level, Worm's eye, Interior, Detail shot, etc.)
                 - Provide both English and Vietnamese versions.
@@ -2737,6 +2811,8 @@ if(btnCustomAngle) {
         setLoading(true);
         try {
             const prompt = `Generate 1 detailed prompt for angle: "${req}". Follow annotations if any.
+            PHOTOREALISM: The prompt must describe a photorealistic, high-quality real-life image.
+            CONTEXT: If exterior, use realistic settings (street, residential, coast, river). If interior, focus on finished spaces.
             Output JSON: { "en": { "title": "...", "content": "...", "composition": "...", "lighting": "..." }, "vi": { ... } }`;
             const txt = await callGemini(prompt, currentFiles);
             const raw = JSON.parse(txt);
@@ -2755,7 +2831,10 @@ const runSingle = async (key: keyof AnalysisResult) => {
     }
     setLoading(true);
     try {
-        const prompt = `Analyze ONLY: ${String(key)}. Return JSON: { "${String(key)}": { "en": "...", "vi": "..." } }`;
+        const prompt = `Analyze ONLY: ${String(key)}. 
+        PHOTOREALISM: The response must describe a photorealistic, high-quality real-life image.
+        CONTEXT: If exterior, use realistic settings (street, residential, coast, river). If interior, focus on finished spaces.
+        Return JSON: { "${String(key)}": { "en": "...", "vi": "..." } }`;
         const txt = await callGemini(prompt, currentFiles);
         const raw = JSON.parse(txt);
         if(!lastAnalysisData) lastAnalysisData = {};
@@ -2821,6 +2900,7 @@ setupCardActions('res-context', 'btn-copy-context', 'btn-dl-context', 'Context_A
 setupCardActions('res-composition', 'btn-copy-composition', 'btn-dl-composition', 'Composition_Analysis');
 setupCardActions('res-prompt', 'btn-copy-prompt', 'btn-dl-prompt', 'Generation_Prompt');
 setupCardActions('res-sketch-prompt', 'btn-copy-sketch-prompt', 'btn-dl-sketch-prompt', 'Sketch_Prompt');
+setupCardActions('res-collage-analysis', 'btn-copy-collage-analysis', 'btn-dl-collage-analysis', 'Collage_Analysis');
 
 // PNG Info Button Logic
 if (btnPngInfoPrompt) {
