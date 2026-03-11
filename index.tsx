@@ -2616,7 +2616,10 @@ if(analyzeBtn) {
             const hasSketch = !!currentSketchFile;
             let prompt = `Role: Architectural Photographer & Prompt Engineer. 
             Analyze the provided images. 
-            PHOTOREALISM REQUIREMENT: All generated prompts must describe photorealistic, high-quality, real-life images.
+            REALISM REQUIREMENT: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in the generated prompts.
+            PHOTOREALISM: All generated prompts must describe photorealistic, high-quality, real-life images.
+            DETAIL PRESERVATION: Ensure strict adherence to the visual details of the uploaded images.
+            CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
             EXTERIOR CONTEXT: If the project is an EXTERIOR, place it in a realistic setting such as a busy street, a quiet residential neighborhood, a coastal area with ocean views, or a serene riverside.
             INTERIOR CONTEXT: If the project is an INTERIOR, describe it as a fully finished, professionally designed, and high-end interior space.
             SPECIAL INSTRUCTION: If you detect any image that is a collage (multiple smaller views or angles combined into one main image), you MUST treat it as a single architectural project or space. 
@@ -2661,7 +2664,10 @@ if(btnRunObjAnalysis) {
             const prompt = `
                 Role: Senior Architectural Technical Analyst.
                 Task: Analyze the provided images to extract the "Visual DNA" of the object/building.
+                REALISM: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in descriptions.
                 PHOTOREALISM: The description must emphasize photorealism, high-quality finishes, and realistic textures.
+                DETAIL PRESERVATION: Ensure strict adherence to the visual details of the uploaded images.
+                CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
                 SPECIAL INSTRUCTION: If you detect any image that is a collage (multiple smaller views or angles combined into one main image), you MUST treat it as a single architectural project or space. 
                 Analyze the relationship between these views to understand the project holistically.
                 Focus on:
@@ -2759,7 +2765,10 @@ if(multiViewBtn) {
                 Role: Senior Architectural Photographer.
                 Task: Generate EXACTLY ${count} distinct and creative camera angle prompts for this architectural project.
                 
+                REALISM: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in each prompt.
                 PHOTOREALISM: All prompts must describe photorealistic, high-quality, real-life images.
+                DETAIL PRESERVATION: Ensure strict adherence to the visual details of the uploaded images.
+                CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
                 CONTEXTUAL REALISM: For exteriors, use realistic environments (street, residential, coast, river). For interiors, focus on finished, high-end spaces.
 
                 SPECIAL INSTRUCTION: If you detect any image that is a collage (multiple smaller views or angles combined into one main image), you MUST treat it as a single architectural project or space. 
@@ -2811,7 +2820,10 @@ if(btnCustomAngle) {
         setLoading(true);
         try {
             const prompt = `Generate 1 detailed prompt for angle: "${req}". Follow annotations if any.
+            REALISM: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in the prompt.
             PHOTOREALISM: The prompt must describe a photorealistic, high-quality real-life image.
+            DETAIL PRESERVATION: Ensure strict adherence to the visual details of the uploaded images.
+            CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
             CONTEXT: If exterior, use realistic settings (street, residential, coast, river). If interior, focus on finished spaces.
             Output JSON: { "en": { "title": "...", "content": "...", "composition": "...", "lighting": "..." }, "vi": { ... } }`;
             const txt = await callGemini(prompt, currentFiles);
@@ -2832,7 +2844,10 @@ const runSingle = async (key: keyof AnalysisResult) => {
     setLoading(true);
     try {
         const prompt = `Analyze ONLY: ${String(key)}. 
+        REALISM: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in the response.
         PHOTOREALISM: The response must describe a photorealistic, high-quality real-life image.
+        DETAIL PRESERVATION: Ensure strict adherence to the visual details of the uploaded images.
+        CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
         CONTEXT: If exterior, use realistic settings (street, residential, coast, river). If interior, focus on finished spaces.
         Return JSON: { "${String(key)}": { "en": "...", "vi": "..." } }`;
         const txt = await callGemini(prompt, currentFiles);
