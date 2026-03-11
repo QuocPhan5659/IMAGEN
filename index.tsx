@@ -25,8 +25,9 @@ let globalSigBgColor = '#FFD700'; // Default Gold
 // --- Application State ---
 type Lang = 'en' | 'vi';
 let currentLang: Lang = 'en';
-let activeTab: 'analysis' | 'multiview' | 'notes' | 'textOverlay' = 'analysis';
+let activeTab: 'analysis' | 'multiview' | 'notes' | 'textOverlay' | 'artistic' = 'analysis';
 let currentSketchFile: File | null = null;
+let currentStyleRefFile: File | null = null;
 let currentFiles: File[] = [];
 let currentModel = localStorage.getItem('gemini_selected_model') || (customApiKey ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview');
 
@@ -38,6 +39,8 @@ interface AnalysisResult {
     composition?: { en: string; vi: string };
     generationPrompt?: { en: string; vi: string };
     sketchPrompt?: { en: string; vi: string };
+    photoToSketchPrompt?: { en: string; vi: string };
+    artisticPrompts?: { [key: string]: { en: string; vi: string } };
     multiViewPrompts?: { en: string; vi: string };
     collageAnalysis?: { en: string; vi: string };
     [key: string]: any;
@@ -57,6 +60,7 @@ interface NoteEntry {
     en: string;
 }
 let notesHistory: NoteEntry[] = [];
+let artisticHistory: { style: string; en: string; vi: string }[] = [];
 
 interface Arrow {
     nx1: number; ny1: number; nx2: number; ny2: number;
@@ -191,6 +195,22 @@ const translations = {
         tabMultiView: "Multi-View",
         tabNotes: "Notes",
         tabTextOverlay: "Text Overlay",
+        tabArtistic: "Artistic Styles",
+        btnToSketch: "Photo to Sketch",
+        titlePhotoToSketch: "Photo to Sketch Prompt",
+        lblArtistic: "Artistic Style Transfer",
+        lblArtisticDesc: "Generate prompts to convert your images into various artistic sketching styles.",
+        lblCustomStyle: "Custom Style Reference",
+        lblUploadStyle: "Upload Style Reference",
+        lblCustomInstruction: "Custom Instruction",
+        btnGenerateCustom: "Generate Style",
+        artisticStyles: {
+            watercolor: "Watercolor",
+            blueInk: "Blue Ink Sketch",
+            cleanLine: "Clean Line Art",
+            blackInk: "Black Ink Technical",
+            redInk: "Red Ink Sketch"
+        },
         lblObjAnalysis: "Detailed Object Analysis",
         lblObjDesc: "Analyze uploaded images to establish a unified reference (DNA) for consistent angle generation.",
         btnObjAnalysis: "Analyze Object DNA",
@@ -238,6 +258,22 @@ const translations = {
         tabMultiView: "Đa Góc Nhìn",
         tabNotes: "Ghi Chú",
         tabTextOverlay: "Chèn Chữ",
+        tabArtistic: "Phong Cách Nghệ Thuật",
+        btnToSketch: "Ảnh sang Sketch",
+        titlePhotoToSketch: "Prompt Chuyển Ảnh sang Sketch",
+        lblArtistic: "Chuyển Đổi Phong Cách Nghệ Thuật",
+        lblArtisticDesc: "Tạo prompt để chuyển đổi ảnh kiến trúc của bạn sang các phong cách vẽ nghệ thuật khác nhau.",
+        lblCustomStyle: "Hình Mẫu Phong Cách",
+        lblUploadStyle: "Tải Ảnh Mẫu Phong Cách",
+        lblCustomInstruction: "Yêu Cầu Tùy Chỉnh",
+        btnGenerateCustom: "Tạo Phong Cách",
+        artisticStyles: {
+            watercolor: "Màu Nước",
+            blueInk: "Bút Bi Xanh",
+            cleanLine: "Nét Vẽ Sạch",
+            blackInk: "Kỹ Thuật Mực Đen",
+            redInk: "Bút Đỏ"
+        },
         lblObjAnalysis: "Phân Tích Chi Tiết Đối Tượng",
         lblObjDesc: "Phân tích các ảnh đã tải để thiết lập tham chiếu chung (DNA) cho việc tạo góc nhìn đồng nhất.",
         btnObjAnalysis: "Phân Tích Cốt Lõi",
@@ -271,11 +307,13 @@ const translations = {
 const tabAnalysis = getEl<HTMLButtonElement>('tab-analysis');
 const tabNotes = getEl<HTMLButtonElement>('tab-notes');
 const tabMultiView = getEl<HTMLButtonElement>('tab-multiview');
+const tabArtistic = getEl<HTMLButtonElement>('tab-artistic');
 const tabTextOverlay = getEl<HTMLButtonElement>('tab-text-overlay');
 
 const panelAnalysis = getEl<HTMLDivElement>('panel-analysis');
 const panelNotes = getEl<HTMLDivElement>('panel-notes');
 const panelMultiView = getEl<HTMLDivElement>('panel-multiview');
+const panelArtistic = getEl<HTMLDivElement>('panel-artistic');
 const panelUploadAnalysis = getEl<HTMLDivElement>('panel-upload-analysis');
 const panelTextOverlaySettings = getEl<HTMLDivElement>('panel-text-overlay-settings');
 
@@ -329,11 +367,13 @@ const resultsContainer = getEl<HTMLDivElement>('results-container');
 const loader = getEl<HTMLDivElement>('loader');
 const analysisCardsWrapper = getEl<HTMLDivElement>('analysis-cards-wrapper');
 const notesResults = getEl<HTMLDivElement>('notes-results');
+const artisticResults = getEl<HTMLDivElement>('artistic-results');
 const multiviewResults = getEl<HTMLDivElement>('multiview-results');
 
 const analyzeBtn = getEl<HTMLButtonElement>('analyze-btn');
 const analyzeNotesBtn = getEl<HTMLButtonElement>('analyze-notes-btn');
 const btnAnalyzeNotesText = getEl('btn-analyze-notes-text');
+const btnArtisticText = getEl('btn-artistic-text');
 const downloadAllBtn = getEl<HTMLButtonElement>('download-all-btn');
 const btnLoadPngInfo = getEl<HTMLButtonElement>('btn-load-png-info');
 
@@ -360,6 +400,28 @@ const titleCollageAnalysis = getEl('title-collage-analysis');
 // Buttons for Single Analysis
 const btnRunPrompt = getEl<HTMLButtonElement>('btn-run-prompt');
 const btnRunSketchPrompt = getEl<HTMLButtonElement>('btn-run-sketch-prompt');
+
+// Artistic Style Buttons
+const btnStyleWatercolor = getEl<HTMLButtonElement>('btn-style-watercolor');
+const btnStyleBlueInk = getEl<HTMLButtonElement>('btn-style-blue-ink');
+const btnStyleCleanLine = getEl<HTMLButtonElement>('btn-style-clean-line');
+const btnStyleBlackInk = getEl<HTMLButtonElement>('btn-style-black-ink');
+const btnStyleRedInk = getEl<HTMLButtonElement>('btn-style-red-ink');
+
+// Custom Artistic Style Elements
+const dropZoneStyle = getEl<HTMLDivElement>('drop-zone-style');
+const fileInputStyle = getEl<HTMLInputElement>('file-input-style');
+const styleRefPreview = getEl<HTMLDivElement>('style-ref-preview');
+const imgStyleRef = getEl<HTMLImageElement>('img-style-ref');
+const styleRefPlaceholder = getEl<HTMLDivElement>('style-ref-placeholder');
+const btnClearStyleRef = getEl<HTMLButtonElement>('btn-clear-style-ref');
+const inputCustomStyle = getEl<HTMLTextAreaElement>('input-custom-style');
+const btnGenerateCustomStyle = getEl<HTMLButtonElement>('btn-generate-custom-style');
+
+const btnToSketchPrompt = getEl<HTMLButtonElement>('btn-to-sketch-prompt');
+const resPhotoToSketch = getEl<HTMLParagraphElement>('res-photo-to-sketch');
+const cardPhotoToSketch = getEl<HTMLDivElement>('card-photo-to-sketch');
+
 const btnRunStyle = getEl<HTMLButtonElement>('btn-run-style');
 const btnRunMaterial = getEl<HTMLButtonElement>('btn-run-material');
 const btnRunLighting = getEl<HTMLButtonElement>('btn-run-lighting');
@@ -994,18 +1056,25 @@ async function generateContentWithRetry(ai: GoogleGenAI, params: any, retries = 
     }
 }
 
-async function callGemini(prompt: string, files: File[]): Promise<string> {
+async function callGemini(prompt: string, files: File[], sketchFile: File | null = null): Promise<string> {
     const apiKey = customApiKey || process.env.GEMINI_API_KEY;
     if (!apiKey) { await openApiKeyDialog(); return "{}"; }
 
     const ai = new GoogleGenAI({ apiKey });
     const parts: any[] = [];
-    for (const file of files) {
-        parts.push(await processFileForGemini(file));
+    
+    if (files.length > 0) {
+        parts.push({ text: "REFERENCE IMAGES:" });
+        for (const file of files) {
+            parts.push(await processFileForGemini(file));
+        }
     }
-    if (activeTab === 'analysis' && currentSketchFile) {
-        parts.push(await processFileForGemini(currentSketchFile));
+    
+    if (sketchFile) {
+        parts.push({ text: "SKETCH IMAGE (to be rendered based on references):" });
+        parts.push(await processFileForGemini(sketchFile));
     }
+    
     parts.push({ text: prompt });
 
     // Use retry wrapper
@@ -1047,6 +1116,7 @@ function updateLanguageUI() {
     setText(lblDrag, t.uploadDrag);
     setText(lblUploadSketch, t.uploadSketch);
     setText(btnAnalyzeText, t.btnAnalyze);
+    setText(getEl('btn-to-sketch-text'), t.btnToSketch);
     setText(btnDownloadAllText, t.btnDownloadAll);
     setText(btnLoadPngInfoText, t.btnLoadPngInfo);
     setText(loaderTitle, t.loaderTitle);
@@ -1054,6 +1124,7 @@ function updateLanguageUI() {
     if(tabAnalysis) setText(tabAnalysis, t.tabAnalysis);
     if(tabMultiView) setText(tabMultiView, t.tabMultiView);
     if(tabNotes) setText(tabNotes, t.tabNotes);
+    if(tabArtistic) setText(tabArtistic, t.tabArtistic);
     if(tabTextOverlay) setText(tabTextOverlay, t.tabTextOverlay);
     setText(lblAngleCount, t.lblAngleCount);
     setText(lblCustomAngle, t.lblCustomAngle);
@@ -1065,6 +1136,18 @@ function updateLanguageUI() {
     setText(btnAnalyzeNotesText, t.btnAnalyzeNotes);
     setText(btnMultiViewText, t.btnMultiView);
 
+    setText(getEl('lbl-artistic'), t.lblArtistic);
+    setText(getEl('lbl-artistic-desc'), t.lblArtisticDesc);
+    setText(getEl('lbl-custom-style'), t.lblCustomStyle);
+    setText(getEl('lbl-upload-style'), t.lblUploadStyle);
+    setText(getEl('lbl-custom-instruction'), t.lblCustomInstruction);
+    setText(getEl('btn-generate-custom-text'), t.btnGenerateCustom);
+    setText(getEl('style-watercolor-text'), t.artisticStyles.watercolor);
+    setText(getEl('style-blue-ink-text'), t.artisticStyles.blueInk);
+    setText(getEl('style-clean-line-text'), t.artisticStyles.cleanLine);
+    setText(getEl('style-black-ink-text'), t.artisticStyles.blackInk);
+    setText(getEl('style-red-ink-text'), t.artisticStyles.redInk);
+
     setText(titleStyle, t.titles.style);
     setText(titleMaterial, t.titles.materials);
     setText(titleLighting, t.titles.lighting);
@@ -1072,6 +1155,7 @@ function updateLanguageUI() {
     setText(titleComposition, t.titles.composition);
     setText(titlePrompt, t.titles.generationPrompt);
     setText(titleSketchPrompt, t.titles.sketchPrompt);
+    setText(getEl('title-photo-to-sketch'), t.titlePhotoToSketch);
     setText(titleCollageAnalysis, t.titles.collageAnalysis);
 
     // API Modal
@@ -1087,6 +1171,7 @@ function updateLanguageUI() {
     // Tab Logic
     setHidden(panelAnalysis, true);
     setHidden(panelMultiView, true);
+    setHidden(panelArtistic, true);
     setHidden(panelNotes, true);
     setHidden(panelUploadAnalysis, true);
     setHidden(sketchContainer, true);
@@ -1095,6 +1180,7 @@ function updateLanguageUI() {
     
     setHidden(analysisCardsWrapper, true);
     setHidden(multiviewResults, true);
+    setHidden(artisticResults, true);
     setHidden(notesResults, true);
     setHidden(overlayGrid, true);
     
@@ -1129,6 +1215,14 @@ function updateLanguageUI() {
         setHidden(globalActionsBar, false);
         addClass(tabNotes, 'active');
     
+    } else if (activeTab === 'artistic') {
+        setHidden(panelArtistic, false);
+        setHidden(panelUploadAnalysis, false);
+        setHidden(artisticResults, false);
+        setHidden(globalActionsBar, false);
+        addClass(tabArtistic, 'active');
+        renderArtisticResults();
+
     } else if (activeTab === 'textOverlay') {
         setHidden(panelTextOverlaySettings, false);
         setHidden(overlayGrid, false);
@@ -1146,7 +1240,16 @@ function updateLanguageUI() {
         if(resContext) setText(resContext, lastAnalysisData.context?.[currentLang] || "");
         if(resComposition) setText(resComposition, lastAnalysisData.composition?.[currentLang] || "");
         if(resPrompt) setText(resPrompt, lastAnalysisData.generationPrompt?.[currentLang] || "");
-        if(resSketchPrompt) setText(resSketchPrompt, lastAnalysisData.sketchPrompt?.[currentLang] || "");
+        if(resPhotoToSketch) {
+            const ptsText = lastAnalysisData.photoToSketchPrompt?.[currentLang] || "";
+            setText(resPhotoToSketch, ptsText);
+            setHidden(cardPhotoToSketch, !ptsText);
+        }
+        if(resSketchPrompt) {
+            const sketchText = lastAnalysisData.sketchPrompt?.[currentLang] || "";
+            setText(resSketchPrompt, sketchText);
+            setHidden(sketchPromptCard, !sketchText);
+        }
         if(resCollageAnalysis) {
             const collageText = lastAnalysisData.collageAnalysis?.[currentLang] || "";
             setText(resCollageAnalysis, collageText);
@@ -1156,6 +1259,7 @@ function updateLanguageUI() {
 
     // Render Logic for Views and Notes handled in respective functions
     if(activeTab === 'multiview') renderMultiViewResults();
+    if(activeTab === 'artistic') renderArtisticResults();
     if(activeTab === 'notes') renderNotesResults();
 
     // Lang Toggle Style
@@ -1250,6 +1354,52 @@ function renderMultiViewResults() {
              });
          }
     }
+}
+
+function renderArtisticResults() {
+    if (!artisticResults) return;
+    if (artisticHistory.length === 0) {
+        artisticResults.innerHTML = `
+        <div class="text-center py-12 text-gray-600">
+             ${currentLang === 'en' ? 'Upload images and select a style to begin.' : 'Tải ảnh lên và chọn một phong cách để bắt đầu.'}
+        </div>`;
+        return;
+    }
+
+    artisticResults.innerHTML = '';
+    [...artisticHistory].reverse().forEach((entry, idx) => {
+        const realIndex = artisticHistory.length - 1 - idx;
+        const card = document.createElement('div');
+        card.className = "w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group";
+        card.innerHTML = `
+            <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                 <div class="flex items-center gap-2">
+                     <span class="chevron-icon text-yellow-500 mr-1 transition-transform">
+                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                     </span>
+                     <h3 class="text-xs font-bold text-gray-400 uppercase">${entry.style}</h3>
+                 </div>
+                 <div class="flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                      <button class="btn-copy-artistic p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition" title="Copy"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                      <button class="btn-delete-artistic p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded transition" title="Delete"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                 </div>
+            </div>
+            <div class="card-content p-4">
+                <p class="text-sm text-gray-300 whitespace-pre-line font-mono leading-relaxed pl-2 border-l-2 border-blue-500/30">${entry[currentLang]}</p>
+            </div>
+        `;
+        
+        card.querySelector('.btn-copy-artistic')?.addEventListener('click', () => copyToClipboard(entry[currentLang], card.querySelector('.btn-copy-artistic') as HTMLElement, '<svg class="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>', '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>'));
+        card.querySelector('.btn-delete-artistic')?.addEventListener('click', () => { artisticHistory.splice(realIndex, 1); renderArtisticResults(); });
+        card.querySelector('.card-header')?.addEventListener('click', () => {
+             const content = card.querySelector('.card-content') as HTMLElement;
+             const chevron = card.querySelector('.chevron-icon') as HTMLElement;
+             content.classList.toggle('hidden');
+             chevron.style.transform = content.classList.contains('hidden') ? 'rotate(-90deg)' : 'rotate(0deg)';
+        });
+        
+        artisticResults.appendChild(card);
+    });
 }
 
 function renderNotesResults() {
@@ -2062,6 +2212,7 @@ if (langToggleBtn) langToggleBtn.addEventListener('click', () => {
 });
 if (tabAnalysis) tabAnalysis.addEventListener('click', () => { activeTab = 'analysis'; updateLanguageUI(); });
 if (tabMultiView) tabMultiView.addEventListener('click', () => { activeTab = 'multiview'; updateLanguageUI(); });
+if (tabArtistic) tabArtistic.addEventListener('click', () => { activeTab = 'artistic'; updateLanguageUI(); });
 if (tabNotes) tabNotes.addEventListener('click', () => { activeTab = 'notes'; updateLanguageUI(); });
 if (tabTextOverlay) tabTextOverlay.addEventListener('click', () => { activeTab = 'textOverlay'; updateLanguageUI(); });
 
@@ -2608,6 +2759,107 @@ if(modalCanvas) {
 
 // --- Analysis Handlers ---
 
+async function generateArtisticStyle(styleKey: string, styleName: string, stylePrompt: string, customRefFile: File | null = null) {
+    if (currentFiles.length === 0) {
+        showStatus(currentLang === 'en' ? 'Please upload images first.' : 'Vui lòng tải ảnh lên trước.', true);
+        return;
+    }
+    setLoading(true);
+    try {
+        let prompt = `Role: Architectural Illustrator. 
+        TASK: Generate a detailed prompt to convert the uploaded architectural project into a specific artistic style: "${styleName}".
+        STYLE DESCRIPTION: ${stylePrompt}
+        REQUIREMENTS:
+        1. Preserve the architectural form, structure, and perspective of the uploaded images.
+        2. Describe the artistic medium, line quality, shading techniques, and color palette in detail.
+        3. Ensure the prompt is optimized for high-quality AI image generation.
+        4. Output strictly valid JSON: { "en": "...", "vi": "..." }`;
+
+        if (customRefFile) {
+            prompt += `\nSTYLE REFERENCE: An additional image has been provided as a STYLE REFERENCE. Analyze its artistic style, medium, and mood, and apply these characteristics to the generated prompt.`;
+        }
+
+        const txt = await callGemini(prompt, currentFiles, customRefFile || currentSketchFile);
+        const raw = JSON.parse(txt);
+        artisticHistory.push({
+            style: styleName,
+            en: raw.en,
+            vi: raw.vi
+        });
+        updateLanguageUI();
+        showStatus('Generated!');
+    } catch (e) {
+        handleApiError(e, 'Error generating style');
+    } finally {
+        setLoading(false);
+    }
+}
+
+// Custom Style Reference Handlers
+if(dropZoneStyle) {
+    dropZoneStyle.addEventListener('click', () => fileInputStyle?.click());
+    dropZoneStyle.addEventListener('dragover', (e) => { e.preventDefault(); addClass(dropZoneStyle, 'border-blue-500'); });
+    dropZoneStyle.addEventListener('dragleave', () => removeClass(dropZoneStyle, 'border-blue-500'));
+    dropZoneStyle.addEventListener('drop', (e) => {
+        e.preventDefault();
+        removeClass(dropZoneStyle, 'border-blue-500');
+        const file = e.dataTransfer?.files[0];
+        if (file && file.type.startsWith('image/')) handleStyleRefFile(file);
+    });
+}
+
+if(fileInputStyle) fileInputStyle.addEventListener('change', (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (file) handleStyleRefFile(file);
+});
+
+function handleStyleRefFile(file: File) {
+    currentStyleRefFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        if(imgStyleRef) imgStyleRef.src = e.target?.result as string;
+        setHidden(styleRefPreview, false);
+        setHidden(styleRefPlaceholder, true);
+        setHidden(btnClearStyleRef, false);
+    };
+    reader.readAsDataURL(file);
+}
+
+if(btnClearStyleRef) btnClearStyleRef.addEventListener('click', (e) => {
+    e.stopPropagation();
+    currentStyleRefFile = null;
+    setHidden(styleRefPreview, true);
+    setHidden(styleRefPlaceholder, false);
+    setHidden(btnClearStyleRef, true);
+    if(fileInputStyle) fileInputStyle.value = '';
+});
+
+if(btnGenerateCustomStyle) btnGenerateCustomStyle.addEventListener('click', () => {
+    const customText = inputCustomStyle?.value.trim() || "Custom Artistic Style";
+    generateArtisticStyle('custom', currentLang === 'en' ? 'Custom Style' : 'Phong cách tùy chỉnh', customText, currentStyleRefFile);
+});
+
+if(btnStyleWatercolor) btnStyleWatercolor.addEventListener('click', () => {
+    const t = translations[currentLang].artisticStyles;
+    generateArtisticStyle('watercolor', t.watercolor, "Watercolor architectural sketch, soft vibrant colors, bleeding edges, visible paper texture, hand-drawn pencil outlines, artistic and expressive.");
+});
+if(btnStyleBlueInk) btnStyleBlueInk.addEventListener('click', () => {
+    const t = translations[currentLang].artisticStyles;
+    generateArtisticStyle('blueInk', t.blueInk, "Architectural sketch using blue ballpoint pen on aged, stained paper. Cross-hatching, varying line weights, realistic ink texture, vintage feel.");
+});
+if(btnStyleCleanLine) btnStyleCleanLine.addEventListener('click', () => {
+    const t = translations[currentLang].artisticStyles;
+    generateArtisticStyle('cleanLine', t.cleanLine, "Clean architectural line art, minimalist blueprint style, thin black lines on a light blue background, soft white highlights, precise and modern.");
+});
+if(btnStyleBlackInk) btnStyleBlackInk.addEventListener('click', () => {
+    const t = translations[currentLang].artisticStyles;
+    generateArtisticStyle('blackInk', t.blackInk, "Technical architectural drawing, black ink on white paper, detailed cross-hatching, stippling for shadows, precise lines, professional drafting style.");
+});
+if(btnStyleRedInk) btnStyleRedInk.addEventListener('click', () => {
+    const t = translations[currentLang].artisticStyles;
+    generateArtisticStyle('redInk', t.redInk, "Architectural sketch in red ink, energetic lines, technical annotations and dimensions in red, hand-drawn on white paper, conceptual and dynamic.");
+});
+
 if(analyzeBtn) {
     analyzeBtn.addEventListener('click', async () => {
         if (currentFiles.length === 0 && !currentSketchFile) { showStatus('Please upload files.', true); return; }
@@ -2626,7 +2878,20 @@ if(analyzeBtn) {
             Analyze the relationship between these views to understand the project holistically. 
             Ensure the 'generationPrompt' captures the essence of the project while allowing for the specific details and camera angles seen in the collage to be preserved in future generations.
             Return JSON.`;
-            if (hasSketch) prompt += ` Create 'sketchPrompt' to render the sketch based on references.`;
+            if (hasSketch) {
+                if (currentFiles.length > 0) {
+                    prompt += ` 
+                    SKETCH ANALYSIS: One of the provided images is a SKETCH. 
+                    Your task is to create a 'sketchPrompt' that describes how to render this specific SKETCH into a photorealistic architectural visualization.
+                    The 'sketchPrompt' MUST use the architectural style, materials, lighting, and context extracted from the other REFERENCE IMAGES.
+                    Ensure the 'sketchPrompt' is detailed enough for an AI image generator to accurately interpret the sketch's lines while applying the reference DNA.`;
+                } else {
+                    prompt += `
+                    SKETCH ANALYSIS: The provided image is a SKETCH.
+                    Your task is to create a 'sketchPrompt' that describes how to render this specific SKETCH into a photorealistic architectural visualization.
+                    Since no other reference images are provided, use your architectural knowledge to suggest a high-quality style, materials, and context that would suit the design in the sketch.`;
+                }
+            }
             prompt += ` JSON: { 
                 "style": {"en":"", "vi":""}, 
                 "materials": {"en":"", "vi":""}, 
@@ -2638,7 +2903,7 @@ if(analyzeBtn) {
                 ${hasSketch ? ', "sketchPrompt": {"en":"", "vi":""}':''} 
             }`;
             
-            const txt = await callGemini(prompt, currentFiles);
+            const txt = await callGemini(prompt, currentFiles, currentSketchFile);
             lastAnalysisData = JSON.parse(txt);
             updateLanguageUI(); showStatus('');
         } catch(e) { handleApiError(e, 'Error analyzing'); } finally { setLoading(false); }
@@ -2686,7 +2951,7 @@ if(btnRunObjAnalysis) {
                 }
             `;
 
-            const responseText = await callGemini(prompt, currentFiles);
+            const responseText = await callGemini(prompt, currentFiles, currentSketchFile);
             const data = JSON.parse(responseText);
 
             if(objAnalysisResult) {
@@ -2793,7 +3058,7 @@ if(multiViewBtn) {
                 }
              `;
              
-             const txt = await callGemini(prompt, currentFiles);
+             const txt = await callGemini(prompt, currentFiles, currentSketchFile);
              const raw = JSON.parse(txt);
              
              if (!raw.multiViewPrompts || !raw.multiViewPrompts.en || !raw.multiViewPrompts.vi) {
@@ -2826,7 +3091,7 @@ if(btnCustomAngle) {
             CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
             CONTEXT: If exterior, use realistic settings (street, residential, coast, river). If interior, focus on finished spaces.
             Output JSON: { "en": { "title": "...", "content": "...", "composition": "...", "lighting": "..." }, "vi": { ... } }`;
-            const txt = await callGemini(prompt, currentFiles);
+            const txt = await callGemini(prompt, currentFiles, currentSketchFile);
             const raw = JSON.parse(txt);
             customAnglesHistory.push({ en: raw.en, vi: raw.vi });
             updateLanguageUI(); showStatus('Generated!');
@@ -2843,14 +3108,33 @@ const runSingle = async (key: keyof AnalysisResult) => {
     }
     setLoading(true);
     try {
-        const prompt = `Analyze ONLY: ${String(key)}. 
+        let prompt = `Analyze ONLY: ${String(key)}. 
         REALISM: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in the response.
         PHOTOREALISM: The response must describe a photorealistic, high-quality real-life image.
         DETAIL PRESERVATION: Ensure strict adherence to the visual details of the uploaded images.
         CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
-        CONTEXT: If exterior, use realistic settings (street, residential, coast, river). If interior, focus on finished spaces.
-        Return JSON: { "${String(key)}": { "en": "...", "vi": "..." } }`;
-        const txt = await callGemini(prompt, currentFiles);
+        CONTEXT: If exterior, use realistic settings (street, residential, coast, river). If interior, focus on finished spaces.`;
+
+        if (key === 'sketchPrompt') {
+            prompt += `
+            TASK: Create a prompt to render the provided SKETCH into a photorealistic image.
+            If REFERENCE IMAGES are provided, use their style/materials/context.
+            If no references are provided, suggest a high-quality architectural style.`;
+        }
+        
+        if (key === 'photoToSketchPrompt') {
+            prompt = `Role: Architectural Sketch Artist.
+            TASK: Create a detailed prompt to convert the uploaded PHOTOGRAPH into a hand-drawn architectural sketch.
+            STRICT REQUIREMENT: 
+            1. DO NOT mention lighting, photorealism, or realistic rendering.
+            2. Focus on: Line quality (pencil, ink, charcoal), hatching techniques, paper texture, and artistic expression.
+            3. Describe the scene as a pure drawing or sketch.
+            4. Preserve the architectural form and perspective of the photo.
+            Return JSON: { "photoToSketchPrompt": { "en": "...", "vi": "..." } }`;
+        }
+
+        prompt += ` Return JSON: { "${String(key)}": { "en": "...", "vi": "..." } }`;
+        const txt = await callGemini(prompt, currentFiles, currentSketchFile);
         const raw = JSON.parse(txt);
         if(!lastAnalysisData) lastAnalysisData = {};
         lastAnalysisData[key] = raw[key];
@@ -2864,6 +3148,7 @@ if(btnRunContext) btnRunContext.addEventListener('click', (e) => { e.stopPropaga
 if(btnRunComposition) btnRunComposition.addEventListener('click', (e) => { e.stopPropagation(); runSingle('composition'); });
 if(btnRunPrompt) btnRunPrompt.addEventListener('click', (e) => { e.stopPropagation(); runSingle('generationPrompt'); });
 if(btnRunSketchPrompt) btnRunSketchPrompt.addEventListener('click', (e) => { e.stopPropagation(); runSingle('sketchPrompt'); });
+if(btnToSketchPrompt) btnToSketchPrompt.addEventListener('click', (e) => { e.stopPropagation(); runSingle('photoToSketchPrompt'); });
 
 // --- Helper for Single Card Actions (Copy/Download) ---
 function setupCardActions(
@@ -2915,6 +3200,7 @@ setupCardActions('res-context', 'btn-copy-context', 'btn-dl-context', 'Context_A
 setupCardActions('res-composition', 'btn-copy-composition', 'btn-dl-composition', 'Composition_Analysis');
 setupCardActions('res-prompt', 'btn-copy-prompt', 'btn-dl-prompt', 'Generation_Prompt');
 setupCardActions('res-sketch-prompt', 'btn-copy-sketch-prompt', 'btn-dl-sketch-prompt', 'Sketch_Prompt');
+setupCardActions('res-photo-to-sketch', 'btn-copy-photo-to-sketch', 'btn-dl-photo-to-sketch', 'Photo_to_Sketch_Prompt');
 setupCardActions('res-collage-analysis', 'btn-copy-collage-analysis', 'btn-dl-collage-analysis', 'Collage_Analysis');
 
 // PNG Info Button Logic
