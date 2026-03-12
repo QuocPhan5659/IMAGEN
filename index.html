@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Architectural AI Analyst</title>
-    <script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773276362719&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2F922116c2-6230-49be-98ca-52a96df11d4f%2Ffile%2F1298b334722aeabbf3d868ee68c45951024cb39c8305c0de354a9dffaca74d18&amp;app=opera.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773276362719&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773270964405&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2Fa30fcdd5-728f-40f5-9842-eceaf2fa7c27%2Ffile%2Ff0e017ab3f1ae90a29de33819339b1eb99d419d8da179346fa7ad716ef052abb&amp;app=msedge.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773270964405&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773276362719&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2F922116c2-6230-49be-98ca-52a96df11d4f%2Ffile%2Ff1a93e489f4cce1797dd226ba7d6b78402431bf852c63a7c3e11a461f9525e39&amp;app=opera.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773276362719&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773270964405&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2Fa30fcdd5-728f-40f5-9842-eceaf2fa7c27%2Ffile%2Ff0e017ab3f1ae90a29de33819339b1eb99d419d8da179346fa7ad716ef052abb&amp;app=msedge.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773270964405&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -115,25 +115,25 @@
                 <div class="flex flex-col">
                     <h1 class="text-2xl font-black text-white tracking-tighter uppercase leading-none" id="app-title">COMMAND CENTER</h1>
                     <div class="flex items-center gap-2 mt-1">
-                        <span class="text-[9px] text-gray-200 uppercase tracking-widest">System Status:</span>
-                        <span class="text-[9px] text-green-200 uppercase tracking-widest font-bold">Online</span>
+                        <span class="text-[9px] text-white uppercase tracking-widest">System Status:</span>
+                        <span class="text-[9px] text-green-100 uppercase tracking-widest font-bold">Online</span>
                     </div>
                 </div>
             </div>
             
             <div class="flex items-center gap-4">
                 <!-- Model Selector -->
-                <div class="flex items-center gap-2 bg-black px-3 py-1.5 border border-gray-900 text-gray-100 font-mono">
+                <div class="flex items-center gap-2 bg-black px-3 py-1.5 border border-gray-900 text-white font-mono">
                     <span class="text-[9px] uppercase tracking-widest">Core:</span>
-                    <select id="model-select" class="bg-transparent text-[10px] font-bold outline-none cursor-pointer text-green-400 uppercase">
+                    <select id="model-select" class="bg-transparent text-[10px] font-bold outline-none cursor-pointer text-green-200 uppercase">
                         <option value="gemini-3-flash-preview">Flash-v3</option>
                         <option value="gemini-3.1-pro-preview">Pro-v3.1</option>
                     </select>
                 </div>
                 <!-- Language Toggle -->
                 <button id="lang-toggle-btn" class="flex items-center gap-2 text-[10px] font-mono bg-black px-3 py-1.5 border border-gray-900">
-                    <span id="lang-en" class="text-green-400 font-bold">EN</span>
-                    <span class="text-gray-300">/</span>
+                    <span id="lang-en" class="text-green-200 font-bold">EN</span>
+                    <span class="text-gray-100">/</span>
                     <span id="lang-vi" class="text-gray-200">VI</span>
                 </button>
                 <!-- API Key Settings -->
@@ -143,11 +143,15 @@
                     </svg>
                     <span class="text-green-400 font-bold uppercase tracking-widest">API Key</span>
                 </button>
-                <button id="btn-pro-badge" class="hidden flex items-center gap-2 text-[10px] font-mono bg-green-500/10 px-3 py-1.5 border border-green-500/50 hover:border-green-500 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                <button id="btn-pro-badge" class="hidden group flex items-center gap-2 text-[10px] font-mono bg-green-500/10 px-3 py-1.5 border border-green-500/50 hover:bg-red-500/10 hover:border-red-500/50 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-green-400 group-hover:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                     </svg>
-                    <span class="text-green-400 font-bold uppercase tracking-widest">PRO Active</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-red-400 hidden group-hover:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span class="text-green-400 font-bold uppercase tracking-widest group-hover:hidden">PRO Active</span>
+                    <span class="text-red-400 font-bold uppercase tracking-widest hidden group-hover:block">Remove Key</span>
                 </button>
             </div>
         </div>
@@ -179,12 +183,12 @@
                     </div>
                     
                     <!-- Drop Zone (Reduced Height) -->
-                    <div id="drop-zone" class="min-h-[140px] flex flex-col justify-center border border-gray-900 bg-black rounded-sm p-4 text-center hover:border-green-500/50 transition-all cursor-pointer group relative">
+                    <div id="drop-zone" class="min-h-[140px] flex flex-col justify-center border-2 border-dashed border-gray-900 bg-black rounded-none p-4 text-center hover:border-green-500/50 transition-all cursor-pointer group relative">
                         <input type="file" id="file-input" multiple accept="image/*" class="hidden">
                         
                         <div id="empty-state">
                             <div class="w-12 h-12 bg-gray-950 border border-gray-900 flex items-center justify-center mx-auto mb-3 group-hover:border-green-500/50 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400 group-hover:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-200 group-hover:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
@@ -204,7 +208,7 @@
                         <label class="text-xs font-bold text-purple-400 uppercase tracking-wider" id="lbl-upload-sketch">Upload Sketch (Optional)</label>
                         <button id="sketch-clear-btn" class="text-xs text-red-400 hover:text-red-300 hidden">Clear</button>
                     </div>
-                    <div id="sketch-drop-zone" class="h-[120px] flex flex-col justify-center border-2 border-dashed border-gray-700 rounded-xl p-4 text-center hover:border-gray-500 hover:bg-gray-800/50 transition-all cursor-pointer relative overflow-hidden group">
+                    <div id="sketch-drop-zone" class="h-[120px] flex flex-col justify-center border-2 border-dashed border-gray-700 rounded-none p-4 text-center hover:border-gray-500 hover:bg-gray-800/50 transition-all cursor-pointer relative overflow-hidden group">
                         <input type="file" id="sketch-input" accept="image/*" class="hidden">
                         <div id="sketch-empty-state">
                             <p class="text-xs text-gray-200 group-hover:text-white transition-colors">Drag Sketch Here</p>
@@ -218,18 +222,18 @@
                     <div>
                          <label class="text-xs font-bold text-green-400 uppercase tracking-wider mb-2 block" id="lbl-obj-analysis">Detailed Object Analysis</label>
                          <p class="text-[10px] text-gray-400 mb-3 leading-relaxed" id="lbl-obj-desc">Analyze uploaded images to establish a unified reference (DNA) for consistent angle generation.</p>
-                         <button id="btn-run-obj-analysis" class="w-full text-gray-400 border border-dashed border-purple-600/50 bg-gray-900/20 font-bold py-2.5 px-4 rounded-lg transition-all hover:border-purple-500 hover:bg-gray-800/30 hover:text-white active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wide">
+                         <button id="btn-run-obj-analysis" class="w-full text-gray-400 border-solid border-2 border-purple-600 bg-gray-900/20 font-bold py-2.5 px-4 rounded-none transition-all hover:border-purple-500 hover:bg-gray-800/30 hover:text-white active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wide">
                              <span id="btn-obj-analysis-text">Analyze Object DNA</span>
                          </button>
-                         <div id="obj-analysis-result" class="mt-3 p-3 bg-gray-900 rounded-lg border border-gray-700 text-xs text-gray-300 h-32 overflow-y-auto hidden whitespace-pre-line font-mono"></div>
+                         <div id="obj-analysis-result" class="mt-3 p-3 bg-gray-900 rounded-none border border-gray-700 text-xs text-gray-300 h-32 overflow-y-auto hidden whitespace-pre-line font-mono"></div>
                     </div>
                     
                     <hr class="border-gray-700" />
                     
                     <div>
                         <label class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2 block" id="lbl-custom-angle">Custom Angle Request</label>
-                        <textarea id="custom-angle-input" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm text-white focus:ring-2 focus:ring-purple-500 outline-none resize-none h-20 placeholder-gray-500" placeholder="e.g., 'Low angle shot looking up at the entrance...'"></textarea>
-                        <button id="btn-custom-angle" class="w-full mt-2 text-gray-400 border border-dashed border-purple-600/50 bg-gray-900/20 font-bold py-2 px-4 rounded-lg transition-all hover:border-purple-500 hover:bg-gray-800/30 hover:text-white active:scale-95 text-xs uppercase tracking-wide">
+                        <textarea id="custom-angle-input" class="w-full bg-gray-900 border border-gray-700 rounded-none p-3 text-sm text-white focus:ring-2 focus:ring-purple-500 outline-none resize-none h-20 placeholder-gray-500" placeholder="e.g., 'Low angle shot looking up at the entrance...'"></textarea>
+                        <button id="btn-custom-angle" class="w-full mt-2 text-gray-400 border-solid border-2 border-purple-600 bg-gray-900/20 font-bold py-2 px-4 rounded-none transition-all hover:border-purple-500 hover:bg-gray-800/30 hover:text-white active:scale-95 text-xs uppercase tracking-wide">
                              <span id="btn-custom-angle-text">Generate Custom Angle</span>
                         </button>
                     </div>
@@ -244,24 +248,19 @@
                         
                         <div class="space-y-2">
                             <label class="text-[10px] text-gray-200 block uppercase font-bold">Actions</label>
-                            <button id="btn-add-slot" class="w-full text-xs text-gray-400 border border-dashed border-purple-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            <button id="btn-add-slot" class="w-full text-xs text-gray-400 border-solid border-2 border-purple-600 bg-gray-900/20 px-3 py-3 rounded-none hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
                                 Add New Slot (Alt+N)
                             </button>
-                             <button id="btn-embed-all" class="w-full text-xs text-gray-400 border border-dashed border-purple-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                             <button id="btn-embed-all" class="w-full text-xs text-gray-400 border-solid border-2 border-purple-600 bg-gray-900/20 px-3 py-3 rounded-none hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
                                 Embed All (Alt+Enter)
                             </button>
-                            <button id="btn-download-all-embeds" class="w-full text-xs text-gray-400 border border-dashed border-purple-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            <button id="btn-download-all-embeds" class="w-full text-xs text-gray-400 border-solid border-2 border-purple-600 bg-gray-900/20 px-3 py-3 rounded-none hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
                                 Download All Embeds
                             </button>
-                            <button id="btn-reset-overlay" class="w-full text-xs text-gray-400 border border-dashed border-purple-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                            <button id="btn-reset-overlay" class="w-full text-xs text-gray-400 border-solid border-2 border-purple-600 bg-gray-900/20 px-3 py-3 rounded-none hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
                                 Reset All Slots (Alt+R)
                             </button>
-                            <button id="btn-toggle-all-bg" class="w-full text-xs text-gray-400 border border-dashed border-purple-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                            <button id="btn-toggle-all-bg" class="w-full text-xs text-gray-400 border-solid border-2 border-purple-600 bg-gray-900/20 px-3 py-3 rounded-none hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
                                 Toggle All BG
                             </button>
                         </div>
@@ -270,8 +269,8 @@
                     <hr class="border-gray-800" />
 
                     <div class="space-y-2">
-                        <label class="text-[10px] text-gray-500 block uppercase font-bold">Typography</label>
-                        <select id="global-font-select" class="w-full bg-gray-900 border border-gray-700 text-xs rounded px-2 py-2.5 text-white outline-none focus:border-purple-500 cursor-pointer">
+                        <label class="text-[10px] text-gray-300 block uppercase font-bold">Typography</label>
+                        <select id="global-font-select" class="w-full bg-gray-900 border border-gray-700 text-xs rounded-none px-2 py-2.5 text-white outline-none focus:border-purple-500 cursor-pointer">
                             <option value="Inter" style="font-family: 'Inter', sans-serif;">Inter (Sans-Serif)</option>
                             <option value="Montserrat" style="font-family: 'Montserrat', sans-serif;">Montserrat (Modern)</option>
                             <option value="Cinzel" style="font-family: 'Cinzel', serif;">Cinzel (Classic)</option>
@@ -286,11 +285,11 @@
                     </div>
 
                     <div class="space-y-2">
-                        <label class="text-[10px] text-gray-500 block uppercase font-bold">Signature / Footer <span class="text-[9px] text-gray-600 ml-1">(Drop .txt)</span></label>
+                        <label class="text-[10px] text-gray-300 block uppercase font-bold">Signature / Footer <span class="text-[9px] text-gray-400 ml-1">(Drop .txt)</span></label>
                         <div class="relative group">
-                            <input type="text" id="global-signature" placeholder="e.g. © Architectural AI" class="w-full bg-gray-900 border border-gray-700 text-xs rounded px-2 py-2.5 text-white outline-none focus:border-purple-500 transition-colors group-hover:border-gray-500 pr-8" />
-                            <div id="signature-drop-indicator" class="absolute inset-0 border-2 border-dashed border-purple-500/50 bg-purple-500/10 rounded pointer-events-none hidden flex items-center justify-center backdrop-blur-sm">
-                                <span class="text-[10px] text-purple-500 font-bold bg-black/80 px-2 py-1 rounded">Drop .txt Here</span>
+                            <input type="text" id="global-signature" placeholder="e.g. © Architectural AI" class="w-full bg-gray-900 border border-gray-700 text-xs rounded-none px-2 py-2.5 text-white outline-none focus:border-purple-500 transition-colors group-hover:border-gray-500 pr-8" />
+                            <div id="signature-drop-indicator" class="absolute inset-0 border-2 border-dashed border-purple-500/50 bg-purple-500/10 rounded-none pointer-events-none hidden flex items-center justify-center backdrop-blur-sm">
+                                <span class="text-[10px] text-purple-500 font-bold bg-black/80 px-2 py-1 rounded-none">Drop .txt Here</span>
                             </div>
                             <input type="file" id="signature-file-input" accept=".txt" class="hidden" />
                             <button id="btn-upload-sig" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white p-1" title="Upload .txt">
@@ -301,11 +300,11 @@
                         <div class="flex items-center justify-between pt-1">
                             <label class="text-[9px] text-gray-500 uppercase font-bold">Badge Color</label>
                             <div id="sig-bg-options" class="flex gap-2">
-                                <button class="w-5 h-5 rounded-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#FFD700] hover:scale-110 transition-transform sig-color-btn active" data-color="#FFD700" title="Gold"></button>
-                                <button class="w-5 h-5 rounded-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#FFFFFF] hover:scale-110 transition-transform sig-color-btn" data-color="#FFFFFF" title="White"></button>
-                                <button class="w-5 h-5 rounded-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#000000] hover:scale-110 transition-transform sig-color-btn" data-color="#000000" title="Black"></button>
-                                <button class="w-5 h-5 rounded-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#EF4444] hover:scale-110 transition-transform sig-color-btn" data-color="#EF4444" title="Red"></button>
-                                <button class="w-5 h-5 rounded-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#3B82F6] hover:scale-110 transition-transform sig-color-btn" data-color="#3B82F6" title="Blue"></button>
+                                <button class="w-5 h-5 rounded-none-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#FFD700] hover:scale-110 transition-transform sig-color-btn active" data-color="#FFD700" title="Gold"></button>
+                                <button class="w-5 h-5 rounded-none-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#FFFFFF] hover:scale-110 transition-transform sig-color-btn" data-color="#FFFFFF" title="White"></button>
+                                <button class="w-5 h-5 rounded-none-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#000000] hover:scale-110 transition-transform sig-color-btn" data-color="#000000" title="Black"></button>
+                                <button class="w-5 h-5 rounded-none-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#EF4444] hover:scale-110 transition-transform sig-color-btn" data-color="#EF4444" title="Red"></button>
+                                <button class="w-5 h-5 rounded-none-full border border-gray-600 focus:ring-1 focus:ring-white bg-[#3B82F6] hover:scale-110 transition-transform sig-color-btn" data-color="#3B82F6" title="Blue"></button>
                             </div>
                         </div>
                     </div>
@@ -313,10 +312,10 @@
                     <!-- NEW LOGO UI -->
                     <div class="space-y-2">
                         <label class="text-[10px] text-gray-500 block uppercase font-bold">Logo / Branding (Image)</label>
-                        <div id="logo-drop-zone" class="relative h-20 border border-dashed border-gray-700 rounded-lg hover:border-gray-500 hover:bg-gray-800/30 flex items-center justify-center cursor-pointer transition-all overflow-hidden group bg-gray-900/20">
+                        <div id="logo-drop-zone" class="relative h-20 border-2 border-dashed border-gray-700 rounded-none hover:border-gray-500 hover:bg-gray-800/30 flex items-center justify-center cursor-pointer transition-all overflow-hidden group bg-gray-900/20">
                             <input type="file" id="logo-file-input" accept="image/*" class="hidden" />
                             <div id="logo-empty" class="text-center flex flex-col items-center gap-1">
-                                <div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-gray-700 transition-colors shadow-sm border border-gray-700">
+                                <div class="w-8 h-8 rounded-none-full bg-gray-800 flex items-center justify-center group-hover:bg-gray-700 transition-colors shadow-sm border border-gray-700">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 group-hover:text-purple-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
@@ -324,7 +323,7 @@
                                 <span class="text-[9px] text-gray-500 group-hover:text-gray-300 uppercase tracking-wide font-medium">Drop Logo Here</span>
                             </div>
                             <img id="logo-preview" class="hidden h-full w-full object-contain p-2" />
-                            <button id="btn-clear-logo" class="hidden absolute top-1 right-1 bg-red-900/80 text-white w-4 h-4 rounded-full flex items-center justify-center text-[10px] hover:bg-red-600 z-10" title="Remove Logo">×</button>
+                            <button id="btn-clear-logo" class="hidden absolute top-1 right-1 bg-red-900/80 text-white w-4 h-4 rounded-none-full flex items-center justify-center text-[10px] hover:bg-red-600 z-10" title="Remove Logo">×</button>
                         </div>
                     </div>
 
@@ -345,21 +344,15 @@
                 <div id="panel-analysis" class="space-y-4">
                     <div class="grid grid-cols-1 gap-3">
                         <button id="analyze-btn" class="command-btn py-4 px-4 flex items-center justify-center gap-3 group">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                            </svg>
                             <span id="btn-analyze-text" class="text-xs font-bold tracking-[0.2em]">Execute Analysis</span>
                         </button>
                         <button id="btn-to-sketch-prompt" class="command-btn py-4 px-4 flex items-center justify-center gap-3 group border-gray-800 text-gray-500 hover:border-green-500 hover:text-green-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                            </svg>
                             <span id="btn-to-sketch-text" class="text-xs font-bold tracking-[0.2em]">Sketch Protocol</span>
                         </button>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-2">
-                        <button id="download-all-btn" class="bg-black border border-green-500/20 hover:border-green-500/50 text-green-400 font-bold py-2 px-4 rounded-sm transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest">
+                        <button id="download-all-btn" class="bg-black border border-green-500/20 hover:border-green-500/50 text-green-400 font-bold py-2 px-4 rounded-none transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
@@ -368,7 +361,7 @@
 
                          <div class="flex gap-1">
                             <!-- Download PNG Info -->
-                            <button id="btn-png-info-prompt" class="flex-1 bg-black border border-green-500/20 hover:border-green-500/50 text-green-400 font-bold py-2 px-2 rounded-sm transition-all flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest" title="Download PNG with Data">
+                            <button id="btn-png-info-prompt" class="flex-1 bg-black border border-green-500/20 hover:border-green-500/50 text-green-400 font-bold py-2 px-2 rounded-none transition-all flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest" title="Download PNG with Data">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                   <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                 </svg>
@@ -376,14 +369,14 @@
                             </button>
 
                             <!-- Select Download Folder -->
-                            <button id="btn-select-folder" class="w-10 bg-black border border-green-500/20 hover:border-green-500/50 text-green-400 font-bold py-2 rounded-sm transition-all flex items-center justify-center" title="Select Download Folder">
+                            <button id="btn-select-folder" class="w-10 bg-black border border-green-500/20 hover:border-green-500/50 text-green-400 font-bold py-2 rounded-none transition-all flex items-center justify-center" title="Select Download Folder">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                                 </svg>
                             </button>
                             
                             <!-- Copy Banana JSON -->
-                            <button id="btn-send-banana" class="w-10 bg-black border border-green-500/20 hover:border-green-500/50 text-green-400 font-bold py-2 rounded-sm transition-all flex items-center justify-center" title="Copy Data (JSON)">
+                            <button id="btn-send-banana" class="w-10 bg-black border border-green-500/20 hover:border-green-500/50 text-green-400 font-bold py-2 rounded-none transition-all flex items-center justify-center" title="Copy Data (JSON)">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                   <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                 </svg>
@@ -393,42 +386,36 @@
                 </div>
 
                 <div id="panel-multiview" class="hidden space-y-4">
-                     <div class="flex items-center gap-4 mb-2 bg-black p-3 border border-green-500/20 rounded-sm">
+                     <div class="flex items-center gap-4 mb-2 bg-black p-3 border border-green-500/20 rounded-none">
                         <label class="text-[10px] text-gray-600 uppercase tracking-widest font-bold" id="lbl-angle-count">Angle Count</label>
                         <input type="number" id="angle-input" min="1" max="16" value="4" class="bg-transparent border-b border-green-500/30 text-green-400 font-mono text-xs w-12 text-center focus:border-green-500 outline-none">
                     </div>
                     <button id="multiview-btn" class="command-btn w-full py-4 px-4 flex items-center justify-center gap-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
                         <span id="btn-multiview-text" class="text-xs font-bold tracking-[0.2em]">Generate Multi-View</span>
                     </button>
                 </div>
                 
                  <div id="panel-notes" class="hidden space-y-4">
                      <button id="analyze-notes-btn" class="command-btn w-full py-4 px-4 flex items-center justify-center gap-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
                         <span id="btn-analyze-notes-text" class="text-xs font-bold tracking-[0.2em]">Extract & Translate Notes</span>
                     </button>
                  </div>
 
                  <div id="panel-artistic" class="hidden space-y-4">
-                    <div class="p-4 bg-black border border-green-500/20 rounded-sm mb-2">
+                    <div class="p-4 bg-black border border-green-500/20 rounded-none mb-2">
                         <h3 class="text-[10px] font-bold text-green-400 uppercase tracking-widest mb-1" id="lbl-artistic">Artistic Style Transfer</h3>
                         <p class="text-[9px] text-gray-600 leading-tight uppercase tracking-wider" id="lbl-artistic-desc">Generate prompts to convert your images into various artistic sketching styles.</p>
                     </div>
 
                     <!-- Custom Style Section -->
-                    <div class="p-4 bg-black border border-green-500/20 rounded-sm space-y-4">
+                    <div class="p-4 bg-black border border-green-500/20 rounded-none space-y-4">
                         <div class="flex items-center justify-between">
                             <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest" id="lbl-custom-style">Style Reference</h3>
                             <button id="btn-clear-style-ref" class="text-[9px] text-red-900 hover:text-red-500 uppercase font-bold tracking-widest hidden">Purge</button>
                         </div>
                         
                         <!-- Style Reference Upload -->
-                        <div id="drop-zone-style" class="border border-green-500/20 bg-black rounded-sm p-2 text-center hover:border-green-500/50 transition-colors cursor-pointer group relative overflow-hidden h-24 flex flex-col items-center justify-center">
+                        <div id="drop-zone-style" class="border-2 border-dashed border-green-500/20 bg-black rounded-none p-2 text-center hover:border-green-500/50 transition-colors cursor-pointer group relative overflow-hidden h-24 flex flex-col items-center justify-center">
                             <input type="file" id="file-input-style" class="hidden" accept="image/*">
                             <div id="style-ref-preview" class="absolute inset-0 hidden">
                                 <img id="img-style-ref" class="w-full h-full object-cover opacity-30">
@@ -444,45 +431,44 @@
                         <!-- Custom Instruction -->
                         <div class="space-y-2">
                             <label class="text-[9px] text-gray-600 uppercase font-bold tracking-widest" id="lbl-custom-instruction">Custom Parameters</label>
-                            <textarea id="input-custom-style" class="w-full bg-black border border-green-500/20 rounded-sm p-3 text-xs text-green-100 font-mono focus:border-green-500 outline-none resize-none h-20" placeholder="[PROTOCOL_INPUT]"></textarea>
+                            <textarea id="input-custom-style" class="w-full bg-black border border-green-500/20 rounded-none p-3 text-xs text-green-100 font-mono focus:border-green-500 outline-none resize-none h-20" placeholder="[PROTOCOL_INPUT]"></textarea>
                         </div>
 
                         <button id="btn-generate-custom-style" class="command-btn w-full py-3 px-4 flex items-center justify-center gap-2">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                             <span id="btn-generate-custom-text" class="text-xs font-bold tracking-[0.2em]">Execute Style</span>
                         </button>
                     </div>
 
                     <div class="grid grid-cols-1 gap-2">
-                        <button id="btn-style-watercolor" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-sm hover:border-green-500/50 transition-all text-left group">
+                        <button id="btn-style-watercolor" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-none hover:border-green-500/50 transition-all text-left group">
                             <div class="w-1 h-1 bg-green-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
                             <div>
                                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block group-hover:text-green-400" id="style-watercolor-text">Watercolor</span>
                                 <span class="text-[9px] text-gray-400 uppercase tracking-wider">Soft, vibrant colors</span>
                             </div>
                         </button>
-                        <button id="btn-style-purple-ink" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-sm hover:border-green-500/50 transition-all text-left group">
+                        <button id="btn-style-purple-ink" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-none hover:border-green-500/50 transition-all text-left group">
                             <div class="w-1 h-1 bg-green-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
                             <div>
                                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block group-hover:text-green-400" id="style-purple-ink-text">Blue Ink Sketch</span>
-                                <span class="text-[9px] text-gray-700 uppercase tracking-wider">Ballpoint pen on aged paper</span>
+                                <span class="text-[9px] text-gray-500 uppercase tracking-wider">Ballpoint pen on aged paper</span>
                             </div>
                         </button>
-                        <button id="btn-style-clean-line" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-sm hover:border-green-500/50 transition-all text-left group">
+                        <button id="btn-style-clean-line" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-none hover:border-green-500/50 transition-all text-left group">
                             <div class="w-1 h-1 bg-green-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
                             <div>
                                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block group-hover:text-green-400" id="style-clean-line-text">Clean Line Art</span>
                                 <span class="text-[9px] text-gray-700 uppercase tracking-wider">Minimalist blueprint style</span>
                             </div>
                         </button>
-                        <button id="btn-style-black-ink" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-sm hover:border-green-500/50 transition-all text-left group">
+                        <button id="btn-style-black-ink" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-none hover:border-green-500/50 transition-all text-left group">
                             <div class="w-1 h-1 bg-green-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
                             <div>
                                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block group-hover:text-green-400" id="style-black-ink-text">Black Ink Technical</span>
                                 <span class="text-[9px] text-gray-700 uppercase tracking-wider">Cross-hatching & precision</span>
                             </div>
                         </button>
-                        <button id="btn-style-red-ink" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-sm hover:border-green-500/50 transition-all text-left group">
+                        <button id="btn-style-red-ink" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-none hover:border-green-500/50 transition-all text-left group">
                             <div class="w-1 h-1 bg-green-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
                             <div>
                                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block group-hover:text-green-400" id="style-red-ink-text">Red Ink Sketch</span>
@@ -521,9 +507,9 @@
             <!-- Loader -->
             <div id="loader" class="hidden absolute inset-0 z-50 bg-[#050505]/95 flex flex-col items-center justify-center backdrop-blur-md">
                 <div class="relative w-32 h-32 mb-8">
-                    <div class="absolute inset-0 border border-green-500/20 rounded-full animate-ping"></div>
-                    <div class="absolute inset-0 border-2 border-t-green-500 border-r-transparent border-b-green-500 border-l-transparent rounded-full animate-spin"></div>
-                    <div class="absolute inset-6 bg-black border border-gray-900 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(0,255,0,0.1)]">
+                    <div class="absolute inset-0 border border-green-500/20 rounded-none-full animate-ping"></div>
+                    <div class="absolute inset-0 border-2 border-t-green-500 border-r-transparent border-b-green-500 border-l-transparent rounded-none-full animate-spin"></div>
+                    <div class="absolute inset-6 bg-black border border-gray-900 rounded-none-full flex items-center justify-center shadow-[0_0_20px_rgba(0,255,0,0.1)]">
                          <div class="status-indicator animate-pulse"></div>
                     </div>
                 </div>
@@ -540,7 +526,7 @@
                      <!-- We construct these cards statically for better control, but data is dynamic -->
                      
                      <!-- Prompt Card (Highlighted) -->
-                     <div class="w-full border border-green-500/20 rounded-sm bg-black relative transition hover:border-green-500/50 mb-4 collapsible-card group">
+                     <div class="w-full border border-green-500/20 rounded-none bg-black relative transition hover:border-green-500/50 mb-4 collapsible-card group">
                         <div class="flex justify-between items-center p-4 border-b border-green-500/20 cursor-pointer card-header select-none">
                              <div class="flex items-center gap-3">
                                  <span class="chevron-icon text-green-400">
@@ -555,12 +541,12 @@
                              </div>
                         </div>
                         <div class="card-content p-6">
-                            <p id="res-prompt" class="text-xs text-green-300 whitespace-pre-line font-mono leading-relaxed pl-4 border-l border-green-500/20">Waiting for analysis...</p>
+                            <p id="res-prompt" class="text-xs text-green-100 whitespace-pre-line font-mono leading-relaxed pl-4 border-l border-green-500/20">Waiting for analysis...</p>
                         </div>
                      </div>
 
                      <!-- Collage Analysis Card (Hidden by default) -->
-                     <div id="card-collage-analysis" class="w-full border border-green-500/20 rounded-sm bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group hidden">
+                     <div id="card-collage-analysis" class="w-full border border-green-500/20 rounded-none bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group hidden">
                         <div class="flex justify-between items-center p-3 border-b border-green-500/20 cursor-pointer card-header select-none">
                              <div class="flex items-center gap-2">
                                 <span class="chevron-icon text-green-400 mr-1">
@@ -579,7 +565,7 @@
                      </div>
 
                      <!-- Photo to Sketch Card -->
-                     <div id="card-photo-to-sketch" class="w-full border border-green-500/30 rounded-sm bg-green-500/5 relative transition hover:border-green-500/50 mb-4 collapsible-card group hidden">
+                     <div id="card-photo-to-sketch" class="w-full border border-green-500/30 rounded-none bg-green-500/5 relative transition hover:border-green-500/50 mb-4 collapsible-card group hidden">
                         <div class="flex justify-between items-center p-3 border-b border-green-500/30 cursor-pointer card-header select-none">
                              <div class="flex items-center gap-2">
                                 <span class="chevron-icon text-green-400 mr-1">
@@ -598,7 +584,7 @@
                      </div>
 
                      <!-- Sketch Prompt Card (Hidden by default until needed) -->
-                     <div id="card-sketch-prompt" class="w-full border border-green-500/20 rounded-sm bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
+                     <div id="card-sketch-prompt" class="w-full border border-green-500/20 rounded-none bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
                         <div class="flex justify-between items-center p-3 border-b border-green-500/20 cursor-pointer card-header select-none">
                              <div class="flex items-center gap-2">
                                 <span class="chevron-icon text-green-400 mr-1">
@@ -619,7 +605,7 @@
 
                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Style -->
-                        <div class="w-full border border-green-500/20 rounded-sm bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
+                        <div class="w-full border border-green-500/20 rounded-none bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
                             <div class="flex justify-between items-center p-3 border-b border-green-500/20 cursor-pointer card-header select-none">
                                 <div class="flex items-center gap-2">
                                     <span class="chevron-icon text-green-400 mr-1">
@@ -638,7 +624,7 @@
                             </div>
                         </div>
                         <!-- Materials -->
-                        <div class="w-full border border-green-500/20 rounded-sm bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
+                        <div class="w-full border border-green-500/20 rounded-none bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
                             <div class="flex justify-between items-center p-3 border-b border-green-500/20 cursor-pointer card-header select-none">
                                 <div class="flex items-center gap-2">
                                     <span class="chevron-icon text-green-400 mr-1">
@@ -657,7 +643,7 @@
                             </div>
                         </div>
                          <!-- Lighting -->
-                        <div class="w-full border border-green-500/20 rounded-sm bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
+                        <div class="w-full border border-green-500/20 rounded-none bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
                             <div class="flex justify-between items-center p-3 border-b border-green-500/20 cursor-pointer card-header select-none">
                                 <div class="flex items-center gap-2">
                                     <span class="chevron-icon text-green-400 mr-1">
@@ -676,7 +662,7 @@
                             </div>
                         </div>
                          <!-- Context -->
-                        <div class="w-full border border-green-500/20 rounded-sm bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
+                        <div class="w-full border border-green-500/20 rounded-none bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
                             <div class="flex justify-between items-center p-3 border-b border-green-500/20 cursor-pointer card-header select-none">
                                 <div class="flex items-center gap-2">
                                     <span class="chevron-icon text-green-400 mr-1">
@@ -695,7 +681,7 @@
                             </div>
                         </div>
                          <!-- Composition -->
-                        <div class="w-full border border-green-500/20 rounded-sm bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group col-span-1 md:col-span-2">
+                        <div class="w-full border border-green-500/20 rounded-none bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group col-span-1 md:col-span-2">
                             <div class="flex justify-between items-center p-3 border-b border-green-500/20 cursor-pointer card-header select-none">
                                 <div class="flex items-center gap-2">
                                     <span class="chevron-icon text-green-400 mr-1">
@@ -747,7 +733,7 @@
              <button id="btn-close-modal" class="absolute top-4 right-4 text-white hover:text-gray-300 z-50">
                 <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
              </button>
-             <button id="btn-clear-draw" class="absolute top-4 left-4 text-red-400 hover:text-red-300 font-bold border border-red-500/50 rounded px-3 py-1 bg-black/50 z-50 text-xs">Clear Arrows</button>
+             <button id="btn-clear-draw" class="absolute top-4 left-4 text-red-400 hover:text-red-300 font-bold border border-red-500/50 rounded-none px-3 py-1 bg-black/50 z-50 text-xs">Clear Arrows</button>
              <div class="relative max-w-full max-h-full">
                  <img id="modal-img" class="max-w-full max-h-full object-contain select-none" />
                  <canvas id="modal-canvas" class="absolute inset-0 cursor-crosshair touch-none"></canvas>
@@ -760,12 +746,12 @@
         <!-- Controls Overlay -->
         <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-50 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
             <div class="pointer-events-auto">
-                 <button id="zoom-dl-btn" class="bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors" title="Download Image">
+                 <button id="zoom-dl-btn" class="bg-white/10 hover:bg-white/20 text-white p-2 rounded-none-full transition-colors" title="Download Image">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 </button>
             </div>
             <div class="pointer-events-auto">
-                <button id="zoom-close-btn" class="bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors" title="Close (ESC)">
+                <button id="zoom-close-btn" class="bg-white/10 hover:bg-white/20 text-white p-2 rounded-none-full transition-colors" title="Close (ESC)">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
@@ -776,14 +762,14 @@
             <img id="zoom-img" class="max-w-none origin-center transition-transform duration-75 ease-out select-none" />
         </div>
         
-        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 px-4 py-2 rounded-full text-xs text-gray-300 pointer-events-none">
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 px-4 py-2 rounded-none-full text-xs text-gray-300 pointer-events-none">
             Scroll to Zoom • Drag to Pan • ESC to Close
         </div>
     </div>
 
     <!-- API Key Modal -->
     <div id="api-key-modal" class="fixed inset-0 z-[120] bg-black/95 hidden flex items-center justify-center backdrop-blur-md">
-        <div class="bg-black border border-green-500/20 rounded-sm p-8 w-full max-w-sm shadow-2xl mx-4 relative">
+        <div class="bg-black border border-green-500/20 rounded-none p-8 w-full max-w-sm shadow-2xl mx-4 relative">
             <!-- Close Button -->
             <button id="btn-close-api-modal" class="absolute top-4 right-4 text-gray-700 hover:text-red-500 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -803,7 +789,7 @@
             </a>
             
             <div class="relative mb-6">
-                <input type="password" id="api-key-input" class="w-full bg-black border border-green-500/20 rounded-sm p-4 text-xs text-green-400 font-mono focus:border-green-500 outline-none transition-all placeholder:text-gray-500" placeholder="[KEY_INPUT]">
+                <input type="password" id="api-key-input" class="w-full bg-black border border-green-500/20 rounded-none p-4 text-xs text-green-400 font-mono focus:border-green-500 outline-none transition-all placeholder:text-gray-500" placeholder="[KEY_INPUT]">
             </div>
             
             <div class="flex flex-col gap-3">
