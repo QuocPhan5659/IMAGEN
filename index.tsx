@@ -93,6 +93,36 @@ const btnRemoveApiKey = getEl<HTMLButtonElement>('btn-remove-api-key');
 const modelSelect = getEl<HTMLSelectElement>('model-select');
 
 // --- Helper Functions ---
+// Helper: Extract JSON from markdown or raw text
+function extractJson(text: string): any {
+    try {
+        // Try direct parse first
+        return JSON.parse(text);
+    } catch (e) {
+        // Try to find JSON block
+        const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        if (match && match[1]) {
+            try {
+                return JSON.parse(match[1]);
+            } catch (e2) {
+                console.error("Failed to parse extracted JSON block", e2);
+            }
+        }
+        
+        // Try to find anything between { and }
+        const braceMatch = text.match(/\{[\s\S]*\}/);
+        if (braceMatch) {
+            try {
+                return JSON.parse(braceMatch[0]);
+            } catch (e3) {
+                console.error("Failed to parse text between braces", e3);
+            }
+        }
+        
+        throw new Error("Could not parse JSON from model response");
+    }
+}
+
 async function copyToClipboard(text: string, btnEl?: HTMLElement, successIcon?: string, originalIcon?: string): Promise<boolean> {
     if (!text) return false;
     let successful = false;
@@ -694,7 +724,7 @@ async function processBlobForMetadata(blob: Blob): Promise<boolean> {
         const buffer = await blob.arrayBuffer();
         const metadata = extractPngMetadata(buffer);
         if (!metadata) return false;
-        const data = JSON.parse(metadata);
+        const data = extractJson(metadata);
         populateBananaData(data);
         showStatus('Data loaded from image!');
         return true;
@@ -711,7 +741,7 @@ async function getTextFromImage(blob: Blob): Promise<string> {
         const metadata = extractPngMetadata(buffer);
         if (metadata) {
             try {
-                const data = JSON.parse(metadata);
+                const data = extractJson(metadata);
                 let parts = [];
                 if (data.mega) parts.push(`[PROMPT]:\n${data.mega}`);
                 else if (data.generationPrompt?.en) parts.push(`[PROMPT]:\n${data.generationPrompt.en}`);
@@ -1053,8 +1083,8 @@ async function generateContentWithRetry(ai: GoogleGenAI, params: any, retries = 
 }
 
 async function callGemini(prompt: string, files: File[], sketchFile: File | null = null): Promise<string> {
-    const apiKey = customApiKey || process.env.GEMINI_API_KEY;
-    if (!apiKey) { await openApiKeyDialog(); return "{}"; }
+    const apiKey = customApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey.trim() === "") { await openApiKeyDialog(); return "{}"; }
 
     const ai = new GoogleGenAI({ apiKey });
     const parts: any[] = [];
@@ -2780,7 +2810,7 @@ async function generateArtisticStyle(styleKey: string, styleName: string, styleP
         }
 
         const txt = await callGemini(prompt, currentFiles, customRefFile || currentSketchFile);
-        const raw = JSON.parse(txt);
+        const raw = extractJson(txt);
         artisticHistory.push({
             style: styleName,
             en: raw.en,
@@ -2904,7 +2934,7 @@ if(analyzeBtn) {
             }`;
             
             const txt = await callGemini(prompt, currentFiles, currentSketchFile);
-            lastAnalysisData = JSON.parse(txt);
+            lastAnalysisData = extractJson(txt);
             updateLanguageUI(); showStatus('');
         } catch(e) { handleApiError(e, 'Error analyzing'); } finally { setLoading(false); }
     });
@@ -2952,7 +2982,7 @@ if(btnRunObjAnalysis) {
             `;
 
             const responseText = await callGemini(prompt, currentFiles, currentSketchFile);
-            const data = JSON.parse(responseText);
+            const data = extractJson(responseText);
 
             if(objAnalysisResult) {
                 setText(objAnalysisResult, data.analysis || "No result.");
@@ -2979,15 +3009,15 @@ if (analyzeNotesBtn) {
         notesHistory = [];
         
         try {
-            const apiKey = customApiKey || process.env.API_KEY;
-            if (!apiKey) { await openApiKeyDialog(); setLoading(false); return; }
+            const apiKey = customApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+            if (!apiKey || apiKey.trim() === "") { await openApiKeyDialog(); setLoading(false); return; }
             const ai = new GoogleGenAI({ apiKey });
 
             // Process images concurrently
             const promises = currentFiles.map(async (file) => {
                 const parts = [
-                    await fileToGenerativePart(file),
-                    { text: "Analyze the handwritten or printed notes/text on this image. Transcribe strictly into Vietnamese (if it's not already VI, translate it to VI). Also provide an English translation. Return only JSON: { \"vi\": \"...\", \"en\": \"...\" }" }
+                    await processFileForGemini(file),
+                    { text: "Analyze the handwritten or printed notes/text on this architectural image. Transcribe all text strictly into Vietnamese (if it's not already VI, translate it to VI). Also provide a professional English translation. Return ONLY a valid JSON object with 'vi' and 'en' keys. Do not include any other text or markdown formatting outside the JSON." }
                 ];
                 
                 try {
@@ -2998,11 +3028,11 @@ if (analyzeNotesBtn) {
                         config: { responseMimeType: "application/json" }
                     });
                     const txt = response.text || "{}";
-                    const json = JSON.parse(txt);
+                    const json = extractJson(txt);
                     return { file: file, vi: json.vi || "No text detected", en: json.en || "No text detected" };
                 } catch (e) {
                     console.error("Single image error:", e);
-                    return { file: file, vi: "Error processing", en: "Error processing" };
+                    return { file: file, vi: "Error processing: " + (e instanceof Error ? e.message : String(e)), en: "Error processing" };
                 }
             });
 
@@ -3059,7 +3089,7 @@ if(multiViewBtn) {
              `;
              
              const txt = await callGemini(prompt, currentFiles, currentSketchFile);
-             const raw = JSON.parse(txt);
+             const raw = extractJson(txt);
              
              if (!raw.multiViewPrompts || !raw.multiViewPrompts.en || !raw.multiViewPrompts.vi) {
                  throw new Error("Invalid response format from AI");
@@ -3092,7 +3122,7 @@ if(btnCustomAngle) {
             CONTEXT: If exterior, use realistic settings (street, residential, coast, river). If interior, focus on finished spaces.
             Output JSON: { "en": { "title": "...", "content": "...", "composition": "...", "lighting": "..." }, "vi": { ... } }`;
             const txt = await callGemini(prompt, currentFiles, currentSketchFile);
-            const raw = JSON.parse(txt);
+            const raw = extractJson(txt);
             customAnglesHistory.push({ en: raw.en, vi: raw.vi });
             updateLanguageUI(); showStatus('Generated!');
             if(customAngleInput) customAngleInput.value = '';
@@ -3135,7 +3165,7 @@ const runSingle = async (key: keyof AnalysisResult) => {
 
         prompt += ` Return JSON: { "${String(key)}": { "en": "...", "vi": "..." } }`;
         const txt = await callGemini(prompt, currentFiles, currentSketchFile);
-        const raw = JSON.parse(txt);
+        const raw = extractJson(txt);
         if(!lastAnalysisData) lastAnalysisData = {};
         lastAnalysisData[key] = raw[key];
         updateLanguageUI();
