@@ -4,7 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Architectural AI Analyst</title>
-    <script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773224019655&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2Fa30fcdd5-728f-40f5-9842-eceaf2fa7c27%2Ffile%2F2b5bbfbd8266c55d148e326b457d8077970196751ed4e8653615cf1e77ef1dea&amp;app=msedge.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773224019655&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773276362719&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2F922116c2-6230-49be-98ca-52a96df11d4f%2Ffile%2F1298b334722aeabbf3d868ee68c45951024cb39c8305c0de354a9dffaca74d18&amp;app=opera.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773276362719&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773270964405&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2Fa30fcdd5-728f-40f5-9842-eceaf2fa7c27%2Ffile%2Ff0e017ab3f1ae90a29de33819339b1eb99d419d8da179346fa7ad716ef052abb&amp;app=msedge.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773270964405&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        black: '#18181b', // Lighter black with a hint of gray (zinc-900)
+                        gray: {
+                            900: '#27272a', // zinc-800
+                            950: '#18181b'
+                        },
+                        green: {
+                            100: '#e8f0eb', // Almost white sage
+                            200: '#c2d5cb', // Very bright sage green
+                            300: '#84a98c', // Brighter sage green for text
+                            400: '#6b9080',
+                            500: '#52796f', // Muted sage green
+                            600: '#354f52'
+                        },
+                        purple: {
+                            100: '#e8f0eb',
+                            200: '#c2d5cb',
+                            300: '#84a98c',
+                            400: '#6b9080',
+                            500: '#52796f',
+                            600: '#354f52'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel:wght@400;700&family=Courier+Prime&family=Dancing+Script:wght@400;700&family=Great+Vibes&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@300;400;700&family=Oswald:wght@300;400;500&family=Permanent+Marker&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
     <script type="importmap">
     {
@@ -20,47 +51,40 @@
         body { font-family: 'Inter', sans-serif; }
         .font-serif { font-family: 'Playfair Display', serif; }
         .font-mono { font-family: 'Courier Prime', monospace; }
-        .font-hand { font-family: 'Permanent Marker', cursive; }
         
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .drag-active { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.1); }
-        .analysis-card { transition: all 0.2s; }
-        .analysis-card:hover { transform: translateY(-2px); }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #18181a; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #444; }
+        .drag-active { border-color: var(--neon-green); background-color: var(--neon-green-dim); }
+        .analysis-card { transition: all 0.2s; border-color: var(--border-color); }
+        .analysis-card:hover { border-color: var(--neon-green); transform: translateY(-2px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #050505; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1a1a1a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--neon-green); }
 
-        /* New Gold Button Style */
+        /* Command Button Style */
         .gold-btn {
-            background-color: #0f0f10;
-            border: 1px solid #7c5e10;
-            color: #fbbf24; /* amber-400 */
-            font-weight: 800;
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: #666;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            text-shadow: 2px 2px 0px #b91c1c; /* red-700 */
+            letter-spacing: 0.1em;
             transition: all 0.2s;
-            border-radius: 0.5rem; /* rounded-lg */
-            padding: 0.35rem 0.75rem;
-            font-size: 0.7rem;
-            position: relative;
-            overflow: hidden;
-            white-space: nowrap;
+            border-radius: 2px;
+            padding: 0.4rem 1rem;
+            font-size: 0.65rem;
+            font-family: var(--font-mono);
         }
         .gold-btn:hover {
-            background-color: #2e2000;
-            border-color: #f59e0b;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            border-color: var(--neon-green);
+            color: var(--neon-green);
         }
         .gold-btn.active {
-            background-color: #3f2e00;
-            border-color: #fbbf24;
-            color: #fffbeb; /* amber-50 */
-            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
-            text-shadow: 2px 2px 0px #991b1b;
+            background-color: var(--neon-green);
+            border-color: var(--neon-green);
+            color: black;
+            box-shadow: 0 0 10px var(--neon-green-dim);
         }
         
         /* Collapsible Utility */
@@ -69,92 +93,102 @@
         .card-collapsed .card-content { display: none; }
         
         #model-select option {
-            background-color: #1f2937; /* bg-gray-800 */
-            color: #c084fc; /* text-purple-400 */
+            background-color: #0a0a0a;
+            color: var(--neon-green);
+        }
+
+        .header-line {
+            height: 1px;
+            background: linear-gradient(90deg, var(--neon-green) 0%, transparent 100%);
+            opacity: 0.3;
         }
     </style>
     <link rel="stylesheet" href="/index.css">
 </head>
-<body class="bg-[#121212] text-gray-200 min-h-screen flex flex-col">
+<body class="bg-[#121212] text-white min-h-screen flex flex-col">
 
     <!-- Header with Integrated Tabs -->
-    <header class="border-b border-gray-800 bg-[#1E1F20] px-4 py-2 flex items-center gap-4 sticky top-0 z-50 shadow-lg h-14">
-        <div class="flex items-center gap-3 shrink-0">
-            <div>
-                <h1 class="text-sm font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent leading-none" id="app-title">Architectural AI Analyst</h1>
-                <p class="text-[10px] text-gray-400" id="app-subtitle">Deep analysis powered by Gemini Vision</p>
+    <header class="border-b border-gray-900 bg-[#050505] px-6 py-4 flex flex-col gap-4 sticky top-0 z-50">
+        <div class="flex items-center justify-between w-full">
+            <div class="flex items-center gap-4">
+                <div class="status-indicator"></div>
+                <div class="flex flex-col">
+                    <h1 class="text-2xl font-black text-white tracking-tighter uppercase leading-none" id="app-title">COMMAND CENTER</h1>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="text-[9px] text-gray-200 uppercase tracking-widest">System Status:</span>
+                        <span class="text-[9px] text-green-200 uppercase tracking-widest font-bold">Online</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <!-- Model Selector -->
+                <div class="flex items-center gap-2 bg-black px-3 py-1.5 border border-gray-900 text-gray-100 font-mono">
+                    <span class="text-[9px] uppercase tracking-widest">Core:</span>
+                    <select id="model-select" class="bg-transparent text-[10px] font-bold outline-none cursor-pointer text-green-400 uppercase">
+                        <option value="gemini-3-flash-preview">Flash-v3</option>
+                        <option value="gemini-3.1-pro-preview">Pro-v3.1</option>
+                    </select>
+                </div>
+                <!-- Language Toggle -->
+                <button id="lang-toggle-btn" class="flex items-center gap-2 text-[10px] font-mono bg-black px-3 py-1.5 border border-gray-900">
+                    <span id="lang-en" class="text-green-400 font-bold">EN</span>
+                    <span class="text-gray-300">/</span>
+                    <span id="lang-vi" class="text-gray-200">VI</span>
+                </button>
+                <!-- API Key Settings -->
+                <button id="btn-settings" class="flex items-center gap-2 text-[10px] font-mono bg-black px-3 py-1.5 border border-gray-900 hover:border-green-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                    <span class="text-green-400 font-bold uppercase tracking-widest">API Key</span>
+                </button>
+                <button id="btn-pro-badge" class="hidden flex items-center gap-2 text-[10px] font-mono bg-green-500/10 px-3 py-1.5 border border-green-500/50 hover:border-green-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span class="text-green-400 font-bold uppercase tracking-widest">PRO Active</span>
+                </button>
             </div>
         </div>
         
-        <div class="h-6 w-px bg-gray-700 mx-2 hidden md:block"></div>
+        <div class="header-line"></div>
 
         <!-- Navigation Tabs -->
-        <nav class="flex items-center gap-2 flex-1 overflow-x-auto scrollbar-hide">
+        <nav class="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             <button id="tab-analysis" class="gold-btn">Analysis</button>
             <button id="tab-multiview" class="gold-btn">Multi-View</button>
             <button id="tab-artistic" class="gold-btn">Artistic Styles</button>
             <button id="tab-notes" class="gold-btn">Notes</button>
-            <button id="tab-text-overlay" class="gold-btn border-yellow-700/50 text-yellow-500/80 hover:text-yellow-400">Text Overlay</button>
+            <button id="tab-text-overlay" class="gold-btn">Text Overlay</button>
         </nav>
-
-        <div class="flex items-center gap-3 shrink-0">
-            <!-- Model Selector -->
-            <div class="flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-full border border-gray-700 hover:border-gray-500 transition-colors text-gray-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" /></svg>
-                <select id="model-select" class="bg-transparent text-[10px] font-medium outline-none cursor-pointer pr-1 text-purple-400">
-                    <option value="gemini-3-flash-preview">Gemini 3 Flash (Free)</option>
-                    <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (API Key)</option>
-                </select>
-            </div>
-            <!-- Settings / API Key -->
-            <button id="btn-settings" class="flex items-center gap-1 text-[10px] font-medium bg-gray-800 px-2 py-1 rounded-full border border-gray-700 hover:border-gray-500 transition-colors text-gray-300" title="Set Custom API Key">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
-                <span class="hidden sm:inline">API Key</span>
-            </button>
-            <!-- Pro Badge (Hidden by default) -->
-            <button id="btn-pro-badge" class="hidden flex items-center gap-1.5 px-3 py-1 rounded-full border border-indigo-500 bg-indigo-950/30 hover:bg-indigo-900/40 transition-all group" title="Pro Mode Active - Click to Manage">
-                <div class="w-4 h-4 rounded-full bg-cyan-400 flex items-center justify-center shadow-[0_0_8px_rgba(34,211,238,0.6)]">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-indigo-950" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <span class="text-[10px] font-black text-white tracking-widest uppercase">PRO</span>
-            </button>
-            <!-- Language Toggle -->
-            <button id="lang-toggle-btn" class="flex items-center gap-2 text-[10px] font-medium bg-gray-800 px-2 py-1 rounded-full border border-gray-700 hover:border-gray-500 transition-colors">
-                <span id="lang-en" class="text-blue-400 font-bold">EN</span>
-                <span class="text-gray-600">|</span>
-                <span id="lang-vi" class="text-gray-400">VI</span>
-            </button>
-        </div>
     </header>
 
     <!-- Main Content -->
     <main class="flex-1 flex overflow-hidden">
         
         <!-- Left Sidebar: Controls & Upload -->
-        <aside class="w-[400px] flex-shrink-0 border-r border-gray-800 bg-[#18181a] flex flex-col overflow-y-auto custom-scrollbar">
-            <div class="p-6 space-y-6">
+        <aside class="w-[400px] flex-shrink-0 border-r border-gray-900 bg-[#0a0a0a] flex flex-col overflow-y-auto custom-scrollbar">
+            <div class="p-8 space-y-8">
                 
                 <!-- 1. ANALYSIS MODE: Reference Images Upload -->
                 <div id="panel-upload-analysis">
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="text-xs font-bold text-blue-400 uppercase tracking-wider" id="lbl-upload">Upload Images</label>
-                        <button id="clear-btn" class="text-xs text-red-400 hover:text-red-300 hidden">Clear All</button>
+                    <div class="flex justify-between items-center mb-4">
+                        <label class="text-[10px] font-bold text-green-400 uppercase tracking-[0.2em]" id="lbl-upload">Data Protocols</label>
+                        <button id="clear-btn" class="text-[10px] text-red-500 hover:text-red-400 uppercase font-bold hidden">Purge</button>
                     </div>
                     
                     <!-- Drop Zone (Reduced Height) -->
-                    <div id="drop-zone" class="min-h-[140px] flex flex-col justify-center border-2 border-dashed border-gray-700 rounded-xl p-4 text-center hover:border-gray-500 hover:bg-gray-800/50 transition-all cursor-pointer group relative">
+                    <div id="drop-zone" class="min-h-[140px] flex flex-col justify-center border border-gray-900 bg-black rounded-sm p-4 text-center hover:border-green-500/50 transition-all cursor-pointer group relative">
                         <input type="file" id="file-input" multiple accept="image/*" class="hidden">
                         
                         <div id="empty-state">
-                            <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-gray-700 transition-colors shadow-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            <div class="w-12 h-12 bg-gray-950 border border-gray-900 flex items-center justify-center mx-auto mb-3 group-hover:border-green-500/50 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400 group-hover:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
-                            <p class="text-xs font-medium text-gray-300 group-hover:text-white transition-colors" id="lbl-drag">Drag & Drop or Click</p>
-                            <p class="text-[10px] text-gray-500 mt-1">Supports JPG, PNG (Max 10)</p>
+                            <p class="text-[10px] font-bold text-gray-300 uppercase tracking-widest group-hover:text-green-400 transition-colors" id="lbl-drag">Initialize Upload</p>
                         </div>
 
                         <!-- Previews Grid -->
@@ -167,13 +201,13 @@
                 <!-- Sketch Upload Container (Visible in Analysis Mode) -->
                 <div id="sketch-container">
                      <div class="flex justify-between items-center mb-2">
-                        <label class="text-xs font-bold text-blue-400 uppercase tracking-wider" id="lbl-upload-sketch">Upload Sketch (Optional)</label>
+                        <label class="text-xs font-bold text-purple-400 uppercase tracking-wider" id="lbl-upload-sketch">Upload Sketch (Optional)</label>
                         <button id="sketch-clear-btn" class="text-xs text-red-400 hover:text-red-300 hidden">Clear</button>
                     </div>
                     <div id="sketch-drop-zone" class="h-[120px] flex flex-col justify-center border-2 border-dashed border-gray-700 rounded-xl p-4 text-center hover:border-gray-500 hover:bg-gray-800/50 transition-all cursor-pointer relative overflow-hidden group">
                         <input type="file" id="sketch-input" accept="image/*" class="hidden">
                         <div id="sketch-empty-state">
-                            <p class="text-xs text-gray-400 group-hover:text-white transition-colors">Drag Sketch Here</p>
+                            <p class="text-xs text-gray-200 group-hover:text-white transition-colors">Drag Sketch Here</p>
                         </div>
                         <img id="sketch-preview-img" class="absolute inset-0 w-full h-full object-contain bg-[#18181a] hidden" />
                     </div>
@@ -184,7 +218,7 @@
                     <div>
                          <label class="text-xs font-bold text-green-400 uppercase tracking-wider mb-2 block" id="lbl-obj-analysis">Detailed Object Analysis</label>
                          <p class="text-[10px] text-gray-400 mb-3 leading-relaxed" id="lbl-obj-desc">Analyze uploaded images to establish a unified reference (DNA) for consistent angle generation.</p>
-                         <button id="btn-run-obj-analysis" class="w-full text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 font-bold py-2.5 px-4 rounded-lg transition-all hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wide">
+                         <button id="btn-run-obj-analysis" class="w-full text-gray-400 border border-dashed border-purple-600/50 bg-gray-900/20 font-bold py-2.5 px-4 rounded-lg transition-all hover:border-purple-500 hover:bg-gray-800/30 hover:text-white active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wide">
                              <span id="btn-obj-analysis-text">Analyze Object DNA</span>
                          </button>
                          <div id="obj-analysis-result" class="mt-3 p-3 bg-gray-900 rounded-lg border border-gray-700 text-xs text-gray-300 h-32 overflow-y-auto hidden whitespace-pre-line font-mono"></div>
@@ -193,9 +227,9 @@
                     <hr class="border-gray-700" />
                     
                     <div>
-                        <label class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2 block" id="lbl-custom-angle">Custom Angle Request</label>
-                        <textarea id="custom-angle-input" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none h-20 placeholder-gray-500" placeholder="e.g., 'Low angle shot looking up at the entrance...'"></textarea>
-                        <button id="btn-custom-angle" class="w-full mt-2 text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 font-bold py-2 px-4 rounded-lg transition-all hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white active:scale-95 text-xs uppercase tracking-wide">
+                        <label class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2 block" id="lbl-custom-angle">Custom Angle Request</label>
+                        <textarea id="custom-angle-input" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm text-white focus:ring-2 focus:ring-purple-500 outline-none resize-none h-20 placeholder-gray-500" placeholder="e.g., 'Low angle shot looking up at the entrance...'"></textarea>
+                        <button id="btn-custom-angle" class="w-full mt-2 text-gray-400 border border-dashed border-purple-600/50 bg-gray-900/20 font-bold py-2 px-4 rounded-lg transition-all hover:border-purple-500 hover:bg-gray-800/30 hover:text-white active:scale-95 text-xs uppercase tracking-wide">
                              <span id="btn-custom-angle-text">Generate Custom Angle</span>
                         </button>
                     </div>
@@ -206,27 +240,27 @@
                 <!-- 4. TEXT OVERLAY MODE: Settings Panel (In Sidebar) -->
                 <div id="panel-text-overlay-settings" class="hidden space-y-6">
                     <div>
-                        <label class="text-xs font-bold text-yellow-500 uppercase tracking-wider mb-2 block">Global Settings</label>
+                        <label class="text-xs font-bold text-purple-500 uppercase tracking-wider mb-2 block">Global Settings</label>
                         
                         <div class="space-y-2">
-                            <label class="text-[10px] text-gray-500 block uppercase font-bold">Actions</label>
-                            <button id="btn-add-slot" class="w-full text-xs text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                            <label class="text-[10px] text-gray-200 block uppercase font-bold">Actions</label>
+                            <button id="btn-add-slot" class="w-full text-xs text-gray-400 border border-dashed border-purple-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                                 Add New Slot (Alt+N)
                             </button>
-                             <button id="btn-embed-all" class="w-full text-xs text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                             <button id="btn-embed-all" class="w-full text-xs text-gray-400 border border-dashed border-purple-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
                                 Embed All (Alt+Enter)
                             </button>
-                            <button id="btn-download-all-embeds" class="w-full text-xs text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                            <button id="btn-download-all-embeds" class="w-full text-xs text-gray-400 border border-dashed border-purple-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                                 Download All Embeds
                             </button>
-                            <button id="btn-reset-overlay" class="w-full text-xs text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                            <button id="btn-reset-overlay" class="w-full text-xs text-gray-400 border border-dashed border-purple-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                 Reset All Slots (Alt+R)
                             </button>
-                            <button id="btn-toggle-all-bg" class="w-full text-xs text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                            <button id="btn-toggle-all-bg" class="w-full text-xs text-gray-400 border border-dashed border-purple-600/50 bg-gray-900/20 px-3 py-3 rounded-lg hover:border-purple-500 hover:bg-gray-800/30 hover:text-white font-bold transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
                                 Toggle All BG
                             </button>
@@ -237,7 +271,7 @@
 
                     <div class="space-y-2">
                         <label class="text-[10px] text-gray-500 block uppercase font-bold">Typography</label>
-                        <select id="global-font-select" class="w-full bg-gray-900 border border-gray-700 text-xs rounded px-2 py-2.5 text-white outline-none focus:border-yellow-500 cursor-pointer">
+                        <select id="global-font-select" class="w-full bg-gray-900 border border-gray-700 text-xs rounded px-2 py-2.5 text-white outline-none focus:border-purple-500 cursor-pointer">
                             <option value="Inter" style="font-family: 'Inter', sans-serif;">Inter (Sans-Serif)</option>
                             <option value="Montserrat" style="font-family: 'Montserrat', sans-serif;">Montserrat (Modern)</option>
                             <option value="Cinzel" style="font-family: 'Cinzel', serif;">Cinzel (Classic)</option>
@@ -254,9 +288,9 @@
                     <div class="space-y-2">
                         <label class="text-[10px] text-gray-500 block uppercase font-bold">Signature / Footer <span class="text-[9px] text-gray-600 ml-1">(Drop .txt)</span></label>
                         <div class="relative group">
-                            <input type="text" id="global-signature" placeholder="e.g. © Architectural AI" class="w-full bg-gray-900 border border-gray-700 text-xs rounded px-2 py-2.5 text-white outline-none focus:border-yellow-500 transition-colors group-hover:border-gray-500 pr-8" />
-                            <div id="signature-drop-indicator" class="absolute inset-0 border-2 border-dashed border-yellow-500/50 bg-yellow-500/10 rounded pointer-events-none hidden flex items-center justify-center backdrop-blur-sm">
-                                <span class="text-[10px] text-yellow-500 font-bold bg-black/80 px-2 py-1 rounded">Drop .txt Here</span>
+                            <input type="text" id="global-signature" placeholder="e.g. © Architectural AI" class="w-full bg-gray-900 border border-gray-700 text-xs rounded px-2 py-2.5 text-white outline-none focus:border-purple-500 transition-colors group-hover:border-gray-500 pr-8" />
+                            <div id="signature-drop-indicator" class="absolute inset-0 border-2 border-dashed border-purple-500/50 bg-purple-500/10 rounded pointer-events-none hidden flex items-center justify-center backdrop-blur-sm">
+                                <span class="text-[10px] text-purple-500 font-bold bg-black/80 px-2 py-1 rounded">Drop .txt Here</span>
                             </div>
                             <input type="file" id="signature-file-input" accept=".txt" class="hidden" />
                             <button id="btn-upload-sig" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white p-1" title="Upload .txt">
@@ -283,7 +317,7 @@
                             <input type="file" id="logo-file-input" accept="image/*" class="hidden" />
                             <div id="logo-empty" class="text-center flex flex-col items-center gap-1">
                                 <div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-gray-700 transition-colors shadow-sm border border-gray-700">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 group-hover:text-yellow-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 group-hover:text-purple-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 </div>
@@ -308,24 +342,24 @@
                 </div>
 
                 <!-- Action Buttons -->
-                <div id="panel-analysis" class="space-y-3">
-                    <div class="grid grid-cols-2 gap-2">
-                        <button id="analyze-btn" class="bg-[#0f0f10] border border-yellow-500 text-yellow-500 font-bold py-3 px-4 rounded-xl transition-all shadow-lg hover:bg-yellow-900/20 hover:shadow-yellow-500/20 active:scale-95 flex items-center justify-center gap-2 group">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 group-hover:animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                <div id="panel-analysis" class="space-y-4">
+                    <div class="grid grid-cols-1 gap-3">
+                        <button id="analyze-btn" class="command-btn py-4 px-4 flex items-center justify-center gap-3 group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                             </svg>
-                            <span id="btn-analyze-text" class="text-xs">Analyze Images</span>
+                            <span id="btn-analyze-text" class="text-xs font-bold tracking-[0.2em]">Execute Analysis</span>
                         </button>
-                        <button id="btn-to-sketch-prompt" class="bg-gray-900 border border-blue-500 text-blue-400 font-bold py-3 px-4 rounded-xl transition-all shadow-lg hover:bg-blue-900/20 hover:shadow-blue-500/20 active:scale-95 flex items-center justify-center gap-2 group">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 group-hover:rotate-12 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        <button id="btn-to-sketch-prompt" class="command-btn py-4 px-4 flex items-center justify-center gap-3 group border-gray-800 text-gray-500 hover:border-green-500 hover:text-green-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                             </svg>
-                            <span id="btn-to-sketch-text" class="text-xs">Photo to Sketch</span>
+                            <span id="btn-to-sketch-text" class="text-xs font-bold tracking-[0.2em]">Sketch Protocol</span>
                         </button>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-2">
-                        <button id="download-all-btn" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-xs">
+                        <button id="download-all-btn" class="bg-black border border-green-500/20 hover:border-green-500/50 text-green-400 font-bold py-2 px-4 rounded-sm transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
@@ -334,7 +368,7 @@
 
                          <div class="flex gap-1">
                             <!-- Download PNG Info -->
-                            <button id="btn-png-info-prompt" class="flex-1 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/50 text-blue-200 font-medium py-2 px-2 rounded-lg transition-colors flex items-center justify-center gap-1 text-xs" title="Download PNG with Data">
+                            <button id="btn-png-info-prompt" class="flex-1 bg-black border border-green-500/20 hover:border-green-500/50 text-green-400 font-bold py-2 px-2 rounded-sm transition-all flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest" title="Download PNG with Data">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                   <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                 </svg>
@@ -342,14 +376,14 @@
                             </button>
 
                             <!-- Select Download Folder -->
-                            <button id="btn-select-folder" class="w-10 bg-yellow-600/20 hover:bg-yellow-500/30 border border-yellow-600/50 text-yellow-500 font-medium py-2 rounded-lg transition-colors flex items-center justify-center" title="Select Download Folder">
+                            <button id="btn-select-folder" class="w-10 bg-black border border-green-500/20 hover:border-green-500/50 text-green-400 font-bold py-2 rounded-sm transition-all flex items-center justify-center" title="Select Download Folder">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                                 </svg>
                             </button>
                             
                             <!-- Copy Banana JSON -->
-                            <button id="btn-send-banana" class="w-10 bg-yellow-600 hover:bg-yellow-500 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center" title="Copy Data (JSON)">
+                            <button id="btn-send-banana" class="w-10 bg-black border border-green-500/20 hover:border-green-500/50 text-green-400 font-bold py-2 rounded-sm transition-all flex items-center justify-center" title="Copy Data (JSON)">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                   <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                 </svg>
@@ -358,96 +392,101 @@
                     </div>
                 </div>
 
-                <div id="panel-multiview" class="hidden space-y-3">
-                     <div class="flex items-center gap-3 mb-2">
-                        <label class="text-xs text-gray-400" id="lbl-angle-count">Angle Count</label>
-                        <input type="number" id="angle-input" min="1" max="16" value="4" class="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm w-16 text-center focus:ring-1 focus:ring-blue-500 outline-none">
+                <div id="panel-multiview" class="hidden space-y-4">
+                     <div class="flex items-center gap-4 mb-2 bg-black p-3 border border-green-500/20 rounded-sm">
+                        <label class="text-[10px] text-gray-600 uppercase tracking-widest font-bold" id="lbl-angle-count">Angle Count</label>
+                        <input type="number" id="angle-input" min="1" max="16" value="4" class="bg-transparent border-b border-green-500/30 text-green-400 font-mono text-xs w-12 text-center focus:border-green-500 outline-none">
                     </div>
-                    <button id="multiview-btn" class="w-full text-gray-400 border border-dashed border-yellow-600/50 bg-gray-900/20 font-bold py-3 px-6 rounded-xl transition-all hover:border-yellow-500 hover:bg-gray-800/30 hover:text-white active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wide">
+                    <button id="multiview-btn" class="command-btn w-full py-4 px-4 flex items-center justify-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                         </svg>
-                        <span id="btn-multiview-text">Generate Multi-View</span>
+                        <span id="btn-multiview-text" class="text-xs font-bold tracking-[0.2em]">Generate Multi-View</span>
                     </button>
                 </div>
                 
-                 <div id="panel-notes" class="hidden space-y-3">
-                     <button id="analyze-notes-btn" class="w-full bg-[#0f0f10] border border-yellow-500 text-yellow-500 font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:bg-yellow-900/20 hover:shadow-yellow-500/20 active:scale-95 flex items-center justify-center gap-2">
+                 <div id="panel-notes" class="hidden space-y-4">
+                     <button id="analyze-notes-btn" class="command-btn w-full py-4 px-4 flex items-center justify-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <span id="btn-analyze-notes-text">Extract & Translate Notes</span>
+                        <span id="btn-analyze-notes-text" class="text-xs font-bold tracking-[0.2em]">Extract & Translate Notes</span>
                     </button>
                  </div>
 
-                 <div id="panel-artistic" class="hidden space-y-3">
-                    <div class="p-3 bg-gray-900/50 border border-gray-800 rounded-xl mb-2">
-                        <h3 class="text-xs font-bold text-yellow-500 uppercase mb-1" id="lbl-artistic">Artistic Style Transfer</h3>
-                        <p class="text-[10px] text-gray-400 leading-tight" id="lbl-artistic-desc">Generate prompts to convert your images into various artistic sketching styles.</p>
+                 <div id="panel-artistic" class="hidden space-y-4">
+                    <div class="p-4 bg-black border border-green-500/20 rounded-sm mb-2">
+                        <h3 class="text-[10px] font-bold text-green-400 uppercase tracking-widest mb-1" id="lbl-artistic">Artistic Style Transfer</h3>
+                        <p class="text-[9px] text-gray-600 leading-tight uppercase tracking-wider" id="lbl-artistic-desc">Generate prompts to convert your images into various artistic sketching styles.</p>
                     </div>
 
                     <!-- Custom Style Section -->
-                    <div class="p-3 bg-gray-900/50 border border-gray-800 rounded-xl space-y-3">
+                    <div class="p-4 bg-black border border-green-500/20 rounded-sm space-y-4">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-[10px] font-bold text-gray-400 uppercase" id="lbl-custom-style">Custom Style Reference</h3>
-                            <button id="btn-clear-style-ref" class="text-[9px] text-red-500 hover:text-red-400 hidden">Clear Ref</button>
+                            <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest" id="lbl-custom-style">Style Reference</h3>
+                            <button id="btn-clear-style-ref" class="text-[9px] text-red-900 hover:text-red-500 uppercase font-bold tracking-widest hidden">Purge</button>
                         </div>
                         
                         <!-- Style Reference Upload -->
-                        <div id="drop-zone-style" class="border-2 border-dashed border-gray-700 rounded-lg p-2 text-center hover:border-blue-500 transition-colors cursor-pointer group relative overflow-hidden h-20 flex flex-col items-center justify-center">
+                        <div id="drop-zone-style" class="border border-green-500/20 bg-black rounded-sm p-2 text-center hover:border-green-500/50 transition-colors cursor-pointer group relative overflow-hidden h-24 flex flex-col items-center justify-center">
                             <input type="file" id="file-input-style" class="hidden" accept="image/*">
                             <div id="style-ref-preview" class="absolute inset-0 hidden">
-                                <img id="img-style-ref" class="w-full h-full object-cover opacity-40">
+                                <img id="img-style-ref" class="w-full h-full object-cover opacity-30">
                             </div>
                             <div id="style-ref-placeholder" class="relative z-10 flex flex-col items-center">
-                                <svg class="w-5 h-5 text-gray-500 group-hover:text-blue-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                <svg class="w-6 h-6 text-gray-500 group-hover:text-green-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
-                                <span class="text-[9px] text-gray-500 group-hover:text-gray-300" id="lbl-upload-style">Upload Style Reference</span>
+                                <span class="text-[9px] text-gray-400 group-hover:text-green-400 uppercase tracking-widest font-bold" id="lbl-upload-style">Upload Reference</span>
                             </div>
                         </div>
 
                         <!-- Custom Instruction -->
-                        <div class="space-y-1">
-                            <label class="text-[9px] text-gray-500 uppercase font-bold" id="lbl-custom-instruction">Custom Instruction</label>
-                            <textarea id="input-custom-style" class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2 text-xs text-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none h-16" placeholder="e.g. Cyberpunk neon sketch, pencil with gold leaf..."></textarea>
+                        <div class="space-y-2">
+                            <label class="text-[9px] text-gray-600 uppercase font-bold tracking-widest" id="lbl-custom-instruction">Custom Parameters</label>
+                            <textarea id="input-custom-style" class="w-full bg-black border border-green-500/20 rounded-sm p-3 text-xs text-green-100 font-mono focus:border-green-500 outline-none resize-none h-20" placeholder="[PROTOCOL_INPUT]"></textarea>
                         </div>
 
-                        <button id="btn-generate-custom-style" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg transition-all text-xs flex items-center justify-center gap-2">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                            <span id="btn-generate-custom-text">Generate Style</span>
+                        <button id="btn-generate-custom-style" class="command-btn w-full py-3 px-4 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            <span id="btn-generate-custom-text" class="text-xs font-bold tracking-[0.2em]">Execute Style</span>
                         </button>
                     </div>
 
                     <div class="grid grid-cols-1 gap-2">
-                        <button id="btn-style-watercolor" class="artistic-style-btn flex items-center gap-3 p-2 bg-gray-800/40 border border-gray-700 rounded-xl hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-left group">
+                        <button id="btn-style-watercolor" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-sm hover:border-green-500/50 transition-all text-left group">
+                            <div class="w-1 h-1 bg-green-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
                             <div>
-                                <span class="text-xs font-bold text-gray-200 block" id="style-watercolor-text">Watercolor</span>
-                                <span class="text-[9px] text-gray-500">Soft, vibrant colors</span>
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block group-hover:text-green-400" id="style-watercolor-text">Watercolor</span>
+                                <span class="text-[9px] text-gray-400 uppercase tracking-wider">Soft, vibrant colors</span>
                             </div>
                         </button>
-                        <button id="btn-style-blue-ink" class="artistic-style-btn flex items-center gap-3 p-2 bg-gray-800/40 border border-gray-700 rounded-xl hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-left group">
+                        <button id="btn-style-purple-ink" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-sm hover:border-green-500/50 transition-all text-left group">
+                            <div class="w-1 h-1 bg-green-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
                             <div>
-                                <span class="text-xs font-bold text-gray-200 block" id="style-blue-ink-text">Blue Ink Sketch</span>
-                                <span class="text-[9px] text-gray-500">Ballpoint pen on aged paper</span>
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block group-hover:text-green-400" id="style-purple-ink-text">Blue Ink Sketch</span>
+                                <span class="text-[9px] text-gray-700 uppercase tracking-wider">Ballpoint pen on aged paper</span>
                             </div>
                         </button>
-                        <button id="btn-style-clean-line" class="artistic-style-btn flex items-center gap-3 p-2 bg-gray-800/40 border border-gray-700 rounded-xl hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-left group">
+                        <button id="btn-style-clean-line" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-sm hover:border-green-500/50 transition-all text-left group">
+                            <div class="w-1 h-1 bg-green-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
                             <div>
-                                <span class="text-xs font-bold text-gray-200 block" id="style-clean-line-text">Clean Line Art</span>
-                                <span class="text-[9px] text-gray-500">Minimalist blueprint style</span>
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block group-hover:text-green-400" id="style-clean-line-text">Clean Line Art</span>
+                                <span class="text-[9px] text-gray-700 uppercase tracking-wider">Minimalist blueprint style</span>
                             </div>
                         </button>
-                        <button id="btn-style-black-ink" class="artistic-style-btn flex items-center gap-3 p-2 bg-gray-800/40 border border-gray-700 rounded-xl hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-left group">
+                        <button id="btn-style-black-ink" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-sm hover:border-green-500/50 transition-all text-left group">
+                            <div class="w-1 h-1 bg-green-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
                             <div>
-                                <span class="text-xs font-bold text-gray-200 block" id="style-black-ink-text">Black Ink Technical</span>
-                                <span class="text-[9px] text-gray-500">Cross-hatching & precision</span>
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block group-hover:text-green-400" id="style-black-ink-text">Black Ink Technical</span>
+                                <span class="text-[9px] text-gray-700 uppercase tracking-wider">Cross-hatching & precision</span>
                             </div>
                         </button>
-                        <button id="btn-style-red-ink" class="artistic-style-btn flex items-center gap-3 p-2 bg-gray-800/40 border border-gray-700 rounded-xl hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-left group">
+                        <button id="btn-style-red-ink" class="artistic-style-btn flex items-center gap-3 p-3 bg-black border border-green-500/20 rounded-sm hover:border-green-500/50 transition-all text-left group">
+                            <div class="w-1 h-1 bg-green-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
                             <div>
-                                <span class="text-xs font-bold text-gray-200 block" id="style-red-ink-text">Red Ink Sketch</span>
-                                <span class="text-[9px] text-gray-500">Architectural annotations</span>
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block group-hover:text-green-400" id="style-red-ink-text">Red Ink Sketch</span>
+                                <span class="text-[9px] text-gray-700 uppercase tracking-wider">Architectural annotations</span>
                             </div>
                         </button>
                     </div>
@@ -459,42 +498,37 @@
         </aside>
 
         <!-- Right Content: Results -->
-        <section class="flex-1 bg-[#121212] flex flex-col relative overflow-hidden">
-            
-            <!-- Result Tabs (Removed - Moved to Header) -->
-            <!-- <div class="hidden"></div> -->
+        <section class="flex-1 bg-[#050505] flex flex-col relative overflow-hidden">
             
             <!-- Global Action Bar (Visible when Results exist) -->
-            <div id="global-actions-bar" class="px-6 py-2 bg-[#18181a] border-b border-gray-800 flex justify-between items-center hidden">
-                <div class="flex gap-2">
-                    <button id="btn-expand-all" class="text-[10px] text-gray-400 hover:text-white uppercase font-bold flex items-center gap-1">
+            <div id="global-actions-bar" class="px-8 py-4 bg-black border-b border-green-500/10 flex justify-between items-center hidden">
+                <div class="flex gap-6">
+                    <button id="btn-expand-all" class="text-[9px] text-gray-500 hover:text-green-400 uppercase font-bold tracking-widest flex items-center gap-2 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13l-7 7-7-7m14-8l-7 7-7-7" /></svg>
                         Expand All
                     </button>
-                    <button id="btn-collapse-all" class="text-[10px] text-gray-400 hover:text-white uppercase font-bold flex items-center gap-1">
+                    <button id="btn-collapse-all" class="text-[9px] text-gray-500 hover:text-green-400 uppercase font-bold tracking-widest flex items-center gap-2 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11l7-7 7 7M5 19l7-7 7 7" /></svg>
                         Collapse All
                     </button>
                 </div>
-                <button id="btn-clear-results" class="text-[10px] text-red-500 hover:text-red-400 uppercase font-bold flex items-center gap-1">
+                <button id="btn-clear-results" class="text-[9px] text-red-900/50 hover:text-red-500 uppercase font-bold tracking-widest flex items-center gap-2 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    Clear Results
+                    Wipe Data
                 </button>
             </div>
 
             <!-- Loader -->
-            <div id="loader" class="hidden absolute inset-0 z-50 bg-[#121212]/90 flex flex-col items-center justify-center backdrop-blur-sm">
-                <div class="relative w-24 h-24 mb-4">
-                    <div class="absolute inset-0 border-4 border-blue-500/20 rounded-full animate-ping"></div>
-                    <div class="absolute inset-0 border-4 border-t-blue-500 border-r-cyan-400 border-b-purple-500 border-l-transparent rounded-full animate-spin"></div>
-                    <div class="absolute inset-4 bg-[#18181a] rounded-full flex items-center justify-center shadow-inner">
-                         <svg class="w-8 h-8 text-blue-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
+            <div id="loader" class="hidden absolute inset-0 z-50 bg-[#050505]/95 flex flex-col items-center justify-center backdrop-blur-md">
+                <div class="relative w-32 h-32 mb-8">
+                    <div class="absolute inset-0 border border-green-500/20 rounded-full animate-ping"></div>
+                    <div class="absolute inset-0 border-2 border-t-green-500 border-r-transparent border-b-green-500 border-l-transparent rounded-full animate-spin"></div>
+                    <div class="absolute inset-6 bg-black border border-gray-900 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(0,255,0,0.1)]">
+                         <div class="status-indicator animate-pulse"></div>
                     </div>
                 </div>
-                <h3 class="text-xl font-bold text-white tracking-widest animate-pulse" id="loader-title">ANALYZING...</h3>
-                <p class="text-sm text-gray-400 mt-2" id="loader-subtitle">Gemini is analyzing architectural details...</p>
+                <h3 class="text-2xl font-black text-white tracking-[0.3em] uppercase animate-pulse font-mono" id="loader-title">ANALYZING</h3>
+                <p class="text-[10px] text-green-400 mt-4 uppercase tracking-widest font-mono" id="loader-subtitle">Accessing neural architectural database...</p>
             </div>
 
             <!-- Scrollable Content -->
@@ -506,177 +540,177 @@
                      <!-- We construct these cards statically for better control, but data is dynamic -->
                      
                      <!-- Prompt Card (Highlighted) -->
-                     <div class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group">
-                        <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
-                             <div class="flex items-center gap-2">
-                                 <span class="chevron-icon text-yellow-500 mr-1">
+                     <div class="w-full border border-green-500/20 rounded-sm bg-black relative transition hover:border-green-500/50 mb-4 collapsible-card group">
+                        <div class="flex justify-between items-center p-4 border-b border-green-500/20 cursor-pointer card-header select-none">
+                             <div class="flex items-center gap-3">
+                                 <span class="chevron-icon text-green-400">
                                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                  </span>
-                                 <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-prompt">Generation Prompt</h3>
+                                 <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest" id="title-prompt">Generation Protocol</h3>
                              </div>
                              <div class="flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
-                                  <button id="btn-run-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition" title="Re-run"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
-                                  <button id="btn-copy-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition" title="Copy"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
-                                  <button id="btn-dl-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition" title="Download"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                  <button id="btn-run-prompt" class="p-1.5 text-gray-700 hover:text-green-400 transition" title="Re-run"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                  <button id="btn-copy-prompt" class="p-1.5 text-gray-700 hover:text-green-400 transition" title="Copy"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                  <button id="btn-dl-prompt" class="p-1.5 text-gray-700 hover:text-green-400 transition" title="Download"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
                              </div>
                         </div>
-                        <div class="card-content p-4">
-                            <p id="res-prompt" class="text-sm text-gray-300 whitespace-pre-line font-mono leading-relaxed pl-2 border-l-2 border-yellow-500/30">Waiting for analysis...</p>
+                        <div class="card-content p-6">
+                            <p id="res-prompt" class="text-xs text-green-300 whitespace-pre-line font-mono leading-relaxed pl-4 border-l border-green-500/20">Waiting for analysis...</p>
                         </div>
                      </div>
 
                      <!-- Collage Analysis Card (Hidden by default) -->
-                     <div id="card-collage-analysis" class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group hidden">
-                        <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                     <div id="card-collage-analysis" class="w-full border border-green-500/20 rounded-sm bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group hidden">
+                        <div class="flex justify-between items-center p-3 border-b border-green-500/20 cursor-pointer card-header select-none">
                              <div class="flex items-center gap-2">
-                                <span class="chevron-icon text-yellow-500 mr-1">
+                                <span class="chevron-icon text-green-400 mr-1">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                 </span>
-                                <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-collage-analysis">Collage & Project Analysis</h3>
+                                <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest" id="title-collage-analysis">Collage & Project Analysis</h3>
                              </div>
                              <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
-                                 <button id="btn-copy-collage-analysis" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
-                                 <button id="btn-dl-collage-analysis" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                 <button id="btn-copy-collage-analysis" class="p-1.5 text-gray-700 hover:text-green-400 transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                 <button id="btn-dl-collage-analysis" class="p-1.5 text-gray-700 hover:text-green-400 transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
                              </div>
                         </div>
                         <div class="card-content p-4">
-                            <p id="res-collage-analysis" class="text-sm text-blue-300/80 whitespace-pre-line font-mono leading-relaxed italic">Waiting for analysis...</p>
+                            <p id="res-collage-analysis" class="text-xs text-green-300 whitespace-pre-line font-mono leading-relaxed pl-4 border-l border-green-500/20">Waiting for analysis...</p>
                         </div>
                      </div>
 
                      <!-- Photo to Sketch Card -->
-                     <div id="card-photo-to-sketch" class="w-full border border-blue-700/50 rounded-xl bg-blue-900/10 relative transition hover:border-blue-500 mb-4 collapsible-card group hidden">
-                        <div class="flex justify-between items-center p-3 border-b border-blue-700/50 cursor-pointer card-header select-none">
+                     <div id="card-photo-to-sketch" class="w-full border border-green-500/30 rounded-sm bg-green-500/5 relative transition hover:border-green-500/50 mb-4 collapsible-card group hidden">
+                        <div class="flex justify-between items-center p-3 border-b border-green-500/30 cursor-pointer card-header select-none">
                              <div class="flex items-center gap-2">
-                                <span class="chevron-icon text-blue-400 mr-1">
+                                <span class="chevron-icon text-green-400 mr-1">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                 </span>
-                                <h3 class="text-xs font-bold text-blue-300 uppercase" id="title-photo-to-sketch">Photo to Sketch Prompt</h3>
+                                <h3 class="text-[10px] font-bold text-green-400 uppercase tracking-widest" id="title-photo-to-sketch">Sketch Protocol</h3>
                              </div>
                              <div class="flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
-                                  <button id="btn-copy-photo-to-sketch" class="p-1.5 text-blue-400 hover:text-white hover:bg-white/10 rounded transition" title="Copy"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
-                                  <button id="btn-dl-photo-to-sketch" class="p-1.5 text-blue-400 hover:text-white hover:bg-white/10 rounded transition" title="Download"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                  <button id="btn-copy-photo-to-sketch" class="p-1.5 text-green-300 hover:text-green-400 transition" title="Copy"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                  <button id="btn-dl-photo-to-sketch" class="p-1.5 text-green-400/70 hover:text-green-400 transition" title="Download"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
                              </div>
                         </div>
                         <div class="card-content p-4">
-                            <p id="res-photo-to-sketch" class="text-sm text-blue-200/90 whitespace-pre-line font-mono leading-relaxed pl-2 border-l-2 border-blue-500/30">Waiting for generation...</p>
+                            <p id="res-photo-to-sketch" class="text-xs text-green-300 whitespace-pre-line font-mono leading-relaxed pl-4 border-l border-green-500/30">Waiting for generation...</p>
                         </div>
                      </div>
 
                      <!-- Sketch Prompt Card (Hidden by default until needed) -->
-                     <div id="card-sketch-prompt" class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group">
-                        <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                     <div id="card-sketch-prompt" class="w-full border border-green-500/20 rounded-sm bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
+                        <div class="flex justify-between items-center p-3 border-b border-green-500/20 cursor-pointer card-header select-none">
                              <div class="flex items-center gap-2">
-                                <span class="chevron-icon text-yellow-500 mr-1">
+                                <span class="chevron-icon text-green-400 mr-1">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                 </span>
-                                <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-sketch-prompt">Sketch Prompt</h3>
+                                <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest" id="title-sketch-prompt">Sketch Prompt</h3>
                              </div>
                              <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
-                                 <button id="btn-run-sketch-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
-                                 <button id="btn-copy-sketch-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
-                                 <button id="btn-dl-sketch-prompt" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                 <button id="btn-run-sketch-prompt" class="p-1.5 text-gray-700 hover:text-green-400 transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                 <button id="btn-copy-sketch-prompt" class="p-1.5 text-gray-700 hover:text-green-400 transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                 <button id="btn-dl-sketch-prompt" class="p-1.5 text-gray-700 hover:text-green-400 transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
                              </div>
                         </div>
                         <div class="card-content p-4">
-                            <p id="res-sketch-prompt" class="text-sm text-gray-400 whitespace-pre-line font-mono leading-relaxed">Waiting for analysis...</p>
+                            <p id="res-sketch-prompt" class="text-xs text-green-300 whitespace-pre-line font-mono leading-relaxed pl-4 border-l border-green-500/20">Waiting for analysis...</p>
                         </div>
                      </div>
 
                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Style -->
-                        <div class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group">
-                            <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                        <div class="w-full border border-green-500/20 rounded-sm bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
+                            <div class="flex justify-between items-center p-3 border-b border-green-500/20 cursor-pointer card-header select-none">
                                 <div class="flex items-center gap-2">
-                                    <span class="chevron-icon text-yellow-500 mr-1">
+                                    <span class="chevron-icon text-green-400 mr-1">
                                         <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                     </span>
-                                    <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-style">Architectural Style</h3>
+                                    <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest" id="title-style">Architectural Style</h3>
                                 </div>
                                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
-                                     <button id="btn-run-style" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
-                                     <button id="btn-copy-style" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
-                                     <button id="btn-dl-style" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                     <button id="btn-run-style" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                     <button id="btn-copy-style" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                     <button id="btn-dl-style" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
                                  </div>
                             </div>
                             <div class="card-content p-4">
-                                <p id="res-style" class="text-sm text-gray-400">Waiting for analysis...</p>
+                                <p id="res-style" class="text-xs text-green-300 font-mono">Waiting for analysis...</p>
                             </div>
                         </div>
                         <!-- Materials -->
-                        <div class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group">
-                            <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                        <div class="w-full border border-green-500/20 rounded-sm bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
+                            <div class="flex justify-between items-center p-3 border-b border-green-500/20 cursor-pointer card-header select-none">
                                 <div class="flex items-center gap-2">
-                                    <span class="chevron-icon text-yellow-500 mr-1">
+                                    <span class="chevron-icon text-green-400 mr-1">
                                         <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                     </span>
-                                    <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-material">Materials & Textures</h3>
+                                    <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest" id="title-material">Materials & Textures</h3>
                                 </div>
                                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
-                                     <button id="btn-run-material" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
-                                     <button id="btn-copy-material" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
-                                     <button id="btn-dl-material" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                     <button id="btn-run-material" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                     <button id="btn-copy-material" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                     <button id="btn-dl-material" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
                                  </div>
                             </div>
                             <div class="card-content p-4">
-                                <p id="res-material" class="text-sm text-gray-400">Waiting for analysis...</p>
+                                <p id="res-material" class="text-xs text-green-300 font-mono">Waiting for analysis...</p>
                             </div>
                         </div>
                          <!-- Lighting -->
-                        <div class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group">
-                            <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                        <div class="w-full border border-green-500/20 rounded-sm bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
+                            <div class="flex justify-between items-center p-3 border-b border-green-500/20 cursor-pointer card-header select-none">
                                 <div class="flex items-center gap-2">
-                                    <span class="chevron-icon text-yellow-500 mr-1">
+                                    <span class="chevron-icon text-green-400 mr-1">
                                         <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                     </span>
-                                    <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-lighting">Lighting & Atmosphere</h3>
+                                    <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest" id="title-lighting">Lighting & Atmosphere</h3>
                                 </div>
                                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
-                                     <button id="btn-run-lighting" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
-                                     <button id="btn-copy-lighting" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
-                                     <button id="btn-dl-lighting" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                     <button id="btn-run-lighting" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                     <button id="btn-copy-lighting" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                     <button id="btn-dl-lighting" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
                                  </div>
                             </div>
                             <div class="card-content p-4">
-                                <p id="res-lighting" class="text-sm text-gray-400">Waiting for analysis...</p>
+                                <p id="res-lighting" class="text-xs text-green-300 font-mono">Waiting for analysis...</p>
                             </div>
                         </div>
                          <!-- Context -->
-                        <div class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group">
-                            <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                        <div class="w-full border border-green-500/20 rounded-sm bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group">
+                            <div class="flex justify-between items-center p-3 border-b border-green-500/20 cursor-pointer card-header select-none">
                                 <div class="flex items-center gap-2">
-                                    <span class="chevron-icon text-yellow-500 mr-1">
+                                    <span class="chevron-icon text-green-400 mr-1">
                                         <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                     </span>
-                                    <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-context">Context & Environment</h3>
+                                    <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest" id="title-context">Context & Environment</h3>
                                 </div>
                                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
-                                     <button id="btn-run-context" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
-                                     <button id="btn-copy-context" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
-                                     <button id="btn-dl-context" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                     <button id="btn-run-context" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                     <button id="btn-copy-context" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                     <button id="btn-dl-context" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
                                  </div>
                             </div>
                             <div class="card-content p-4">
-                                <p id="res-context" class="text-sm text-gray-400">Waiting for analysis...</p>
+                                <p id="res-context" class="text-xs text-green-300 font-mono">Waiting for analysis...</p>
                             </div>
                         </div>
                          <!-- Composition -->
-                        <div class="w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group col-span-1 md:col-span-2">
-                            <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
+                        <div class="w-full border border-green-500/20 rounded-sm bg-black/40 relative transition hover:border-green-500/40 mb-4 collapsible-card group col-span-1 md:col-span-2">
+                            <div class="flex justify-between items-center p-3 border-b border-green-500/20 cursor-pointer card-header select-none">
                                 <div class="flex items-center gap-2">
-                                    <span class="chevron-icon text-yellow-500 mr-1">
+                                    <span class="chevron-icon text-green-400 mr-1">
                                         <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                     </span>
-                                    <h3 class="text-xs font-bold text-gray-400 uppercase" id="title-composition">Composition & Camera</h3>
+                                    <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest" id="title-composition">Composition & Camera</h3>
                                 </div>
                                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
-                                     <button id="btn-run-composition" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
-                                     <button id="btn-copy-composition" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
-                                     <button id="btn-dl-composition" class="p-1 text-gray-500 hover:text-white"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                                     <button id="btn-run-composition" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                     <button id="btn-copy-composition" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                     <button id="btn-dl-composition" class="p-1 text-gray-700 hover:text-green-400 transition"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
                                  </div>
                             </div>
                             <div class="card-content p-4">
-                                <p id="res-composition" class="text-sm text-gray-400">Waiting for analysis...</p>
+                                <p id="res-composition" class="text-xs text-green-300 font-mono">Waiting for analysis...</p>
                             </div>
                         </div>
                      </div>
@@ -748,36 +782,36 @@
     </div>
 
     <!-- API Key Modal -->
-    <div id="api-key-modal" class="fixed inset-0 z-[120] bg-black/90 hidden flex items-center justify-center backdrop-blur-md">
-        <div class="bg-[#0f0f11] border border-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl mx-4 relative">
+    <div id="api-key-modal" class="fixed inset-0 z-[120] bg-black/95 hidden flex items-center justify-center backdrop-blur-md">
+        <div class="bg-black border border-green-500/20 rounded-sm p-8 w-full max-w-sm shadow-2xl mx-4 relative">
             <!-- Close Button -->
-            <button id="btn-close-api-modal" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
+            <button id="btn-close-api-modal" class="absolute top-4 right-4 text-gray-700 hover:text-red-500 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
 
-            <h2 class="text-xl font-black text-white mb-4 italic tracking-tighter uppercase" id="api-modal-title">
-                ENTER API KEY
+            <h2 class="text-xl font-black text-white mb-6 tracking-tighter uppercase font-mono" id="api-modal-title">
+                ENCRYPTION KEY
             </h2>
             
-            <p class="text-xs text-gray-400 mb-2 leading-relaxed" id="api-modal-desc">
-                Add your own API Key to unlock the high-performance Gemini 3.1 Pro model. Without a key, the app uses Gemini 3 Flash for free.
+            <p class="text-[10px] text-gray-600 mb-4 leading-relaxed uppercase tracking-widest" id="api-modal-desc">
+                Provide authorization key for Pro-v3.1 access. Default protocol utilizes Flash-v3.
             </p>
             
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-400 hover:text-indigo-300 text-[10px] font-bold flex items-center gap-1 mb-6 transition-colors">
-                <span id="api-modal-link">Get API Key Here</span>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-green-400 hover:text-green-400 text-[10px] font-bold flex items-center gap-2 mb-8 transition-colors uppercase tracking-widest">
+                <span id="api-modal-link">Request Key</span>
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
             </a>
             
-            <div class="relative mb-4">
-                <input type="password" id="api-key-input" class="w-full bg-[#09090b] border-2 border-indigo-900/30 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-700" placeholder="Paste your API Key...">
+            <div class="relative mb-6">
+                <input type="password" id="api-key-input" class="w-full bg-black border border-green-500/20 rounded-sm p-4 text-xs text-green-400 font-mono focus:border-green-500 outline-none transition-all placeholder:text-gray-500" placeholder="[KEY_INPUT]">
             </div>
             
-            <div class="flex flex-col gap-2">
-                <button id="btn-save-api-key" class="w-full py-3 bg-indigo-700 hover:bg-indigo-600 text-white font-black rounded-xl transition-all uppercase tracking-widest shadow-lg shadow-indigo-900/20 text-xs">
-                    SAVE KEY
+            <div class="flex flex-col gap-3">
+                <button id="btn-save-api-key" class="command-btn w-full py-4 text-xs font-bold">
+                    AUTHORIZE
                 </button>
-                <button id="btn-remove-api-key" class="w-full py-2 text-gray-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest transition-colors hidden">
-                    Remove API Key
+                <button id="btn-remove-api-key" class="w-full py-2 text-red-900 hover:text-red-500 text-[9px] font-bold uppercase tracking-widest transition-colors hidden">
+                    Revoke Access
                 </button>
             </div>
         </div>

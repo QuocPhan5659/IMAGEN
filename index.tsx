@@ -20,7 +20,7 @@ let overlaySlots: OverlaySlot[] = [];
 let globalFont = 'Inter';
 let globalSignature = '';
 let globalLogoSrc: string | null = null;
-let globalSigBgColor = '#FFD700'; // Default Gold
+let globalSigBgColor = '#00ff00'; // Default Neon Green
 
 // --- Application State ---
 type Lang = 'en' | 'vi';
@@ -228,13 +228,13 @@ const translations = {
             collageAnalysis: "Collage & Project Analysis"
         },
         apiModal: {
-            title: "ENTER API KEY",
-            desc: "Add your own API Key to unlock the high-performance Gemini 3.1 Pro model. Without a key, the app uses Gemini 3 Flash for free.",
-            placeholder: "Paste your API Key...",
-            btnCancel: "Cancel",
-            btnSave: "SAVE KEY",
-            btnRemove: "Remove API Key",
-            link: "Get API Key Here"
+            title: "ENCRYPTION KEY",
+            desc: "Provide authorization key for Pro-v3.1 access. Default protocol utilizes Flash-v3.",
+            placeholder: "[KEY_INPUT]",
+            btnCancel: "CANCEL",
+            btnSave: "AUTHORIZE",
+            btnRemove: "REVOKE ACCESS",
+            link: "Request Key"
         },
         modelSwitched: "Model switched to "
     },
@@ -291,13 +291,13 @@ const translations = {
             collageAnalysis: "Phân Tích Ảnh Ghép & Dự Án"
         },
         apiModal: {
-            title: "NHẬP API KEY",
-            desc: "Thêm API Key của riêng bạn để mở khóa model Gemini 3.1 Pro hiệu năng cao. Nếu không có key, ứng dụng sẽ sử dụng Gemini 3 Flash miễn phí.",
-            placeholder: "Dán API Key của bạn...",
-            btnCancel: "Hủy",
-            btnSave: "LƯU KEY",
-            btnRemove: "Xóa API Key",
-            link: "Lấy API Key tại đây"
+            title: "KHÓA MÃ HÓA",
+            desc: "Cung cấp khóa ủy quyền để truy cập Pro-v3.1. Giao thức mặc định sử dụng Flash-v3.",
+            placeholder: "[NHẬP_KHÓA]",
+            btnCancel: "HỦY",
+            btnSave: "ỦY QUYỀN",
+            btnRemove: "THU HỒI QUYỀN",
+            link: "Yêu cầu khóa"
         },
         modelSwitched: "Đã chuyển sang model "
     }
@@ -403,7 +403,7 @@ const btnRunSketchPrompt = getEl<HTMLButtonElement>('btn-run-sketch-prompt');
 
 // Artistic Style Buttons
 const btnStyleWatercolor = getEl<HTMLButtonElement>('btn-style-watercolor');
-const btnStyleBlueInk = getEl<HTMLButtonElement>('btn-style-blue-ink');
+const btnStyleBlueInk = getEl<HTMLButtonElement>('btn-style-purple-ink');
 const btnStyleCleanLine = getEl<HTMLButtonElement>('btn-style-clean-line');
 const btnStyleBlackInk = getEl<HTMLButtonElement>('btn-style-black-ink');
 const btnStyleRedInk = getEl<HTMLButtonElement>('btn-style-red-ink');
@@ -497,7 +497,7 @@ const iconPngInfo = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 
 // Helper: Create mini button
 const createMiniBtn = (iconSvg: string, onClick: (btn: HTMLButtonElement) => void, tooltip: string) => {
     const btn = document.createElement('button');
-    btn.className = "p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors flex items-center justify-center";
+    btn.className = "p-1 hover:bg-white/10 rounded text-white hover:text-white transition-colors flex items-center justify-center";
     btn.title = tooltip;
     btn.innerHTML = iconSvg;
     btn.onclick = (e) => {
@@ -735,23 +735,23 @@ async function getTextFromImage(blob: Blob): Promise<string> {
 // --- Multi-View Card Generator (Synced with Text Overlay Style) ---
 function createMultiViewCardHTML(id: string, title: string, content: string, composition: string, lighting: string, onDelete?: () => void): HTMLElement {
     const card = document.createElement('div');
-    // Unified Style: Gray bg with 40% opacity, border gray-700
-    card.className = "w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group";
+    // Unified Style: Black bg, border green-500/20, rounded-sm
+    card.className = "w-full border border-green-500/20 rounded-sm bg-black relative transition hover:border-green-500/50 mb-4 collapsible-card group";
     
     // Header (Clickable for Collapse)
     const header = document.createElement('div');
-    header.className = "flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none";
+    header.className = "flex justify-between items-center p-4 border-b border-green-500/20 cursor-pointer card-header select-none";
     
     const titleDiv = document.createElement('div');
-    titleDiv.className = "flex items-center gap-2";
+    titleDiv.className = "flex items-center gap-3";
     
     const triangleIcon = document.createElement('div');
     triangleIcon.innerHTML = `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>`;
-    triangleIcon.className = "chevron-icon text-yellow-500 transition-transform duration-200";
+    triangleIcon.className = "chevron-icon text-green-200 transition-transform duration-200";
     
     const h3 = document.createElement('h3');
     // Unified Title Style
-    h3.className = "text-xs font-bold text-gray-400 uppercase"; 
+    h3.className = "text-[10px] font-bold text-gray-100 uppercase tracking-widest"; 
     h3.textContent = title;
     
     titleDiv.appendChild(triangleIcon);
@@ -764,11 +764,11 @@ function createMultiViewCardHTML(id: string, title: string, content: string, com
 
     // --- Vertical Actions Sidebar ---
     const sidebar = document.createElement('div');
-    sidebar.className = "w-10 flex flex-col items-center gap-2 py-3 bg-gray-800/30 border-r border-gray-700 shrink-0";
+    sidebar.className = "w-12 flex flex-col items-center gap-3 py-4 bg-black border-r border-green-500/20 shrink-0";
     
     // Copy All Button
     const btnCopy = document.createElement('button');
-    btnCopy.className = "p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded transition-all";
+    btnCopy.className = "p-1.5 text-gray-200 hover:text-green-400 transition-all";
     btnCopy.title = "Copy All";
     btnCopy.innerHTML = iconCopyAll;
     btnCopy.onclick = async (e) => {
@@ -785,7 +785,7 @@ function createMultiViewCardHTML(id: string, title: string, content: string, com
 
     // PNG Info Button
     const btnPngInfo = document.createElement('button');
-    btnPngInfo.className = "p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded transition-all";
+    btnPngInfo.className = "p-1.5 text-gray-200 hover:text-green-400 transition-all";
     btnPngInfo.title = "Copy Data PNG Info";
     btnPngInfo.innerHTML = iconPngInfo;
     btnPngInfo.onclick = async (e) => {
@@ -810,7 +810,7 @@ function createMultiViewCardHTML(id: string, title: string, content: string, com
 
     // Download Button
     const btnDownload = document.createElement('button');
-    btnDownload.className = "p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded transition-all";
+    btnDownload.className = "p-1.5 text-gray-400 hover:text-green-400 transition-all";
     btnDownload.title = "Download All";
     btnDownload.innerHTML = iconDlAll;
     btnDownload.onclick = (e) => {
@@ -822,7 +822,7 @@ function createMultiViewCardHTML(id: string, title: string, content: string, com
 
     // Delete Button
     const btnDelete = document.createElement('button');
-    btnDelete.className = "p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-all";
+    btnDelete.className = "p-1.5 text-gray-700 hover:text-red-500 transition-all";
     btnDelete.title = "Delete View";
     btnDelete.innerHTML = iconTrash;
     btnDelete.onclick = (e) => {
@@ -838,26 +838,22 @@ function createMultiViewCardHTML(id: string, title: string, content: string, com
     
     // --- Main Content Area ---
     const contentArea = document.createElement('div');
-    contentArea.className = "flex-1 p-4 overflow-hidden";
+    contentArea.className = "flex-1 p-6 overflow-hidden";
     
     const gridDiv = document.createElement('div');
-    gridDiv.className = "grid grid-cols-1 md:grid-cols-3 gap-4";
+    gridDiv.className = "grid grid-cols-1 md:grid-cols-3 gap-6";
     
     const createSection = (sectionTitle: string, sectionText: string, colorClass: string) => {
         const col = document.createElement('div');
         // Keep section color coding but ensure it fits the new container
-        col.className = `p-4 rounded-lg border flex flex-col h-full bg-opacity-10 ${colorClass}`;
-        if(colorClass.includes('blue')) col.classList.add('bg-blue-900', 'border-blue-500/20');
-        else if(colorClass.includes('purple')) col.classList.add('bg-purple-900', 'border-purple-500/20');
-        else if(colorClass.includes('orange')) col.classList.add('bg-orange-900', 'border-orange-500/20');
-        else col.classList.add('bg-gray-800', 'border-gray-700');
+        col.className = `p-4 rounded-sm border flex flex-col h-full bg-black border-gray-900`;
         const secHeader = document.createElement('div');
-        secHeader.className = "flex justify-between items-center mb-2";
+        secHeader.className = "flex justify-between items-center mb-3";
         const secH = document.createElement('h5');
-        secH.className = "font-bold text-xs uppercase tracking-wider opacity-90 text-white";
+        secH.className = "font-bold text-[10px] uppercase tracking-widest text-gray-300";
         secH.textContent = sectionTitle;
         const actions = document.createElement('div');
-        actions.className = "flex gap-1";
+        actions.className = "flex gap-2";
         actions.appendChild(createMiniBtn(iconCopy, async (btn) => { 
             const success = await copyToClipboard(sectionText, btn, iconCheck, iconCopy);
             if (success) {
@@ -869,7 +865,7 @@ function createMultiViewCardHTML(id: string, title: string, content: string, com
         }, "Copy"));
         secHeader.appendChild(secH); secHeader.appendChild(actions);
         const p = document.createElement('p');
-        p.className = "text-gray-300 text-sm whitespace-pre-line font-mono mt-1";
+        p.className = "text-green-100 text-xs whitespace-pre-line font-mono leading-relaxed";
         p.textContent = sectionText;
         col.appendChild(secHeader); col.appendChild(p);
         return col;
@@ -912,7 +908,7 @@ function showStatus(message: string, isError = false) {
   statusMsg.textContent = message;
   statusMsg.className = isError 
     ? 'text-center text-xs text-red-400 h-4 truncate font-bold' 
-    : 'text-center text-xs text-gray-500 h-4 truncate';
+    : 'text-center text-xs text-gray-200 h-4 truncate';
   
   // Auto clear after 5 seconds
   setTimeout(() => {
@@ -1143,7 +1139,7 @@ function updateLanguageUI() {
     setText(getEl('lbl-custom-instruction'), t.lblCustomInstruction);
     setText(getEl('btn-generate-custom-text'), t.btnGenerateCustom);
     setText(getEl('style-watercolor-text'), t.artisticStyles.watercolor);
-    setText(getEl('style-blue-ink-text'), t.artisticStyles.blueInk);
+    setText(getEl('style-purple-ink-text'), t.artisticStyles.blueInk);
     setText(getEl('style-clean-line-text'), t.artisticStyles.cleanLine);
     setText(getEl('style-black-ink-text'), t.artisticStyles.blackInk);
     setText(getEl('style-red-ink-text'), t.artisticStyles.redInk);
@@ -1191,6 +1187,7 @@ function updateLanguageUI() {
     removeClass(tabMultiView, 'active');
     removeClass(tabNotes, 'active');
     removeClass(tabTextOverlay, 'active');
+    removeClass(tabArtistic, 'active');
 
     if (activeTab === 'analysis') {
         setHidden(panelAnalysis, false);
@@ -1360,7 +1357,7 @@ function renderArtisticResults() {
     if (!artisticResults) return;
     if (artisticHistory.length === 0) {
         artisticResults.innerHTML = `
-        <div class="text-center py-12 text-gray-600">
+        <div class="text-center py-12 text-gray-400 font-mono text-[10px] uppercase tracking-widest">
              ${currentLang === 'en' ? 'Upload images and select a style to begin.' : 'Tải ảnh lên và chọn một phong cách để bắt đầu.'}
         </div>`;
         return;
@@ -1370,26 +1367,26 @@ function renderArtisticResults() {
     [...artisticHistory].reverse().forEach((entry, idx) => {
         const realIndex = artisticHistory.length - 1 - idx;
         const card = document.createElement('div');
-        card.className = "w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group";
+        card.className = "w-full border border-green-500/20 rounded-sm bg-black relative transition hover:border-green-500/50 mb-4 collapsible-card group";
         card.innerHTML = `
-            <div class="flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none">
-                 <div class="flex items-center gap-2">
-                     <span class="chevron-icon text-yellow-500 mr-1 transition-transform">
+            <div class="flex justify-between items-center p-4 border-b border-green-500/20 cursor-pointer card-header select-none">
+                 <div class="flex items-center gap-3">
+                     <span class="chevron-icon text-green-400 transition-transform duration-200">
                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                      </span>
-                     <h3 class="text-xs font-bold text-gray-400 uppercase">${entry.style}</h3>
+                     <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">${entry.style}</h3>
                  </div>
                  <div class="flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
-                      <button class="btn-copy-artistic p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition" title="Copy"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
-                      <button class="btn-delete-artistic p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded transition" title="Delete"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                      <button class="btn-copy-artistic p-1.5 text-gray-700 hover:text-green-400 transition" title="Copy"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                      <button class="btn-delete-artistic p-1.5 text-gray-700 hover:text-red-500 transition" title="Delete"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                  </div>
             </div>
-            <div class="card-content p-4">
-                <p class="text-sm text-gray-300 whitespace-pre-line font-mono leading-relaxed pl-2 border-l-2 border-blue-500/30">${entry[currentLang]}</p>
+            <div class="card-content p-6">
+                <p class="text-green-300 text-xs whitespace-pre-line font-mono leading-relaxed pl-4 border-l border-green-500/30">${entry[currentLang]}</p>
             </div>
         `;
         
-        card.querySelector('.btn-copy-artistic')?.addEventListener('click', () => copyToClipboard(entry[currentLang], card.querySelector('.btn-copy-artistic') as HTMLElement, '<svg class="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>', '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>'));
+        card.querySelector('.btn-copy-artistic')?.addEventListener('click', () => copyToClipboard(entry[currentLang], card.querySelector('.btn-copy-artistic') as HTMLElement, '<svg class="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>', '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>'));
         card.querySelector('.btn-delete-artistic')?.addEventListener('click', () => { artisticHistory.splice(realIndex, 1); renderArtisticResults(); });
         card.querySelector('.card-header')?.addEventListener('click', () => {
              const content = card.querySelector('.card-content') as HTMLElement;
@@ -1406,7 +1403,7 @@ function renderNotesResults() {
     if (!notesResults) return;
     if (notesHistory.length === 0) {
         notesResults.innerHTML = `
-        <div class="text-center py-12 text-gray-600">
+        <div class="text-center py-12 text-gray-400 font-mono text-[10px] uppercase tracking-widest">
              ${currentLang === 'en' ? 'Upload images and click "Extract & Translate Notes" to begin.' : 'Tải ảnh lên và nhấn "Trích Xuất & Dịch Ghi Chú" để bắt đầu.'}
         </div>`;
         return;
@@ -1415,30 +1412,30 @@ function renderNotesResults() {
     notesResults.innerHTML = '';
     notesHistory.forEach((note, idx) => {
         const card = document.createElement('div');
-        // Unified Style: Gray bg with 40% opacity, border gray-700
-        card.className = "w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group";
+        // Unified Style: Black bg, border green-500/20, rounded-sm
+        card.className = "w-full border border-green-500/20 rounded-sm bg-black relative transition hover:border-green-500/50 mb-4 collapsible-card group";
         
         // Header
         const header = document.createElement('div');
-        header.className = "flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none";
+        header.className = "flex justify-between items-center p-4 border-b border-green-500/20 cursor-pointer card-header select-none";
         header.innerHTML = `
-            <div class="flex items-center gap-2">
-                <span class="chevron-icon text-yellow-500 mr-1"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></span>
-                <h3 class="text-xs font-bold text-gray-400 uppercase">Note #${idx+1}: ${note.file.name}</h3>
+            <div class="flex items-center gap-3">
+                <span class="chevron-icon text-green-400 transition-transform duration-200"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></span>
+                <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Note #${idx+1}: ${note.file.name}</h3>
             </div>
         `;
         header.onclick = () => card.classList.toggle('card-collapsed');
 
         // Content
         const content = document.createElement('div');
-        content.className = "card-content p-4";
+        content.className = "card-content p-6";
         
         const row = document.createElement('div');
-        row.className = "flex flex-col md:flex-row gap-4 overflow-hidden";
+        row.className = "flex flex-col md:flex-row gap-6 overflow-hidden";
         
         // Col 1: Image
         const imgContainer = document.createElement('div');
-        imgContainer.className = "w-full md:w-1/4 shrink-0 relative group cursor-pointer border border-gray-700 rounded-lg overflow-hidden bg-black";
+        imgContainer.className = "w-full md:w-1/4 shrink-0 relative group cursor-pointer border border-green-500/20 rounded-sm overflow-hidden bg-black";
         const img = document.createElement('img');
         img.src = URL.createObjectURL(note.file);
         img.className = "w-full h-48 md:h-full object-contain hover:scale-105 transition-transform duration-300";
@@ -1454,15 +1451,15 @@ function renderNotesResults() {
         // Helper to create content column
         const createContentCol = (title: string, text: string, color: string) => {
             const col = document.createElement('div');
-            col.className = "flex-1 flex border border-gray-800 rounded-lg overflow-hidden bg-gray-900/30";
+            col.className = "flex-1 flex border border-green-500/20 rounded-sm overflow-hidden bg-black";
             
             // Sidebar
             const sidebar = document.createElement('div');
-            sidebar.className = "w-10 flex flex-col items-center gap-2 py-3 bg-gray-800/50 border-r border-gray-800";
+            sidebar.className = "w-12 flex flex-col items-center gap-3 py-4 bg-black border-r border-green-500/20";
             
             // Copy Btn
             const copyBtn = document.createElement('button');
-            copyBtn.className = `p-1.5 text-gray-500 hover:text-${color}-400 hover:bg-${color}-500/10 rounded transition`;
+            copyBtn.className = `p-1.5 text-gray-700 hover:text-green-400 transition`;
             copyBtn.innerHTML = iconCopy;
             copyBtn.onclick = async (e) => {
                  e.stopPropagation();
@@ -1477,7 +1474,7 @@ function renderNotesResults() {
             
             // Download Btn
             const dlBtn = document.createElement('button');
-            dlBtn.className = `p-1.5 text-gray-500 hover:text-${color}-400 hover:bg-${color}-500/10 rounded transition`;
+            dlBtn.className = `p-1.5 text-gray-700 hover:text-green-400 transition`;
             dlBtn.innerHTML = iconDl;
             dlBtn.onclick = (e) => { e.stopPropagation(); triggerDownload(text, `Note_${title}.txt`); };
 
@@ -1486,12 +1483,12 @@ function renderNotesResults() {
             
             // Text Content
             const contentDiv = document.createElement('div');
-            contentDiv.className = "flex-1 p-3";
+            contentDiv.className = "flex-1 p-4";
             const h4 = document.createElement('h4');
-            h4.className = `text-xs font-bold text-${color}-400 mb-2 uppercase`;
+            h4.className = `text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-widest`;
             h4.textContent = title;
             const p = document.createElement('p');
-            p.className = "text-sm text-gray-300 font-mono whitespace-pre-wrap leading-relaxed";
+            p.className = "text-green-300 text-xs font-mono whitespace-pre-wrap leading-relaxed";
             p.textContent = text;
             
             contentDiv.appendChild(h4);
@@ -1547,22 +1544,22 @@ function renderOverlaySlots() {
     
     overlaySlots.forEach((slot, index) => {
         const slotEl = document.createElement('div');
-        slotEl.className = "w-full border border-gray-700 rounded-xl bg-gray-900/40 relative transition hover:border-gray-500 mb-4 collapsible-card group";
+        slotEl.className = "w-full border border-green-500/20 rounded-sm bg-black relative transition hover:border-green-500/50 mb-4 collapsible-card group";
         if (slot.isCollapsed) {
             slotEl.classList.add('card-collapsed');
         }
         
         // Header
         const header = document.createElement('div');
-        header.className = "flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer card-header select-none";
+        header.className = "flex justify-between items-center p-4 border-b border-green-500/20 cursor-pointer card-header select-none";
         
         const titleDiv = document.createElement('div');
-        titleDiv.className = "flex items-center gap-2";
+        titleDiv.className = "flex items-center gap-3";
         const triangleIcon = document.createElement('div');
         triangleIcon.innerHTML = `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>`;
-        triangleIcon.className = "chevron-icon text-yellow-500 transition-transform duration-200";
+        triangleIcon.className = "chevron-icon text-green-400 transition-transform duration-200";
         const span = document.createElement('span');
-        span.className = "text-xs font-bold text-gray-400 uppercase";
+        span.className = "text-[10px] font-bold text-gray-500 uppercase tracking-widest";
         span.innerText = `Slot ${index + 1}`;
         titleDiv.appendChild(triangleIcon);
         titleDiv.appendChild(span);
@@ -1588,26 +1585,26 @@ function renderOverlaySlots() {
 
         // Content
         const cardContent = document.createElement('div');
-        cardContent.className = "card-content p-4";
+        cardContent.className = "card-content p-6";
 
         // Grid Content (3 columns horizontal)
         const gridContent = document.createElement('div');
-        gridContent.className = "grid grid-cols-1 lg:grid-cols-3 gap-4";
+        gridContent.className = "grid grid-cols-1 lg:grid-cols-3 gap-6";
 
         // --- Column 1: Upload / Preview ---
         const colUpload = document.createElement('div');
-        colUpload.className = "flex flex-col gap-2";
-        colUpload.innerHTML = `<label class="text-[10px] text-gray-500 font-bold uppercase">1. Source Image</label>`;
+        colUpload.className = "flex flex-col gap-3";
+        colUpload.innerHTML = `<label class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">1. Source Image</label>`;
         
         const imgZone = document.createElement('div');
-        imgZone.className = "flex-1 min-h-[300px] rounded-lg bg-black border border-gray-800 relative overflow-hidden group/zone cursor-pointer flex items-center justify-center";
+        imgZone.className = "flex-1 min-h-[300px] rounded-sm bg-black border border-green-500/20 relative overflow-hidden group/zone cursor-pointer flex items-center justify-center";
         
         if (slot.imgSrc) {
             const img = document.createElement('img');
             img.src = slot.imgSrc;
             img.className = "w-full h-full object-contain opacity-90";
             const clearImgBtn = document.createElement('button');
-            clearImgBtn.className = "absolute top-1 right-1 bg-red-600/80 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs opacity-0 group-hover/zone:opacity-100 transition-opacity z-10";
+            clearImgBtn.className = "absolute top-2 right-2 bg-red-600/80 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs opacity-0 group-hover/zone:opacity-100 transition-opacity z-10";
             clearImgBtn.innerHTML = "×";
             clearImgBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -1616,8 +1613,8 @@ function renderOverlaySlots() {
             imgZone.appendChild(img);
             imgZone.appendChild(clearImgBtn);
         } else {
-            imgZone.innerHTML = `<p class="text-xs text-gray-500 text-center px-2">Click/Drop Image</p>`;
-            imgZone.classList.add("border-dashed", "hover:bg-gray-800");
+            imgZone.innerHTML = `<p class="text-[10px] text-gray-700 uppercase tracking-widest text-center px-4">Click/Drop Image</p>`;
+            imgZone.classList.add("border-dashed", "hover:bg-gray-900");
         }
         
         const slotInput = document.createElement('input');
@@ -1633,12 +1630,12 @@ function renderOverlaySlots() {
             imgZone.onclick = () => slotInput.click();
         }
         
-        imgZone.ondragover = (e) => { e.preventDefault(); e.stopPropagation(); imgZone.classList.add('border-blue-500'); };
-        imgZone.ondragleave = (e) => { e.preventDefault(); e.stopPropagation(); imgZone.classList.remove('border-blue-500'); };
+        imgZone.ondragover = (e) => { e.preventDefault(); e.stopPropagation(); imgZone.classList.add('border-purple-500'); };
+        imgZone.ondragleave = (e) => { e.preventDefault(); e.stopPropagation(); imgZone.classList.remove('border-purple-500'); };
         imgZone.ondrop = async (e) => {
             e.preventDefault();
             e.stopPropagation();
-            imgZone.classList.remove('border-blue-500');
+            imgZone.classList.remove('border-purple-500');
             
             const files = Array.from(e.dataTransfer?.files || []).filter(f => f.type.startsWith('image/'));
             if (files.length === 0) return;
@@ -1675,11 +1672,11 @@ function renderOverlaySlots() {
 
         // --- Column 2: Text / Edit ---
         const colEdit = document.createElement('div');
-        colEdit.className = "flex flex-col gap-2";
-        colEdit.innerHTML = `<label class="text-[10px] text-gray-500 font-bold uppercase">2. Edit Text</label>`;
+        colEdit.className = "flex flex-col gap-3";
+        colEdit.innerHTML = `<label class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">2. Edit Text</label>`;
         
         const textArea = document.createElement('textarea');
-        textArea.className = "flex-1 h-64 bg-black/30 border border-gray-700 rounded p-3 text-sm text-white focus:border-yellow-500 outline-none resize-none overlay-textarea";
+        textArea.className = "flex-1 h-64 bg-black border border-gray-900 rounded-sm p-4 text-xs text-green-300 focus:border-green-500 outline-none resize-none overlay-textarea font-mono";
         textArea.setAttribute('data-slot-index', index.toString()); // For keyboard shortcut
         textArea.style.fontFamily = `"${globalFont}", sans-serif`;
         textArea.placeholder = "Enter overlay text here...";
@@ -1693,20 +1690,20 @@ function renderOverlaySlots() {
         }
         
         const controls = document.createElement('div');
-        controls.className = "flex gap-2 mt-auto h-8";
+        controls.className = "flex gap-2 mt-auto h-10";
         
         const themeBtn = document.createElement('button');
-        themeBtn.className = `flex-1 rounded border text-[10px] font-bold transition-colors ${slot.isDarkText ? 'bg-gray-200 text-black border-white' : 'bg-gray-800 text-gray-400 border-gray-600'}`;
+        themeBtn.className = `flex-1 rounded-sm border text-[10px] font-bold uppercase tracking-widest transition-colors ${slot.isDarkText ? 'bg-white text-black border-white' : 'bg-black text-gray-500 border-gray-900 hover:border-green-500/50'}`;
         themeBtn.innerText = slot.isDarkText ? "Dark Text" : "Light Text";
         themeBtn.onclick = () => updateSlot(index, { isDarkText: !slot.isDarkText });
 
         const bgBtn = document.createElement('button');
-        bgBtn.className = `flex-1 rounded border text-[10px] font-bold transition-colors ${slot.hasBackground ? 'bg-gray-700 text-white border-gray-500' : 'bg-transparent text-gray-500 border-gray-700'}`;
+        bgBtn.className = `flex-1 rounded-sm border text-[10px] font-bold uppercase tracking-widest transition-colors ${slot.hasBackground ? 'bg-gray-900 text-white border-gray-700' : 'bg-transparent text-gray-700 border-gray-900 hover:border-green-500/50'}`;
         bgBtn.innerText = slot.hasBackground ? "BG: ON" : "BG: OFF";
         bgBtn.onclick = () => updateSlot(index, { hasBackground: !slot.hasBackground });
 
         const translateBtn = document.createElement('button');
-        translateBtn.className = "w-10 rounded border border-blue-600 bg-blue-900/30 text-blue-400 hover:bg-blue-800 hover:text-white flex items-center justify-center transition-colors";
+        translateBtn.className = "w-12 rounded-sm border border-gray-900 bg-black text-gray-500 hover:text-green-400 hover:border-green-500/50 flex items-center justify-center transition-colors";
         translateBtn.title = "Translate (VN/EN)";
         translateBtn.innerHTML = slot.isTranslating 
             ? `<svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`
@@ -1714,7 +1711,7 @@ function renderOverlaySlots() {
         translateBtn.onclick = () => handleTranslate(index);
         
         const embedBtn = document.createElement('button');
-        embedBtn.className = "flex-1 rounded border border-yellow-600 bg-yellow-600/20 text-yellow-500 hover:bg-yellow-600 hover:text-black font-bold text-[10px] uppercase transition-colors";
+        embedBtn.className = "flex-1 rounded-sm border border-green-500/50 bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-black font-bold text-[10px] uppercase tracking-widest transition-colors";
         embedBtn.innerText = "Embed";
         embedBtn.onclick = () => processSlotEmbed(index);
 
@@ -1727,11 +1724,11 @@ function renderOverlaySlots() {
 
         // --- Column 3: Result ---
         const colResult = document.createElement('div');
-        colResult.className = "flex flex-col gap-2";
-        colResult.innerHTML = `<label class="text-[10px] text-green-500 font-bold uppercase">3. Result Output</label>`;
+        colResult.className = "flex flex-col gap-3";
+        colResult.innerHTML = `<label class="text-[10px] text-green-400 font-bold uppercase tracking-widest">3. Result Output</label>`;
         
         const resultImgZone = document.createElement('div');
-        resultImgZone.className = "flex-1 min-h-[300px] rounded-lg bg-black border border-gray-700 relative overflow-hidden flex items-center justify-center";
+        resultImgZone.className = "flex-1 min-h-[300px] rounded-sm bg-black border border-gray-900 relative overflow-hidden flex items-center justify-center";
         
         if (slot.resultSrc) {
             resultImgZone.classList.add("cursor-zoom-in", "group/zone");
@@ -1743,10 +1740,10 @@ function renderOverlaySlots() {
             
             const zoomOverlay = document.createElement('div');
             zoomOverlay.className = "absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/zone:opacity-100 transition-opacity pointer-events-none";
-            zoomOverlay.innerHTML = `<span class="text-white text-xs font-bold bg-black/50 px-2 py-1 rounded">Zoom</span>`;
+            zoomOverlay.innerHTML = `<span class="text-white text-[10px] font-bold uppercase tracking-widest bg-black/50 px-3 py-1 rounded-sm">Zoom</span>`;
             
             const dlBtn = document.createElement('button');
-            dlBtn.className = "absolute top-1 right-1 bg-green-600/90 text-white p-1 rounded transition-colors z-10 pointer-events-auto hover:bg-green-500";
+            dlBtn.className = "absolute top-2 right-2 bg-green-600/90 text-white p-1.5 rounded-sm transition-colors z-10 pointer-events-auto hover:bg-green-500";
             dlBtn.title = "Download";
             dlBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>`;
             dlBtn.onclick = (e) => {
@@ -1765,7 +1762,7 @@ function renderOverlaySlots() {
             resultImgZone.appendChild(zoomOverlay);
             resultImgZone.appendChild(dlBtn);
         } else {
-            resultImgZone.innerHTML = `<p class="text-xs text-gray-600 italic">Waiting for embed...</p>`;
+            resultImgZone.innerHTML = `<p class="text-xs text-gray-300 italic">Waiting for embed...</p>`;
         }
         
         colResult.appendChild(resultImgZone);
@@ -2423,8 +2420,8 @@ sigColorBtns.forEach(btn => {
         if (color) {
             globalSigBgColor = color;
             // Update UI active state
-            sigColorBtns.forEach(b => b.classList.remove('active', 'ring-2', 'ring-offset-1', 'ring-offset-[#18181a]', 'ring-blue-500'));
-            target.classList.add('active', 'ring-2', 'ring-offset-1', 'ring-offset-[#18181a]', 'ring-blue-500');
+            sigColorBtns.forEach(b => b.classList.remove('active', 'ring-2', 'ring-offset-1', 'ring-offset-[#18181a]', 'ring-purple-500'));
+            target.classList.add('active', 'ring-2', 'ring-offset-1', 'ring-offset-[#18181a]', 'ring-purple-500');
             showStatus(`Signature background: ${color}`);
             renderOverlaySlots(); 
         }
@@ -2459,17 +2456,17 @@ if (logoDropZone && logoFileInput) {
     logoDropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        logoDropZone.classList.add('border-blue-500', 'bg-gray-800');
+        logoDropZone.classList.add('border-purple-500', 'bg-gray-800');
     });
     logoDropZone.addEventListener('dragleave', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        logoDropZone.classList.remove('border-blue-500', 'bg-gray-800');
+        logoDropZone.classList.remove('border-purple-500', 'bg-gray-800');
     });
     logoDropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        logoDropZone.classList.remove('border-blue-500', 'bg-gray-800');
+        logoDropZone.classList.remove('border-purple-500', 'bg-gray-800');
         const file = e.dataTransfer?.files[0];
         if (file && file.type.startsWith('image/')) {
              const reader = new FileReader();
@@ -2798,11 +2795,11 @@ async function generateArtisticStyle(styleKey: string, styleName: string, styleP
 // Custom Style Reference Handlers
 if(dropZoneStyle) {
     dropZoneStyle.addEventListener('click', () => fileInputStyle?.click());
-    dropZoneStyle.addEventListener('dragover', (e) => { e.preventDefault(); addClass(dropZoneStyle, 'border-blue-500'); });
-    dropZoneStyle.addEventListener('dragleave', () => removeClass(dropZoneStyle, 'border-blue-500'));
+    dropZoneStyle.addEventListener('dragover', (e) => { e.preventDefault(); addClass(dropZoneStyle, 'border-purple-500'); });
+    dropZoneStyle.addEventListener('dragleave', () => removeClass(dropZoneStyle, 'border-purple-500'));
     dropZoneStyle.addEventListener('drop', (e) => {
         e.preventDefault();
-        removeClass(dropZoneStyle, 'border-blue-500');
+        removeClass(dropZoneStyle, 'border-purple-500');
         const file = e.dataTransfer?.files[0];
         if (file && file.type.startsWith('image/')) handleStyleRefFile(file);
     });

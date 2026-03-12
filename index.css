@@ -1,13 +1,21 @@
 
 :root {
   --font-body: 'Inter', sans-serif;
-  --font-special: 'Permanent Marker', cursive;
-  --yellow-primary: #facc15;
-  --yellow-secondary: #fde047;
-  --text-neutral-200: #e5e7eb;
-  --text-neutral-400: #9ca3af;
-  --text-neutral-500: #6b7280;
-  --text-neutral-700: #374151;
+  --font-mono: 'Courier Prime', monospace;
+  --neon-green: #52796f;
+  --neon-green-dim: rgba(82, 121, 111, 0.2);
+  --bg-dark: #18181b;
+  --bg-panel: #27272a;
+  --border-color: #3f3f46;
+}
+
+body {
+  background-color: var(--bg-dark);
+  background-image: 
+    linear-gradient(var(--border-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+  background-size: 40px 40px;
+  color: #e5e7eb;
 }
 
 /* --- Banner --- */
@@ -166,12 +174,47 @@
   }
 }
 
-@media (max-width: 500px) {
-    .banner-buttons {
-        gap: 0.75rem;
-    }
-    .banner-button {
-        font-size: 0.8rem;
-        padding: 0.4rem 0.8rem;
-    }
+/* --- Custom Styles --- */
+.neon-border {
+  border: 1px solid var(--neon-green);
+  box-shadow: 0 0 5px var(--neon-green-dim);
+}
+
+.neon-text {
+  color: var(--neon-green);
+  text-shadow: 0 0 5px var(--neon-green-dim);
+}
+
+.panel-bg {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+}
+
+.command-btn {
+  background: transparent;
+  border: 1px solid var(--neon-green);
+  color: var(--neon-green);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.2s;
+}
+
+.command-btn:hover {
+  background: var(--neon-green);
+  color: black;
+  box-shadow: 0 0 15px var(--neon-green);
+}
+
+.command-btn.active {
+  background: var(--neon-green);
+  color: black;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background-color: var(--neon-green);
+  box-shadow: 0 0 8px var(--neon-green);
 }
