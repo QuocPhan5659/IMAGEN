@@ -2195,9 +2195,39 @@ async function callGeminiImageEdit(prompt: string, file: File): Promise<string |
         { text: prompt }
     ];
 
+    // Determine aspect ratio for better results
+    let aspectRatio: any = "1:1";
+    try {
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const i = new Image();
+            i.onload = () => resolve(i);
+            i.onerror = reject;
+            i.src = URL.createObjectURL(file);
+        });
+        const ratio = img.width / img.height;
+        const supported = [
+            { n: "1:1", v: 1 }, { n: "4:3", v: 4/3 }, { n: "3:4", v: 3/4 },
+            { n: "16:9", v: 16/9 }, { n: "9:16", v: 9/16 }, { n: "4:1", v: 4 },
+            { n: "1:4", v: 1/4 }, { n: "8:1", v: 8 }, { n: "1:8", v: 1/8 }
+        ];
+        let closest = supported[0];
+        let minDiff = Math.abs(ratio - closest.v);
+        for (const s of supported) {
+            const d = Math.abs(ratio - s.v);
+            if (d < minDiff) { minDiff = d; closest = s; }
+        }
+        aspectRatio = closest.n;
+    } catch (e) { console.error("Ratio detection failed", e); }
+
     const response = await generateContentWithRetry(ai, {
-        model: 'gemini-2.5-flash-image',
-        contents: { parts: parts }
+        model: 'gemini-3.1-flash-image-preview',
+        contents: { parts: parts },
+        config: {
+            imageConfig: {
+                imageSize: "4K",
+                aspectRatio: aspectRatio
+            }
+        }
     });
 
     if (response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts) {
@@ -2218,13 +2248,69 @@ async function processLogoRemoval(index: number) {
     renderLogoRemovalSlots();
 
     try {
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const i = new Image();
+            i.onload = () => resolve(i);
+            i.onerror = reject;
+            i.src = slot.imgSrc!;
+        });
+
+        const width = img.naturalWidth;
+        const height = img.naturalHeight;
         const prompt = "Remove the Gemini star logo from this image. It is usually located in the bottom right corner. Fill the area seamlessly to match the surrounding architectural details. Do not change anything else in the image. Output the edited image.";
-        const result = await callGeminiImageEdit(prompt, slot.file);
-        if (result) {
-            slot.resultSrc = result;
-            showStatus("Logo removed successfully!");
+
+        // If image is very large, use patching to preserve resolution
+        if (width > 2048 || height > 2048) {
+            showStatus("High-Res Mode: Patching logo area...");
+            
+            // Define patch size - 1024 is good for Gemini
+            const patchSize = Math.min(width, height, 1024);
+            const startX = width - patchSize;
+            const startY = height - patchSize;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = patchSize;
+            canvas.height = patchSize;
+            const ctx = canvas.getContext('2d')!;
+            ctx.drawImage(img, startX, startY, patchSize, patchSize, 0, 0, patchSize, patchSize);
+            
+            const patchBlob = await new Promise<Blob | null>(r => canvas.toBlob(r, 'image/png', 1.0));
+            if (!patchBlob) throw new Error("Patch creation failed");
+            const patchFile = new File([patchBlob], "patch.png", { type: "image/png" });
+
+            const patchPrompt = "Remove the Gemini star logo from this image patch. It is located in the bottom right. Fill the area seamlessly to match the surrounding architectural details. Do not change anything else. Output the edited image.";
+            const editedPatchSrc = await callGeminiImageEdit(patchPrompt, patchFile);
+
+            if (editedPatchSrc) {
+                const editedPatchImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+                    const i = new Image();
+                    i.onload = () => resolve(i);
+                    i.onerror = reject;
+                    i.src = editedPatchSrc;
+                });
+
+                const finalCanvas = document.createElement('canvas');
+                finalCanvas.width = width;
+                finalCanvas.height = height;
+                const finalCtx = finalCanvas.getContext('2d')!;
+                finalCtx.drawImage(img, 0, 0);
+                // Draw the edited patch back
+                finalCtx.drawImage(editedPatchImg, 0, 0, editedPatchImg.width, editedPatchImg.height, startX, startY, patchSize, patchSize);
+                
+                slot.resultSrc = finalCanvas.toDataURL('image/png', 1.0);
+                showStatus("Logo removed (High-Res preserved)!");
+            } else {
+                showStatus("Patch processing failed.", true);
+            }
         } else {
-            showStatus("Failed to remove logo. No image returned.", true);
+            // Normal processing for smaller images
+            const result = await callGeminiImageEdit(prompt, slot.file);
+            if (result) {
+                slot.resultSrc = result;
+                showStatus("Logo removed successfully!");
+            } else {
+                showStatus("Failed to remove logo.", true);
+            }
         }
     } catch (e) {
         console.error("Logo removal failed:", e);
