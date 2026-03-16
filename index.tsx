@@ -25,7 +25,17 @@ let globalSigBgColor = '#00ff00'; // Default Neon Green
 // --- Application State ---
 type Lang = 'en' | 'vi';
 let currentLang: Lang = 'en';
-let activeTab: 'analysis' | 'multiview' | 'notes' | 'textOverlay' | 'artistic' = 'analysis';
+let activeTab: 'analysis' | 'multiview' | 'notes' | 'textOverlay' | 'artistic' | 'removeLogo' = 'analysis';
+
+// --- Logo Removal State ---
+interface LogoRemovalSlot {
+    id: string;
+    file: File | null;
+    imgSrc: string | null;
+    resultSrc: string | null;
+    isProcessing: boolean;
+}
+let logoRemovalSlots: LogoRemovalSlot[] = [];
 let currentSketchFile: File | null = null;
 let currentStyleRefFile: File | null = null;
 let currentFiles: File[] = [];
@@ -226,6 +236,7 @@ const translations = {
         tabNotes: "Notes",
         tabTextOverlay: "Text Overlay",
         tabArtistic: "Artistic Styles",
+        tabRemoveLogo: "Remove Logo",
         btnToSketch: "Photo to Sketch",
         titlePhotoToSketch: "Photo to Sketch Prompt",
         lblArtistic: "Artistic Style Transfer",
@@ -289,6 +300,7 @@ const translations = {
         tabNotes: "Ghi Chú",
         tabTextOverlay: "Chèn Chữ",
         tabArtistic: "Phong Cách Nghệ Thuật",
+        tabRemoveLogo: "Xóa Logo",
         btnToSketch: "Ảnh sang Sketch",
         titlePhotoToSketch: "Prompt Chuyển Ảnh sang Sketch",
         lblArtistic: "Chuyển Đổi Phong Cách Nghệ Thuật",
@@ -336,6 +348,7 @@ const translations = {
 // --- DOM Elements ---
 const tabAnalysis = getEl<HTMLButtonElement>('tab-analysis');
 const tabNotes = getEl<HTMLButtonElement>('tab-notes');
+const tabRemoveLogo = getEl<HTMLButtonElement>('tab-remove-logo');
 const tabMultiView = getEl<HTMLButtonElement>('tab-multiview');
 const tabArtistic = getEl<HTMLButtonElement>('tab-artistic');
 const tabTextOverlay = getEl<HTMLButtonElement>('tab-text-overlay');
@@ -399,6 +412,9 @@ const analysisCardsWrapper = getEl<HTMLDivElement>('analysis-cards-wrapper');
 const notesResults = getEl<HTMLDivElement>('notes-results');
 const artisticResults = getEl<HTMLDivElement>('artistic-results');
 const multiviewResults = getEl<HTMLDivElement>('multiview-results');
+const panelRemoveLogo = getEl<HTMLDivElement>('remove-logo-panel');
+const logoRemovalGrid = getEl<HTMLDivElement>('logo-removal-grid');
+const btnAddLogoSlot = getEl<HTMLButtonElement>('btn-add-logo-slot');
 
 const analyzeBtn = getEl<HTMLButtonElement>('analyze-btn');
 const analyzeViBtn = getEl<HTMLButtonElement>('analyze-vi-btn');
@@ -1152,6 +1168,7 @@ function updateLanguageUI() {
     if(tabMultiView) setText(tabMultiView, t.tabMultiView);
     if(tabNotes) setText(tabNotes, t.tabNotes);
     if(tabArtistic) setText(tabArtistic, t.tabArtistic);
+    if(tabRemoveLogo) setText(tabRemoveLogo, t.tabRemoveLogo);
     if(tabTextOverlay) setText(tabTextOverlay, t.tabTextOverlay);
     setText(lblAngleCount, t.lblAngleCount);
     setText(lblCustomAngle, t.lblCustomAngle);
@@ -1204,6 +1221,7 @@ function updateLanguageUI() {
     setHidden(sketchContainer, true);
     setHidden(multiviewContextContainer, true);
     setHidden(panelTextOverlaySettings, true);
+    setHidden(panelRemoveLogo, true);
     
     setHidden(analysisCardsWrapper, true);
     setHidden(multiviewResults, true);
@@ -1219,6 +1237,7 @@ function updateLanguageUI() {
     removeClass(tabNotes, 'active');
     removeClass(tabTextOverlay, 'active');
     removeClass(tabArtistic, 'active');
+    removeClass(tabRemoveLogo, 'active');
 
     if (activeTab === 'analysis') {
         setHidden(panelAnalysis, false);
@@ -1258,6 +1277,12 @@ function updateLanguageUI() {
         if (overlaySlots.length === 0) initOverlaySlots();
         renderOverlaySlots();
         setHidden(globalActionsBar, false); // Visible for Text Overlay too
+    } else if (activeTab === 'removeLogo') {
+        setHidden(panelRemoveLogo, false);
+        setHidden(globalActionsBar, false);
+        addClass(tabRemoveLogo, 'active');
+        if (logoRemovalSlots.length === 0) initLogoRemovalSlots();
+        renderLogoRemovalSlots();
     }
 
     // Single Analysis Content
@@ -1289,6 +1314,7 @@ function updateLanguageUI() {
     if(activeTab === 'multiview') renderMultiViewResults();
     if(activeTab === 'artistic') renderArtisticResults();
     if(activeTab === 'notes') renderNotesResults();
+    if(activeTab === 'removeLogo') renderLogoRemovalSlots();
 
     // Lang Toggle Style
     if (langEnLabel && langViLabel) {
@@ -1847,6 +1873,183 @@ async function handleTranslate(index: number) {
     }
 }
 
+// --- Logo Removal Functions ---
+function initLogoRemovalSlots() {
+    logoRemovalSlots = [
+        createEmptyLogoSlot(),
+        createEmptyLogoSlot(),
+        createEmptyLogoSlot()
+    ];
+}
+
+function createEmptyLogoSlot(): LogoRemovalSlot {
+    return {
+        id: Math.random().toString(36).substr(2, 9),
+        file: null,
+        imgSrc: null,
+        resultSrc: null,
+        isProcessing: false
+    };
+}
+
+function renderLogoRemovalSlots() {
+    if (!logoRemovalGrid) return;
+    logoRemovalGrid.innerHTML = '';
+
+    logoRemovalSlots.forEach((slot, index) => {
+        const slotEl = document.createElement('div');
+        slotEl.className = "w-full border border-green-500/20 rounded-none bg-black/40 relative transition hover:border-green-500/40 p-4 flex flex-col gap-4 group";
+        
+        // Header
+        const header = document.createElement('div');
+        header.className = "flex justify-between items-center border-b border-green-500/10 pb-2";
+        header.innerHTML = `<span class="text-[9px] font-bold text-gray-600 uppercase tracking-widest">Slot ${index + 1}</span>`;
+        
+        const delBtn = document.createElement('button');
+        delBtn.className = "text-xs text-red-500 hover:text-red-300 px-2";
+        delBtn.innerHTML = "×";
+        delBtn.onclick = () => {
+            logoRemovalSlots.splice(index, 1);
+            renderLogoRemovalSlots();
+        };
+        header.appendChild(delBtn);
+        slotEl.appendChild(header);
+
+        // Upload/Preview Area
+        const uploadArea = document.createElement('div');
+        uploadArea.className = "relative h-48 border border-dashed border-gray-800 rounded-none flex items-center justify-center cursor-pointer hover:bg-gray-900/50 transition-all overflow-hidden";
+        
+        if (slot.imgSrc) {
+            const img = document.createElement('img');
+            img.src = slot.imgSrc;
+            img.className = "w-full h-full object-contain";
+            uploadArea.appendChild(img);
+            
+            const clearBtn = document.createElement('button');
+            clearBtn.className = "absolute top-1 right-1 bg-red-900/80 text-white w-5 h-5 rounded-none flex items-center justify-center text-xs hover:bg-red-600 z-10";
+            clearBtn.innerHTML = "×";
+            clearBtn.onclick = (e) => {
+                e.stopPropagation();
+                slot.file = null;
+                slot.imgSrc = null;
+                slot.resultSrc = null;
+                renderLogoRemovalSlots();
+            };
+            uploadArea.appendChild(clearBtn);
+        } else {
+            uploadArea.innerHTML = `
+                <div class="text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span class="text-[8px] text-gray-600 uppercase font-bold tracking-tighter">Upload Image</span>
+                </div>
+            `;
+            uploadArea.onclick = () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) handleLogoSlotFile(index, file);
+                };
+                input.click();
+            };
+        }
+        slotEl.appendChild(uploadArea);
+
+        // Result Area (if exists)
+        if (slot.resultSrc) {
+            const resultArea = document.createElement('div');
+            resultArea.className = "relative h-48 border border-green-500/20 rounded-none overflow-hidden group/res";
+            const resImg = document.createElement('img');
+            resImg.src = slot.resultSrc;
+            resImg.className = "w-full h-full object-contain";
+            resultArea.appendChild(resImg);
+            
+            const dlBtn = document.createElement('button');
+            dlBtn.className = "absolute bottom-2 right-2 bg-green-600 text-white p-1.5 rounded-none hover:bg-green-500 transition-colors opacity-0 group-hover/res:opacity-100";
+            dlBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>`;
+            dlBtn.onclick = () => {
+                const a = document.createElement('a');
+                a.href = slot.resultSrc!;
+                a.download = `Cleaned_${slot.file?.name || 'image.png'}`;
+                a.click();
+            };
+            resultArea.appendChild(dlBtn);
+            slotEl.appendChild(resultArea);
+        }
+
+        // Action Button
+        const genBtn = document.createElement('button');
+        genBtn.className = `w-full py-2 text-[10px] font-bold uppercase tracking-widest transition-all ${slot.isProcessing ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500 hover:text-black'}`;
+        genBtn.innerHTML = slot.isProcessing ? 'Processing...' : 'GEN (Remove Logo)';
+        genBtn.disabled = slot.isProcessing || !slot.file;
+        genBtn.onclick = () => processLogoRemoval(index);
+        slotEl.appendChild(genBtn);
+
+        logoRemovalGrid.appendChild(slotEl);
+    });
+}
+
+async function handleLogoSlotFile(index: number, file: File) {
+    const src = URL.createObjectURL(file);
+    logoRemovalSlots[index].file = file;
+    logoRemovalSlots[index].imgSrc = src;
+    logoRemovalSlots[index].resultSrc = null;
+    renderLogoRemovalSlots();
+}
+
+async function callGeminiImageEdit(prompt: string, file: File): Promise<string | null> {
+    const apiKey = customApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey.trim() === "") { await openApiKeyDialog(); return null; }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const parts: any[] = [
+        await processFileForGemini(file),
+        { text: prompt }
+    ];
+
+    const response = await generateContentWithRetry(ai, {
+        model: 'gemini-2.5-flash-image',
+        contents: { parts: parts }
+    });
+
+    if (response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts) {
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            }
+        }
+    }
+    return null;
+}
+
+async function processLogoRemoval(index: number) {
+    const slot = logoRemovalSlots[index];
+    if (!slot.file) return;
+
+    slot.isProcessing = true;
+    renderLogoRemovalSlots();
+
+    try {
+        const prompt = "Remove the Gemini star logo from this image. It is usually located in the bottom right corner. Fill the area seamlessly to match the surrounding architectural details. Do not change anything else in the image. Output the edited image.";
+        const result = await callGeminiImageEdit(prompt, slot.file);
+        if (result) {
+            slot.resultSrc = result;
+            showStatus("Logo removed successfully!");
+        } else {
+            showStatus("Failed to remove logo. No image returned.", true);
+        }
+    } catch (e) {
+        console.error("Logo removal failed:", e);
+        showStatus("Logo removal failed. Check console.", true);
+    } finally {
+        slot.isProcessing = false;
+        renderLogoRemovalSlots();
+    }
+}
+
 // Embed Function (Canvas based)
 function processSlotEmbed(index: number) {
     const slot = overlaySlots[index];
@@ -2245,6 +2448,7 @@ if (tabAnalysis) tabAnalysis.addEventListener('click', () => { activeTab = 'anal
 if (tabMultiView) tabMultiView.addEventListener('click', () => { activeTab = 'multiview'; updateLanguageUI(); });
 if (tabArtistic) tabArtistic.addEventListener('click', () => { activeTab = 'artistic'; updateLanguageUI(); });
 if (tabNotes) tabNotes.addEventListener('click', () => { activeTab = 'notes'; updateLanguageUI(); });
+if (tabRemoveLogo) tabRemoveLogo.addEventListener('click', () => { activeTab = 'removeLogo'; updateLanguageUI(); });
 if (tabTextOverlay) tabTextOverlay.addEventListener('click', () => { activeTab = 'textOverlay'; updateLanguageUI(); });
 
 // Global Toolbar Events
@@ -2271,6 +2475,13 @@ if (btnAddSlot) {
         overlaySlots.push(createEmptySlot());
         renderOverlaySlots();
         setTimeout(() => overlayGrid?.scrollTo({ top: overlayGrid.scrollHeight, behavior: 'smooth' }), 100);
+    });
+}
+if (btnAddLogoSlot) {
+    btnAddLogoSlot.addEventListener('click', () => {
+        logoRemovalSlots.push(createEmptyLogoSlot());
+        renderLogoRemovalSlots();
+        setTimeout(() => logoRemovalGrid?.scrollTo({ top: logoRemovalGrid.scrollHeight, behavior: 'smooth' }), 100);
     });
 }
 if (btnEmbedAll) {

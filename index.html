@@ -164,6 +164,7 @@
             <button id="tab-multiview" class="gold-btn">Multi-View</button>
             <button id="tab-artistic" class="gold-btn">Artistic Styles</button>
             <button id="tab-notes" class="gold-btn">Notes</button>
+            <button id="tab-remove-logo" class="gold-btn">Remove Logo</button>
             <button id="tab-text-overlay" class="gold-btn">Text Overlay</button>
         </nav>
     </header>
@@ -720,6 +721,25 @@
                 <!-- 5. ARTISTIC RESULTS -->
                 <div id="artistic-results" class="hidden pb-20 space-y-4">
                     <!-- JS Injected -->
+                </div>
+
+                <!-- 6. REMOVE LOGO TAB -->
+                <div id="remove-logo-panel" class="hidden pb-20 space-y-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h2 id="lbl-remove-logo-title" class="text-lg font-black text-white tracking-tighter uppercase">Gemini Logo Removal</h2>
+                            <p id="lbl-remove-logo-desc" class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Clean your images by removing the Gemini star logo while preserving all architectural details.</p>
+                        </div>
+                        <button id="btn-add-logo-slot" class="p-2 bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 transition-all rounded-none" title="Add New Slot">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div id="logo-removal-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Slots will be injected here -->
+                    </div>
                 </div>
 
             </div>
