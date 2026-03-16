@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Architectural AI Analyst</title>
-    <script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773276362719&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2F922116c2-6230-49be-98ca-52a96df11d4f%2Ffile%2Ff1a93e489f4cce1797dd226ba7d6b78402431bf852c63a7c3e11a461f9525e39&amp;app=opera.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773276362719&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773270964405&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2Fa30fcdd5-728f-40f5-9842-eceaf2fa7c27%2Ffile%2Ff0e017ab3f1ae90a29de33819339b1eb99d419d8da179346fa7ad716ef052abb&amp;app=msedge.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773270964405&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773636621290&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2Fa30fcdd5-728f-40f5-9842-eceaf2fa7c27%2Ffile%2F3747b7c44210ad589865c3f0b1c04955fe95fd46fc4579bd7ad11d9047023e62&amp;app=msedge.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773636621290&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773276362719&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2F922116c2-6230-49be-98ca-52a96df11d4f%2Ffile%2Ff1a93e489f4cce1797dd226ba7d6b78402431bf852c63a7c3e11a461f9525e39&amp;app=opera.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773276362719&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773270964405&amp;type=content-script&amp;dmn=aistudio.google.com&amp;url=https%3A%2F%2Faistudio.google.com%2F_%2Fupload%2Fa30fcdd5-728f-40f5-9842-eceaf2fa7c27%2Ffile%2Ff0e017ab3f1ae90a29de33819339b1eb99d419d8da179346fa7ad716ef052abb&amp;app=msedge.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4f95084d1e8a47b6ab665a7357c" src="//local.adguard.org?ts=1773270964405&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -346,6 +346,9 @@
                         <button id="analyze-btn" class="command-btn py-4 px-4 flex items-center justify-center gap-3 group">
                             <span id="btn-analyze-text" class="text-xs font-bold tracking-[0.2em]">Execute Analysis</span>
                         </button>
+                        <button id="analyze-vi-btn" class="command-btn py-4 px-4 flex items-center justify-center gap-3 group">
+                            <span id="btn-analyze-vi-text" class="text-xs font-bold tracking-[0.2em]">Phân Tích Chi Tiết</span>
+                        </button>
                         <button id="btn-to-sketch-prompt" class="command-btn py-4 px-4 flex items-center justify-center gap-3 group border-gray-800 text-gray-500 hover:border-green-500 hover:text-green-400">
                             <span id="btn-to-sketch-text" class="text-xs font-bold tracking-[0.2em]">Sketch Protocol</span>
                         </button>
@@ -522,9 +525,6 @@
                 
                 <!-- 1. ANALYSIS TAB -->
                 <div id="analysis-cards-wrapper" class="space-y-4 pb-20">
-                     <!-- Helper: Card Generator -->
-                     <!-- We construct these cards statically for better control, but data is dynamic -->
-                     
                      <!-- Prompt Card (Highlighted) -->
                      <div class="w-full border border-green-500/20 rounded-none bg-black relative transition hover:border-green-500/50 mb-4 collapsible-card group">
                         <div class="flex justify-between items-center p-4 border-b border-green-500/20 cursor-pointer card-header select-none">

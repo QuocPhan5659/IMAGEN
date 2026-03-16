@@ -401,6 +401,7 @@ const artisticResults = getEl<HTMLDivElement>('artistic-results');
 const multiviewResults = getEl<HTMLDivElement>('multiview-results');
 
 const analyzeBtn = getEl<HTMLButtonElement>('analyze-btn');
+const analyzeViBtn = getEl<HTMLButtonElement>('analyze-vi-btn');
 const analyzeNotesBtn = getEl<HTMLButtonElement>('analyze-notes-btn');
 const btnAnalyzeNotesText = getEl('btn-analyze-notes-text');
 const btnArtisticText = getEl('btn-artistic-text');
@@ -2940,6 +2941,47 @@ if(analyzeBtn) {
     });
 }
 
+if(analyzeViBtn) {
+    analyzeViBtn.addEventListener('click', async () => {
+        if (currentFiles.length === 0) { showStatus('Please upload files.', true); return; }
+        setLoading(true);
+        try {
+            const prompt = `
+                Role: Senior Architectural Technical Analyst.
+                Task: Analyze the provided images and provide a detailed architectural analysis in VIETNAMESE.
+                Focus on:
+                1. Architectural Style & Form.
+                2. Material Palette & Textures.
+                3. Key Distinctive Features.
+                4. Lighting & Atmosphere.
+                5. Context & Environment.
+                6. Composition & Camera.
+                
+                Output strictly valid JSON:
+                {
+                    "style": "...",
+                    "materials": "...",
+                    "lighting": "...",
+                    "context": "...",
+                    "composition": "..."
+                }
+            `;
+            const txt = await callGemini(prompt, currentFiles, null);
+            const data = extractJson(txt);
+            lastAnalysisData = data;
+            
+            // Populate UI
+            if(resStyle) setText(resStyle, data.style || "No result.");
+            if(resMaterial) setText(resMaterial, data.materials || "No result.");
+            if(resLighting) setText(resLighting, data.lighting || "No result.");
+            if(resContext) setText(resContext, data.context || "No result.");
+            if(resComposition) setText(resComposition, data.composition || "No result.");
+            
+            showStatus('Phân tích hoàn tất!');
+        } catch(e) { handleApiError(e, 'Error analyzing'); } finally { setLoading(false); }
+    });
+}
+
 // Detailed Object Analysis (New Handler)
 if(btnRunObjAnalysis) {
     btnRunObjAnalysis.addEventListener('click', async () => {
@@ -3237,7 +3279,7 @@ setupCardActions('res-collage-analysis', 'btn-copy-collage-analysis', 'btn-dl-co
 if (btnPngInfoPrompt) {
     btnPngInfoPrompt.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (!resPrompt || !resPrompt.textContent || resPrompt.textContent === "Waiting for analysis...") {
+        if (!lastAnalysisData) {
             showStatus('No prompt data to embed.', true);
             return;
         }
@@ -3256,6 +3298,8 @@ if (btnPngInfoPrompt) {
             lighting: getEnText(resLighting, 'lighting'),
             scene: getEnText(resContext, 'context'),
             view: getEnText(resComposition, 'composition'),
+            style: getEnText(resStyle, 'style'),
+            materials: getEnText(resMaterial, 'materials'),
             inpaint: "",
             inpaintEnabled: false,
             cameraProjection: false
@@ -3297,7 +3341,7 @@ if (btnPngInfoPrompt) {
 if (btnSendBanana) {
     btnSendBanana.addEventListener('click', async (e) => {
         e.stopPropagation();
-        if (!resPrompt || !resPrompt.textContent || resPrompt.textContent === "Waiting for analysis...") {
+        if (!lastAnalysisData) {
             showStatus('No prompt data to copy.', true);
             return;
         }
@@ -3311,6 +3355,8 @@ if (btnSendBanana) {
             lighting: getEnText(resLighting, 'lighting'),
             scene: getEnText(resContext, 'context'),
             view: getEnText(resComposition, 'composition'),
+            style: getEnText(resStyle, 'style'),
+            materials: getEnText(resMaterial, 'materials'),
             inpaint: "",
             inpaintEnabled: false,
             cameraProjection: false
