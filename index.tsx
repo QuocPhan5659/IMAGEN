@@ -385,6 +385,10 @@ const logoFileInput = getEl<HTMLInputElement>('logo-file-input');
 const logoPreview = getEl<HTMLImageElement>('logo-preview');
 const logoEmpty = getEl<HTMLDivElement>('logo-empty');
 const btnClearLogo = getEl<HTMLButtonElement>('btn-clear-logo');
+const logoUploadInput = getEl<HTMLInputElement>('logo-upload-input');
+const btnGenAllLogo = getEl<HTMLButtonElement>('btn-gen-all-logo');
+const btnDlAllLogo = getEl<HTMLButtonElement>('btn-dl-all-logo');
+const btnResetAllLogo = getEl<HTMLButtonElement>('btn-reset-all-logo');
 
 const dropZone = getEl<HTMLDivElement>('drop-zone');
 const emptyState = getEl<HTMLDivElement>('empty-state'); 
@@ -414,7 +418,6 @@ const artisticResults = getEl<HTMLDivElement>('artistic-results');
 const multiviewResults = getEl<HTMLDivElement>('multiview-results');
 const panelRemoveLogo = getEl<HTMLDivElement>('remove-logo-panel');
 const logoRemovalGrid = getEl<HTMLDivElement>('logo-removal-grid');
-const btnAddLogoSlot = getEl<HTMLButtonElement>('btn-add-logo-slot');
 
 const analyzeBtn = getEl<HTMLButtonElement>('analyze-btn');
 const analyzeViBtn = getEl<HTMLButtonElement>('analyze-vi-btn');
@@ -1898,15 +1901,15 @@ function renderLogoRemovalSlots() {
 
     logoRemovalSlots.forEach((slot, index) => {
         const slotEl = document.createElement('div');
-        slotEl.className = "w-full border border-green-500/20 rounded-none bg-black/40 relative transition hover:border-green-500/40 p-4 flex flex-col gap-4 group";
+        slotEl.className = "w-full border border-gray-800 bg-[#121212] p-4 flex flex-col gap-4";
         
         // Header
         const header = document.createElement('div');
-        header.className = "flex justify-between items-center border-b border-green-500/10 pb-2";
-        header.innerHTML = `<span class="text-[9px] font-bold text-gray-600 uppercase tracking-widest">Slot ${index + 1}</span>`;
+        header.className = "flex justify-between items-center border-b border-gray-800 pb-2";
+        header.innerHTML = `<span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">SLOT ${index + 1}</span>`;
         
         const delBtn = document.createElement('button');
-        delBtn.className = "text-xs text-red-500 hover:text-red-300 px-2";
+        delBtn.className = "text-xs text-red-900 hover:text-red-500";
         delBtn.innerHTML = "×";
         delBtn.onclick = () => {
             logoRemovalSlots.splice(index, 1);
@@ -1917,7 +1920,7 @@ function renderLogoRemovalSlots() {
 
         // Upload/Preview Area
         const uploadArea = document.createElement('div');
-        uploadArea.className = "relative h-48 border border-dashed border-gray-800 rounded-none flex items-center justify-center cursor-pointer hover:bg-gray-900/50 transition-all overflow-hidden";
+        uploadArea.className = "relative h-48 border border-dashed border-gray-800 flex items-center justify-center cursor-pointer hover:bg-gray-900/50 transition-all overflow-hidden";
         
         if (slot.imgSrc) {
             const img = document.createElement('img');
@@ -1982,8 +1985,8 @@ function renderLogoRemovalSlots() {
 
         // Action Button
         const genBtn = document.createElement('button');
-        genBtn.className = `w-full py-2 text-[10px] font-bold uppercase tracking-widest transition-all ${slot.isProcessing ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500 hover:text-black'}`;
-        genBtn.innerHTML = slot.isProcessing ? 'Processing...' : 'GEN (Remove Logo)';
+        genBtn.className = "w-full py-3 bg-green-900/20 border border-green-900/40 text-green-700 hover:bg-green-900/40 transition-all text-[10px] font-bold uppercase tracking-widest";
+        genBtn.innerHTML = slot.isProcessing ? "PROCESSING..." : "GEN (REMOVE LOGO)";
         genBtn.disabled = slot.isProcessing || !slot.file;
         genBtn.onclick = () => processLogoRemoval(index);
         slotEl.appendChild(genBtn);
@@ -2048,6 +2051,42 @@ async function processLogoRemoval(index: number) {
         slot.isProcessing = false;
         renderLogoRemovalSlots();
     }
+}
+
+function handleBulkUpload(files: FileList) {
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file.type.startsWith('image/')) continue;
+        const slot = createEmptyLogoSlot();
+        slot.file = file;
+        slot.imgSrc = URL.createObjectURL(file);
+        logoRemovalSlots.push(slot);
+    }
+    renderLogoRemovalSlots();
+}
+
+async function processGenAll() {
+    for (let i = 0; i < logoRemovalSlots.length; i++) {
+        if (logoRemovalSlots[i].file && !logoRemovalSlots[i].resultSrc) {
+            await processLogoRemoval(i);
+        }
+    }
+}
+
+function downloadAll() {
+    logoRemovalSlots.forEach((slot, index) => {
+        if (slot.resultSrc) {
+            const a = document.createElement('a');
+            a.href = slot.resultSrc;
+            a.download = `Cleaned_${slot.file?.name || `image_${index}.png`}`;
+            a.click();
+        }
+    });
+}
+
+function resetAll() {
+    logoRemovalSlots = [];
+    renderLogoRemovalSlots();
 }
 
 // Embed Function (Canvas based)
@@ -2477,13 +2516,25 @@ if (btnAddSlot) {
         setTimeout(() => overlayGrid?.scrollTo({ top: overlayGrid.scrollHeight, behavior: 'smooth' }), 100);
     });
 }
-if (btnAddLogoSlot) {
-    btnAddLogoSlot.addEventListener('click', () => {
-        logoRemovalSlots.push(createEmptyLogoSlot());
-        renderLogoRemovalSlots();
-        setTimeout(() => logoRemovalGrid?.scrollTo({ top: logoRemovalGrid.scrollHeight, behavior: 'smooth' }), 100);
+if (logoDropZone) {
+    logoDropZone.addEventListener('click', () => logoUploadInput?.click());
+    logoDropZone.addEventListener('dragover', (e) => { e.preventDefault(); logoDropZone.classList.add('border-green-500'); });
+    logoDropZone.addEventListener('dragleave', () => logoDropZone.classList.remove('border-green-500'));
+    logoDropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        logoDropZone.classList.remove('border-green-500');
+        if (e.dataTransfer?.files) handleBulkUpload(e.dataTransfer.files);
     });
 }
+if (logoUploadInput) {
+    logoUploadInput.addEventListener('change', (e) => {
+        if (logoUploadInput.files) handleBulkUpload(logoUploadInput.files);
+        logoUploadInput.value = ''; // Reset
+    });
+}
+if (btnGenAllLogo) btnGenAllLogo.addEventListener('click', processGenAll);
+if (btnDlAllLogo) btnDlAllLogo.addEventListener('click', downloadAll);
+if (btnResetAllLogo) btnResetAllLogo.addEventListener('click', resetAll);
 if (btnEmbedAll) {
     btnEmbedAll.addEventListener('click', processEmbedAll);
 }
