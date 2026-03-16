@@ -2231,7 +2231,7 @@ async function processLogoRemoval(index: number) {
 
         const width = img.naturalWidth;
         const height = img.naturalHeight;
-        const prompt = "Remove the Gemini star logo from this image. It is located in the bottom right corner. Fill the area seamlessly to match the surrounding architectural details. Do not change anything else. Output the edited image.";
+        const prompt = "Remove the logo from this image. Fill the area seamlessly to match the surrounding architectural details. Do not change anything else. Output the edited image.";
 
         // If image is large, use patching to preserve resolution
         if (width > 1536 || height > 1536) {
