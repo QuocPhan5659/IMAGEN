@@ -2030,26 +2030,54 @@ function renderLogoRemovalSlots() {
         pasteBtn.className = "absolute bottom-2 left-2 bg-black/60 text-gray-400 p-1.5 rounded-none hover:text-green-400 transition-colors z-20";
         pasteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>`;
         pasteBtn.title = "Paste Image (Ctrl+V)";
-        pasteBtn.onclick = async (e) => {
-            e.stopPropagation();
+        
+        const performPaste = async () => {
             try {
-                const items = await navigator.clipboard.read();
-                for (const item of items) {
-                    for (const type of item.types) {
-                        if (type.startsWith('image/')) {
-                            const blob = await item.getType(type);
-                            const file = new File([blob], `pasted_image_${Date.now()}.png`, { type });
+                if (navigator.clipboard && navigator.clipboard.read) {
+                    const items = await navigator.clipboard.read();
+                    for (const item of items) {
+                        for (const type of item.types) {
+                            if (type.startsWith('image/')) {
+                                const blob = await item.getType(type);
+                                const file = new File([blob], `pasted_image_${Date.now()}.png`, { type });
+                                handleLogoSlotFile(index, file);
+                                return;
+                            }
+                        }
+                    }
+                    showStatus('No image found in clipboard');
+                } else {
+                    showStatus('Clipboard API not supported in this environment. Try Ctrl+V directly.', true);
+                }
+            } catch (err) {
+                showStatus('Clipboard access denied or restricted.');
+            }
+        };
+
+        pasteBtn.onclick = (e) => {
+            e.stopPropagation();
+            performPaste();
+        };
+        uploadArea.appendChild(pasteBtn);
+
+        // Add a local listener for the upload area to catch Ctrl+V when focused or hovered
+        uploadArea.tabIndex = 0; // Make it focusable
+        uploadArea.addEventListener('paste', (e: ClipboardEvent) => {
+            const items = e.clipboardData?.items;
+            if (items) {
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        const blob = items[i].getAsFile();
+                        if (blob) {
+                            const file = new File([blob], `pasted_image_${Date.now()}.png`, { type: blob.type });
                             handleLogoSlotFile(index, file);
+                            e.preventDefault();
                             return;
                         }
                     }
                 }
-                showStatus('No image found in clipboard');
-            } catch (err) {
-                showStatus('Clipboard access denied');
             }
-        };
-        uploadArea.appendChild(pasteBtn);
+        });
         slotEl.appendChild(uploadArea);
 
         // Result Area (if exists)
@@ -2089,15 +2117,17 @@ function renderLogoRemovalSlots() {
 async function handleLogoMultiUpload(files: FileList | File[]) {
     if (!files || files.length === 0) return;
     
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+    // Convert FileList to Array if necessary
+    const fileArray = Array.from(files);
+    
+    for (const file of fileArray) {
         const slot = createEmptyLogoSlot();
         slot.file = file;
         slot.imgSrc = URL.createObjectURL(file);
         logoRemovalSlots.push(slot);
     }
     renderLogoRemovalSlots();
-    showStatus(`Added ${files.length} images to removal queue.`);
+    showStatus(`Added ${fileArray.length} images to removal queue.`);
 }
 
 async function processLogoGenAll() {
@@ -2626,6 +2656,27 @@ if (logoMultiDropZone && logoMultiFileInput) {
         logoMultiDropZone.classList.remove('border-green-500', 'bg-black/40');
         const files = e.dataTransfer?.files;
         if (files) handleLogoMultiUpload(files);
+    });
+
+    // Global Paste Listener for the entire panel
+    panelRemoveLogo.addEventListener('paste', (e: ClipboardEvent) => {
+        if (activeTab !== 'removeLogo') return;
+        const items = e.clipboardData?.items;
+        if (items) {
+            const files: File[] = [];
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const blob = items[i].getAsFile();
+                    if (blob) {
+                        files.push(new File([blob], `pasted_batch_${Date.now()}_${i}.png`, { type: blob.type }));
+                    }
+                }
+            }
+            if (files.length > 0) {
+                handleLogoMultiUpload(files);
+                e.preventDefault();
+            }
+        }
     });
 }
 
