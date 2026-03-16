@@ -1124,7 +1124,10 @@ async function generateContentWithRetry(ai: GoogleGenAI, params: any, retries = 
 
 async function callGemini(prompt: string, files: File[], sketchFile: File | null = null): Promise<string> {
     const apiKey = customApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
-    if (!apiKey || apiKey.trim() === "") { await openApiKeyDialog(); return "{}"; }
+    if (!apiKey || apiKey.trim() === "") { 
+        await openApiKeyDialog(); 
+        throw new Error("API Key is missing. Please provide a valid API Key.");
+    }
 
     const ai = new GoogleGenAI({ apiKey });
     const parts: any[] = [];
@@ -2187,7 +2190,10 @@ async function handleLogoSlotFile(index: number, file: File) {
 
 async function callGeminiImageEdit(prompt: string, file: File): Promise<string | null> {
     const apiKey = customApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
-    if (!apiKey || apiKey.trim() === "") { await openApiKeyDialog(); return null; }
+    if (!apiKey || apiKey.trim() === "") { 
+        await openApiKeyDialog(); 
+        throw new Error("API Key is missing. Please provide a valid API Key.");
+    }
 
     const ai = new GoogleGenAI({ apiKey });
     const parts: any[] = [
