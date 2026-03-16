@@ -14,20 +14,15 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ currentImages, onI
   const MAX_IMAGES = 5;
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const fileInputRefGrid = React.useRef<HTMLInputElement>(null);
 
   const triggerUpload = useCallback(() => {
     fileInputRef.current?.click();
   }, []);
 
-  const triggerUploadGrid = useCallback(() => {
-    fileInputRefGrid.current?.click();
-  }, []);
-
   const handleContainerClick = useCallback((e: React.MouseEvent) => {
     // Trigger upload on click anywhere in the container
-    triggerUploadGrid();
-  }, [triggerUploadGrid]);
+    triggerUpload();
+  }, [triggerUpload]);
 
   const processFiles = useCallback((files: FileList | File[]) => {
     const remainingSlots = MAX_IMAGES - currentImages.length;
@@ -85,36 +80,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ currentImages, onI
     e.stopPropagation();
     setIsDragging(false);
 
-    const files: File[] = [];
-    if (e.dataTransfer.items) {
-      for (let i = 0; i < e.dataTransfer.items.length; i++) {
-        if (e.dataTransfer.items[i].kind === 'file') {
-          const file = e.dataTransfer.items[i].getAsFile();
-          if (file) files.push(file);
-        }
-      }
-    } else if (e.dataTransfer.files) {
-      for (let i = 0; i < e.dataTransfer.files.length; i++) {
-        files.push(e.dataTransfer.files[i]);
-      }
-    }
-    
-    if (files.length > 0) {
-      processFiles(files);
-    }
-  }, [processFiles]);
-
-  const handlePaste = useCallback((e: React.ClipboardEvent) => {
-    const items = e.clipboardData.items;
-    const files: File[] = [];
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.startsWith('image/')) {
-        const file = items[i].getAsFile();
-        if (file) files.push(file);
-      }
-    }
-    if (files.length > 0) {
-      processFiles(files);
+    if (e.dataTransfer.files) {
+      processFiles(e.dataTransfer.files);
     }
   }, [processFiles]);
 
@@ -130,9 +97,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ currentImages, onI
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={triggerUpload}
-            onPaste={handlePaste}
-            tabIndex={0}
-            className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-300 group max-w-4xl mx-auto focus:outline-none focus:ring-2 focus:ring-blue-500
+            className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-300 group max-w-4xl mx-auto
               ${isDragging 
                 ? (theme === 'dark' ? 'border-blue-500 bg-blue-900/20 scale-[1.02] shadow-xl shadow-blue-900/20' : 'border-blue-500 bg-blue-50 scale-[1.02] shadow-xl') 
                 : (theme === 'dark' ? 'border-gray-700 bg-gray-800 hover:bg-gray-700 hover:border-blue-500' : 'border-gray-300 bg-white hover:bg-gray-50 hover:border-blue-400')
@@ -205,9 +170,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ currentImages, onI
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                   onClick={triggerUpload}
-                  onPaste={handlePaste}
-                  tabIndex={0}
-                  className={`flex flex-col items-center justify-center aspect-square border-2 border-dashed rounded-xl cursor-pointer transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500
+                  className={`flex flex-col items-center justify-center aspect-square border-2 border-dashed rounded-xl cursor-pointer transition-all duration-300
                     ${isDragging 
                       ? (theme === 'dark' ? 'border-blue-500 bg-blue-900/20' : 'border-blue-500 bg-blue-50') 
                       : (theme === 'dark' ? 'border-gray-700 bg-gray-800 hover:bg-gray-700 hover:border-blue-500' : 'border-gray-300 bg-white hover:bg-gray-50 hover:border-blue-400')
@@ -223,7 +186,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ currentImages, onI
               )}
             </div>
             <input 
-              ref={fileInputRefGrid}
+              ref={fileInputRef}
               type="file" 
               className="hidden" 
               accept="image/*"

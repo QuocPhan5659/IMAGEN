@@ -237,6 +237,12 @@ const translations = {
         tabTextOverlay: "Text Overlay",
         tabArtistic: "Artistic Styles",
         tabRemoveLogo: "Remove Logo",
+        lblRemoveLogoTitle: "Gemini Logo Removal",
+        lblRemoveLogoDesc: "Clean your images by removing the Gemini star logo while preserving all architectural details.",
+        lblLogoDragDrop: "Drag & Drop images here or click to upload",
+        btnLogoGenAll: "Gen All (REMOVE LOGO)",
+        btnLogoDownloadAll: "Download All",
+        btnLogoResetAll: "Reset All",
         btnToSketch: "Photo to Sketch",
         titlePhotoToSketch: "Photo to Sketch Prompt",
         lblArtistic: "Artistic Style Transfer",
@@ -301,6 +307,12 @@ const translations = {
         tabTextOverlay: "Chèn Chữ",
         tabArtistic: "Phong Cách Nghệ Thuật",
         tabRemoveLogo: "Xóa Logo",
+        lblRemoveLogoTitle: "Xóa Logo Gemini",
+        lblRemoveLogoDesc: "Làm sạch hình ảnh bằng cách xóa logo ngôi sao Gemini trong khi vẫn giữ nguyên các chi tiết kiến trúc.",
+        lblLogoDragDrop: "Kéo & Thả ảnh vào đây hoặc click để tải lên",
+        btnLogoGenAll: "Chạy Tất Cả",
+        btnLogoDownloadAll: "Tải Tất Cả",
+        btnLogoResetAll: "Đặt Lại Tất Cả",
         btnToSketch: "Ảnh sang Sketch",
         titlePhotoToSketch: "Prompt Chuyển Ảnh sang Sketch",
         lblArtistic: "Chuyển Đổi Phong Cách Nghệ Thuật",
@@ -357,6 +369,7 @@ const panelAnalysis = getEl<HTMLDivElement>('panel-analysis');
 const panelNotes = getEl<HTMLDivElement>('panel-notes');
 const panelMultiView = getEl<HTMLDivElement>('panel-multiview');
 const panelArtistic = getEl<HTMLDivElement>('panel-artistic');
+const panelRemoveLogoSidebar = getEl<HTMLDivElement>('panel-remove-logo');
 const panelUploadAnalysis = getEl<HTMLDivElement>('panel-upload-analysis');
 const panelTextOverlaySettings = getEl<HTMLDivElement>('panel-text-overlay-settings');
 
@@ -385,10 +398,6 @@ const logoFileInput = getEl<HTMLInputElement>('logo-file-input');
 const logoPreview = getEl<HTMLImageElement>('logo-preview');
 const logoEmpty = getEl<HTMLDivElement>('logo-empty');
 const btnClearLogo = getEl<HTMLButtonElement>('btn-clear-logo');
-const logoUploadInput = getEl<HTMLInputElement>('logo-upload-input');
-const btnGenAllLogo = getEl<HTMLButtonElement>('btn-gen-all-logo');
-const btnDlAllLogo = getEl<HTMLButtonElement>('btn-dl-all-logo');
-const btnResetAllLogo = getEl<HTMLButtonElement>('btn-reset-all-logo');
 
 const dropZone = getEl<HTMLDivElement>('drop-zone');
 const emptyState = getEl<HTMLDivElement>('empty-state'); 
@@ -418,6 +427,17 @@ const artisticResults = getEl<HTMLDivElement>('artistic-results');
 const multiviewResults = getEl<HTMLDivElement>('multiview-results');
 const panelRemoveLogo = getEl<HTMLDivElement>('remove-logo-panel');
 const logoRemovalGrid = getEl<HTMLDivElement>('logo-removal-grid');
+const logoMultiDropZone = getEl<HTMLDivElement>('logo-multi-drop-zone');
+const logoMultiFileInput = getEl<HTMLInputElement>('logo-multi-file-input');
+const btnLogoGenAll = getEl<HTMLButtonElement>('btn-logo-gen-all');
+const btnLogoDownloadAll = getEl<HTMLButtonElement>('btn-logo-download-all');
+const btnLogoResetAll = getEl<HTMLButtonElement>('btn-logo-reset-all');
+const btnAddLogoSlot = getEl<HTMLButtonElement>('btn-add-logo-slot');
+const lblRemoveLogoTitle = getEl('lbl-remove-logo-title');
+const lblRemoveLogoTitleSidebar = getEl('lbl-remove-logo-title-sidebar');
+const lblRemoveLogoDesc = getEl('lbl-remove-logo-desc');
+const lblRemoveLogoDescSidebar = getEl('lbl-remove-logo-desc-sidebar');
+const lblLogoDragDrop = getEl('lbl-logo-drag-drop');
 
 const analyzeBtn = getEl<HTMLButtonElement>('analyze-btn');
 const analyzeViBtn = getEl<HTMLButtonElement>('analyze-vi-btn');
@@ -1173,6 +1193,14 @@ function updateLanguageUI() {
     if(tabArtistic) setText(tabArtistic, t.tabArtistic);
     if(tabRemoveLogo) setText(tabRemoveLogo, t.tabRemoveLogo);
     if(tabTextOverlay) setText(tabTextOverlay, t.tabTextOverlay);
+    
+    setText(lblRemoveLogoTitle, t.lblRemoveLogoTitle);
+    setText(lblRemoveLogoDesc, t.lblRemoveLogoDesc);
+    setText(lblLogoDragDrop, t.lblLogoDragDrop);
+    setText(btnLogoGenAll, t.btnLogoGenAll);
+    setText(btnLogoDownloadAll, t.btnLogoDownloadAll);
+    setText(btnLogoResetAll, t.btnLogoResetAll);
+
     setText(lblAngleCount, t.lblAngleCount);
     setText(lblCustomAngle, t.lblCustomAngle);
     if(customAngleInput) customAngleInput.placeholder = t.customAnglePlaceholder;
@@ -1225,7 +1253,17 @@ function updateLanguageUI() {
     setHidden(multiviewContextContainer, true);
     setHidden(panelTextOverlaySettings, true);
     setHidden(panelRemoveLogo, true);
+    setHidden(panelRemoveLogoSidebar, true);
     
+    setText(lblRemoveLogoTitle, t.lblRemoveLogoTitle);
+    setText(lblRemoveLogoTitleSidebar, t.lblRemoveLogoTitle);
+    setText(lblRemoveLogoDesc, t.lblRemoveLogoDesc);
+    setText(lblRemoveLogoDescSidebar, t.lblRemoveLogoDesc);
+    setText(lblLogoDragDrop, t.lblLogoDragDrop);
+    setText(btnLogoGenAll, t.btnLogoGenAll);
+    setText(btnLogoDownloadAll, t.btnLogoDownloadAll);
+    setText(btnLogoResetAll, t.btnLogoResetAll);
+
     setHidden(analysisCardsWrapper, true);
     setHidden(multiviewResults, true);
     setHidden(artisticResults, true);
@@ -1282,6 +1320,7 @@ function updateLanguageUI() {
         setHidden(globalActionsBar, false); // Visible for Text Overlay too
     } else if (activeTab === 'removeLogo') {
         setHidden(panelRemoveLogo, false);
+        setHidden(panelRemoveLogoSidebar, false);
         setHidden(globalActionsBar, false);
         addClass(tabRemoveLogo, 'active');
         if (logoRemovalSlots.length === 0) initLogoRemovalSlots();
@@ -1899,17 +1938,26 @@ function renderLogoRemovalSlots() {
     if (!logoRemovalGrid) return;
     logoRemovalGrid.innerHTML = '';
 
+    if (logoRemovalSlots.length === 0) {
+        logoRemovalGrid.innerHTML = `
+            <div class="col-span-full py-20 text-center border border-dashed border-gray-800 bg-black/10">
+                <p class="text-[10px] text-gray-600 uppercase font-bold tracking-widest">No images uploaded yet</p>
+            </div>
+        `;
+        return;
+    }
+
     logoRemovalSlots.forEach((slot, index) => {
         const slotEl = document.createElement('div');
-        slotEl.className = "w-full border border-gray-800 bg-[#121212] p-4 flex flex-col gap-4";
+        slotEl.className = "w-full border border-green-500/20 rounded-none bg-black/40 relative transition hover:border-green-500/40 p-4 flex flex-col gap-4 group";
         
         // Header
         const header = document.createElement('div');
-        header.className = "flex justify-between items-center border-b border-gray-800 pb-2";
-        header.innerHTML = `<span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">SLOT ${index + 1}</span>`;
+        header.className = "flex justify-between items-center border-b border-green-500/10 pb-2";
+        header.innerHTML = `<span class="text-[9px] font-bold text-gray-600 uppercase tracking-widest">Slot ${index + 1}</span>`;
         
         const delBtn = document.createElement('button');
-        delBtn.className = "text-xs text-red-900 hover:text-red-500";
+        delBtn.className = "text-xs text-red-500 hover:text-red-300 px-2";
         delBtn.innerHTML = "×";
         delBtn.onclick = () => {
             logoRemovalSlots.splice(index, 1);
@@ -1920,8 +1968,25 @@ function renderLogoRemovalSlots() {
 
         // Upload/Preview Area
         const uploadArea = document.createElement('div');
-        uploadArea.className = "relative h-48 border border-dashed border-gray-800 flex items-center justify-center cursor-pointer hover:bg-gray-900/50 transition-all overflow-hidden";
+        uploadArea.className = "relative h-48 border border-dashed border-gray-800 rounded-none flex items-center justify-center cursor-pointer hover:bg-gray-900/50 transition-all overflow-hidden";
         
+        // Drag and Drop support
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('border-green-500', 'bg-green-500/5');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('border-green-500', 'bg-green-500/5');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('border-green-500', 'bg-green-500/5');
+            const file = e.dataTransfer?.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleLogoSlotFile(index, file);
+            }
+        });
+
         if (slot.imgSrc) {
             const img = document.createElement('img');
             img.src = slot.imgSrc;
@@ -1959,6 +2024,32 @@ function renderLogoRemovalSlots() {
                 input.click();
             };
         }
+
+        // Paste Button - Always visible
+        const pasteBtn = document.createElement('button');
+        pasteBtn.className = "absolute bottom-2 left-2 bg-black/60 text-gray-400 p-1.5 rounded-none hover:text-green-400 transition-colors z-20";
+        pasteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>`;
+        pasteBtn.title = "Paste Image (Ctrl+V)";
+        pasteBtn.onclick = async (e) => {
+            e.stopPropagation();
+            try {
+                const items = await navigator.clipboard.read();
+                for (const item of items) {
+                    for (const type of item.types) {
+                        if (type.startsWith('image/')) {
+                            const blob = await item.getType(type);
+                            const file = new File([blob], `pasted_image_${Date.now()}.png`, { type });
+                            handleLogoSlotFile(index, file);
+                            return;
+                        }
+                    }
+                }
+                showStatus('No image found in clipboard');
+            } catch (err) {
+                showStatus('Clipboard access denied');
+            }
+        };
+        uploadArea.appendChild(pasteBtn);
         slotEl.appendChild(uploadArea);
 
         // Result Area (if exists)
@@ -1985,14 +2076,75 @@ function renderLogoRemovalSlots() {
 
         // Action Button
         const genBtn = document.createElement('button');
-        genBtn.className = "w-full py-3 bg-green-900/20 border border-green-900/40 text-green-700 hover:bg-green-900/40 transition-all text-[10px] font-bold uppercase tracking-widest";
-        genBtn.innerHTML = slot.isProcessing ? "PROCESSING..." : "GEN (REMOVE LOGO)";
+        genBtn.className = `w-full py-2 text-[10px] font-bold uppercase tracking-widest transition-all ${slot.isProcessing ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500 hover:text-black'}`;
+        genBtn.innerHTML = slot.isProcessing ? 'Processing...' : 'GEN (Remove Logo)';
         genBtn.disabled = slot.isProcessing || !slot.file;
         genBtn.onclick = () => processLogoRemoval(index);
         slotEl.appendChild(genBtn);
 
         logoRemovalGrid.appendChild(slotEl);
     });
+}
+
+async function handleLogoMultiUpload(files: FileList | File[]) {
+    if (!files || files.length === 0) return;
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const slot = createEmptyLogoSlot();
+        slot.file = file;
+        slot.imgSrc = URL.createObjectURL(file);
+        logoRemovalSlots.push(slot);
+    }
+    renderLogoRemovalSlots();
+    showStatus(`Added ${files.length} images to removal queue.`);
+}
+
+async function processLogoGenAll() {
+    const pendingSlots = logoRemovalSlots.filter(s => s.file && !s.resultSrc && !s.isProcessing);
+    if (pendingSlots.length === 0) {
+        showStatus("No pending images to process.", true);
+        return;
+    }
+
+    showStatus(`Processing ${pendingSlots.length} images...`);
+    
+    // Process sequentially to avoid overwhelming API or just use Promise.all with limited concurrency if needed
+    for (const slot of pendingSlots) {
+        const index = logoRemovalSlots.indexOf(slot);
+        if (index !== -1) {
+            await processLogoRemoval(index);
+        }
+    }
+    showStatus("All pending images processed.");
+}
+
+async function processLogoDownloadAll() {
+    const slotsToDownload = logoRemovalSlots.filter(s => s.resultSrc);
+    if (slotsToDownload.length === 0) {
+        showStatus("No cleaned images to download.", true);
+        return;
+    }
+
+    showStatus(`Downloading ${slotsToDownload.length} images...`);
+    for (const slot of slotsToDownload) {
+        const a = document.createElement('a');
+        a.href = slot.resultSrc!;
+        a.download = `Cleaned_${slot.file?.name || 'image.png'}`;
+        a.click();
+        // Small delay to prevent browser blocking multiple downloads
+        await new Promise(r => setTimeout(r, 200));
+    }
+}
+
+function processLogoResetAll() {
+    logoRemovalSlots = [
+        createEmptyLogoSlot(),
+        createEmptyLogoSlot(),
+        createEmptyLogoSlot()
+    ];
+    renderLogoRemovalSlots();
+    showStatus("All slots cleared.");
 }
 
 async function handleLogoSlotFile(index: number, file: File) {
@@ -2051,42 +2203,6 @@ async function processLogoRemoval(index: number) {
         slot.isProcessing = false;
         renderLogoRemovalSlots();
     }
-}
-
-function handleBulkUpload(files: FileList) {
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        if (!file.type.startsWith('image/')) continue;
-        const slot = createEmptyLogoSlot();
-        slot.file = file;
-        slot.imgSrc = URL.createObjectURL(file);
-        logoRemovalSlots.push(slot);
-    }
-    renderLogoRemovalSlots();
-}
-
-async function processGenAll() {
-    for (let i = 0; i < logoRemovalSlots.length; i++) {
-        if (logoRemovalSlots[i].file && !logoRemovalSlots[i].resultSrc) {
-            await processLogoRemoval(i);
-        }
-    }
-}
-
-function downloadAll() {
-    logoRemovalSlots.forEach((slot, index) => {
-        if (slot.resultSrc) {
-            const a = document.createElement('a');
-            a.href = slot.resultSrc;
-            a.download = `Cleaned_${slot.file?.name || `image_${index}.png`}`;
-            a.click();
-        }
-    });
-}
-
-function resetAll() {
-    logoRemovalSlots = [];
-    renderLogoRemovalSlots();
 }
 
 // Embed Function (Canvas based)
@@ -2490,6 +2606,40 @@ if (tabNotes) tabNotes.addEventListener('click', () => { activeTab = 'notes'; up
 if (tabRemoveLogo) tabRemoveLogo.addEventListener('click', () => { activeTab = 'removeLogo'; updateLanguageUI(); });
 if (tabTextOverlay) tabTextOverlay.addEventListener('click', () => { activeTab = 'textOverlay'; updateLanguageUI(); });
 
+// Logo Removal Listeners
+if (logoMultiDropZone && logoMultiFileInput) {
+    logoMultiDropZone.addEventListener('click', () => logoMultiFileInput.click());
+    logoMultiFileInput.addEventListener('change', (e) => {
+        const files = (e.target as HTMLInputElement).files;
+        if (files) handleLogoMultiUpload(files);
+    });
+
+    logoMultiDropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        logoMultiDropZone.classList.add('border-green-500', 'bg-black/40');
+    });
+    logoMultiDropZone.addEventListener('dragleave', () => {
+        logoMultiDropZone.classList.remove('border-green-500', 'bg-black/40');
+    });
+    logoMultiDropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        logoMultiDropZone.classList.remove('border-green-500', 'bg-black/40');
+        const files = e.dataTransfer?.files;
+        if (files) handleLogoMultiUpload(files);
+    });
+}
+
+if (btnLogoGenAll) btnLogoGenAll.addEventListener('click', processLogoGenAll);
+if (btnLogoDownloadAll) btnLogoDownloadAll.addEventListener('click', processLogoDownloadAll);
+if (btnLogoResetAll) btnLogoResetAll.addEventListener('click', processLogoResetAll);
+if (btnAddLogoSlot) {
+    btnAddLogoSlot.addEventListener('click', () => {
+        logoRemovalSlots.push(createEmptyLogoSlot());
+        renderLogoRemovalSlots();
+        setTimeout(() => logoRemovalGrid?.scrollTo({ top: logoRemovalGrid.scrollHeight, behavior: 'smooth' }), 100);
+    });
+}
+
 // Global Toolbar Events
 if (btnResetOverlay) {
     btnResetOverlay.addEventListener('click', () => {
@@ -2516,25 +2666,6 @@ if (btnAddSlot) {
         setTimeout(() => overlayGrid?.scrollTo({ top: overlayGrid.scrollHeight, behavior: 'smooth' }), 100);
     });
 }
-if (logoDropZone) {
-    logoDropZone.addEventListener('click', () => logoUploadInput?.click());
-    logoDropZone.addEventListener('dragover', (e) => { e.preventDefault(); logoDropZone.classList.add('border-green-500'); });
-    logoDropZone.addEventListener('dragleave', () => logoDropZone.classList.remove('border-green-500'));
-    logoDropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        logoDropZone.classList.remove('border-green-500');
-        if (e.dataTransfer?.files) handleBulkUpload(e.dataTransfer.files);
-    });
-}
-if (logoUploadInput) {
-    logoUploadInput.addEventListener('change', (e) => {
-        if (logoUploadInput.files) handleBulkUpload(logoUploadInput.files);
-        logoUploadInput.value = ''; // Reset
-    });
-}
-if (btnGenAllLogo) btnGenAllLogo.addEventListener('click', processGenAll);
-if (btnDlAllLogo) btnDlAllLogo.addEventListener('click', downloadAll);
-if (btnResetAllLogo) btnResetAllLogo.addEventListener('click', resetAll);
 if (btnEmbedAll) {
     btnEmbedAll.addEventListener('click', processEmbedAll);
 }
