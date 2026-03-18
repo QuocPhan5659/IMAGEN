@@ -222,6 +222,7 @@ const translations = {
         uploadDrag: "Drag & Drop, Click or Paste (Ctrl+V)",
         uploadSketch: "Upload Sketch (Optional)",
         btnAnalyze: "Analyze Images",
+        btnAnalyzeImagePrompt: "IMAGE PROMPT",
         btnDownloadAll: "Download All",
         btnLoadPngInfo: "PNG Info",
         btnMultiView: "Generate Multi-View",
@@ -292,6 +293,7 @@ const translations = {
         uploadDrag: "Kéo thả, Nhấn hoặc Dán (Ctrl+V)",
         uploadSketch: "Tải Phác Thảo (Tùy chọn)",
         btnAnalyze: "Phân Tích Ảnh",
+        btnAnalyzeImagePrompt: "IMAGE PROMPT",
         btnDownloadAll: "Tải Tất Cả",
         btnLoadPngInfo: "Đọc PNG Info",
         btnMultiView: "Tạo Đa Góc Nhìn",
@@ -1185,6 +1187,7 @@ function updateLanguageUI() {
     setText(lblDrag, t.uploadDrag);
     setText(lblUploadSketch, t.uploadSketch);
     setText(btnAnalyzeText, t.btnAnalyze);
+    setText(getEl('btn-analyze-image-prompt-text'), t.btnAnalyzeImagePrompt || 'IMAGE PROMPT');
     setText(getEl('btn-to-sketch-text'), t.btnToSketch);
     setText(btnDownloadAllText, t.btnDownloadAll);
     setText(btnLoadPngInfoText, t.btnLoadPngInfo);
@@ -2123,12 +2126,27 @@ async function handleLogoMultiUpload(files: FileList | File[]) {
     // Convert FileList to Array if necessary
     const fileArray = Array.from(files);
     
-    for (const file of fileArray) {
+    // Ensure we have at least 3 slots if we are in logo removal tab
+    if (logoRemovalSlots.length < 3) initLogoRemovalSlots();
+
+    // Fill existing empty slots first
+    let fileIndex = 0;
+    for (let i = 0; i < logoRemovalSlots.length && fileIndex < fileArray.length; i++) {
+        if (!logoRemovalSlots[i].file) {
+            logoRemovalSlots[i].file = fileArray[fileIndex];
+            logoRemovalSlots[i].imgSrc = URL.createObjectURL(fileArray[fileIndex]);
+            fileIndex++;
+        }
+    }
+    
+    // Add remaining files as new slots
+    for (let i = fileIndex; i < fileArray.length; i++) {
         const slot = createEmptyLogoSlot();
-        slot.file = file;
-        slot.imgSrc = URL.createObjectURL(file);
+        slot.file = fileArray[i];
+        slot.imgSrc = URL.createObjectURL(fileArray[i]);
         logoRemovalSlots.push(slot);
     }
+    
     renderLogoRemovalSlots();
     showStatus(`Added ${fileArray.length} images to removal queue.`);
 }
@@ -2716,7 +2734,10 @@ if (logoMultiDropZone && logoMultiFileInput) {
     logoMultiDropZone.addEventListener('click', () => logoMultiFileInput.click());
     logoMultiFileInput.addEventListener('change', (e) => {
         const files = (e.target as HTMLInputElement).files;
-        if (files) handleLogoMultiUpload(files);
+        if (files) {
+            handleLogoMultiUpload(files);
+            (e.target as HTMLInputElement).value = '';
+        }
     });
 
     logoMultiDropZone.addEventListener('dragover', (e) => {
@@ -3460,14 +3481,20 @@ if(analyzeBtn) {
     });
 }
 
-if(analyzeViBtn) {
-    analyzeViBtn.addEventListener('click', async () => {
+const analyzeImagePromptBtn = getEl<HTMLButtonElement>('analyze-image-prompt-btn');
+const btnAnalyzeImagePromptText = getEl('btn-analyze-image-prompt-text');
+
+// ... (later in the file)
+
+if(analyzeImagePromptBtn) {
+    analyzeImagePromptBtn.addEventListener('click', async () => {
         if (currentFiles.length === 0) { showStatus('Please upload files.', true); return; }
         setLoading(true);
         try {
+            const lang = currentLang === 'vi' ? 'VIETNAMESE' : 'ENGLISH';
             const prompt = `
                 Role: Senior Architectural Technical Analyst.
-                Task: Analyze the provided images and provide a detailed architectural analysis in VIETNAMESE.
+                Task: Analyze the provided images and provide a detailed architectural analysis in ${lang}.
                 Focus on:
                 1. Architectural Style & Form.
                 2. Material Palette & Textures.
@@ -3475,6 +3502,7 @@ if(analyzeViBtn) {
                 4. Lighting & Atmosphere.
                 5. Context & Environment.
                 6. Composition & Camera.
+                7. Generation Prompt: Provide a detailed prompt for AI image generation based on this analysis.
                 
                 Output strictly valid JSON:
                 {
@@ -3482,7 +3510,8 @@ if(analyzeViBtn) {
                     "materials": "...",
                     "lighting": "...",
                     "context": "...",
-                    "composition": "..."
+                    "composition": "...",
+                    "generationPrompt": "..."
                 }
             `;
             const txt = await callGemini(prompt, currentFiles, null);
@@ -3495,8 +3524,9 @@ if(analyzeViBtn) {
             if(resLighting) setText(resLighting, data.lighting || "No result.");
             if(resContext) setText(resContext, data.context || "No result.");
             if(resComposition) setText(resComposition, data.composition || "No result.");
+            if(resPrompt) setText(resPrompt, data.generationPrompt || "No result.");
             
-            showStatus('Phân tích hoàn tất!');
+            showStatus(currentLang === 'en' ? 'Analysis complete!' : 'Phân tích hoàn tất!');
         } catch(e) { handleApiError(e, 'Error analyzing'); } finally { setLoading(false); }
     });
 }
@@ -3908,8 +3938,36 @@ if (downloadAllBtn) {
         if (lastAnalysisData.composition?.[currentLang]) content += `=== ${t.titles.composition} ===\n${lastAnalysisData.composition[currentLang]}\n\n`;
         if (lastAnalysisData.generationPrompt?.[currentLang]) content += `=== ${t.titles.generationPrompt} ===\n${lastAnalysisData.generationPrompt[currentLang]}\n\n`;
         if (lastAnalysisData.sketchPrompt?.[currentLang]) content += `=== ${t.titles.sketchPrompt} ===\n${lastAnalysisData.sketchPrompt[currentLang]}\n\n`;
+        if (lastAnalysisData.collageAnalysis?.[currentLang]) content += `=== ${t.titles.collageAnalysis} ===\n${lastAnalysisData.collageAnalysis[currentLang]}\n\n`;
 
         triggerDownload(content, 'Full_Architectural_Analysis.txt');
+    });
+}
+
+// Copy All Button
+const copyAllBtn = getEl<HTMLButtonElement>('copy-all-btn');
+if (copyAllBtn) {
+    copyAllBtn.addEventListener('click', async () => {
+        if (!lastAnalysisData) {
+            showStatus('No analysis data to copy', true);
+            return;
+        }
+        
+        const t = translations[currentLang];
+        let content = `${t.appTitle} - Full Analysis\n\n`;
+        
+        if (lastAnalysisData.style?.[currentLang]) content += `=== ${t.titles.style} ===\n${lastAnalysisData.style[currentLang]}\n\n`;
+        if (lastAnalysisData.materials?.[currentLang]) content += `=== ${t.titles.materials} ===\n${lastAnalysisData.materials[currentLang]}\n\n`;
+        if (lastAnalysisData.lighting?.[currentLang]) content += `=== ${t.titles.lighting} ===\n${lastAnalysisData.lighting[currentLang]}\n\n`;
+        if (lastAnalysisData.context?.[currentLang]) content += `=== ${t.titles.context} ===\n${lastAnalysisData.context[currentLang]}\n\n`;
+        if (lastAnalysisData.composition?.[currentLang]) content += `=== ${t.titles.composition} ===\n${lastAnalysisData.composition[currentLang]}\n\n`;
+        if (lastAnalysisData.generationPrompt?.[currentLang]) content += `=== ${t.titles.generationPrompt} ===\n${lastAnalysisData.generationPrompt[currentLang]}\n\n`;
+        if (lastAnalysisData.sketchPrompt?.[currentLang]) content += `=== ${t.titles.sketchPrompt} ===\n${lastAnalysisData.sketchPrompt[currentLang]}\n\n`;
+        if (lastAnalysisData.collageAnalysis?.[currentLang]) content += `=== ${t.titles.collageAnalysis} ===\n${lastAnalysisData.collageAnalysis[currentLang]}\n\n`;
+
+        const success = await copyToClipboard(content, copyAllBtn, iconCheckAll, iconCopyAll);
+        if (success) showStatus('Analysis copied to clipboard!');
+        else showStatus('Failed to copy to clipboard', true);
     });
 }
 
