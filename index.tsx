@@ -2830,15 +2830,16 @@ if (btnDownloadAllEmbeds) {
             const slot = slotsToDownload[i];
             const a = document.createElement('a');
             a.href = slot.resultSrc!;
-            // Auto name logic: Overlay_OriginalName.png
-            // Fallback to index if no original name
             const originalBase = slot.originalName ? slot.originalName.replace(/\.[^/.]+$/, "") : `Result_${i + 1}`;
             a.download = `Overlay_${originalBase}.png`;
+            a.target = '_blank';
             document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            setTimeout(() => {
+                a.click();
+                document.body.removeChild(a);
+            }, 100);
             // Small delay to prevent browser blocking simultaneous downloads
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise(r => setTimeout(r, 500));
         }
     });
 }
