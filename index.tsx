@@ -2255,7 +2255,7 @@ async function processLogoRemoval(index: number) {
 
         const width = img.naturalWidth;
         const height = img.naturalHeight;
-        const prompt = "Remove the logo from this image. Fill the area seamlessly to match the surrounding architectural details. Do not change anything else. Output the edited image.";
+        const prompt = "Remove the logo (Gemini or RunningHub AI) located at the top of this image. Fill the area seamlessly to match the surrounding architectural details. Do not change anything else. Output the edited image.";
 
         // If image is large, use patching to preserve resolution
         if (width > 1536 || height > 1536) {
@@ -2263,10 +2263,11 @@ async function processLogoRemoval(index: number) {
             
             // Define patch size - 1024 is optimal for Gemini
             const patchSize = 1024;
-            const startX = Math.max(0, width - patchSize);
-            const startY = Math.max(0, height - patchSize);
-            const actualPatchWidth = width - startX;
-            const actualPatchHeight = height - startY;
+            // Target the top area (centered horizontally)
+            const startX = Math.max(0, (width - patchSize) / 2);
+            const startY = 0; // Top
+            const actualPatchWidth = Math.min(patchSize, width);
+            const actualPatchHeight = Math.min(patchSize, height);
 
             const canvas = document.createElement('canvas');
             canvas.width = actualPatchWidth;
