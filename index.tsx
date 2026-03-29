@@ -25,7 +25,7 @@ let globalSigBgColor = '#00ff00'; // Default Neon Green
 // --- Application State ---
 type Lang = 'en' | 'vi';
 let currentLang: Lang = 'en';
-let activeTab: 'analysis' | 'multiview' | 'notes' | 'textOverlay' | 'artistic' | 'removeLogo' = 'analysis';
+let activeTab: 'analysis' | 'notes' | 'textOverlay' | 'artistic' | 'removeLogo' = 'analysis';
 
 // --- Logo Removal State ---
 interface LogoRemovalSlot {
@@ -233,7 +233,6 @@ const translations = {
         loaderTitle: "ANALYZING...",
         loaderSubtitle: "Gemini is analyzing architectural details...",
         tabAnalysis: "Analysis",
-        tabMultiView: "Multi-View",
         tabNotes: "Notes",
         tabTextOverlay: "Text Overlay",
         tabArtistic: "Artistic Styles",
@@ -304,7 +303,6 @@ const translations = {
         loaderTitle: "ĐANG PHÂN TÍCH...",
         loaderSubtitle: "Gemini đang xử lý chi tiết kiến trúc...",
         tabAnalysis: "Phân Tích",
-        tabMultiView: "Đa Góc Nhìn",
         tabNotes: "Ghi Chú",
         tabTextOverlay: "Chèn Chữ",
         tabArtistic: "Phong Cách Nghệ Thuật",
@@ -363,13 +361,12 @@ const translations = {
 const tabAnalysis = getEl<HTMLButtonElement>('tab-analysis');
 const tabNotes = getEl<HTMLButtonElement>('tab-notes');
 const tabRemoveLogo = getEl<HTMLButtonElement>('tab-remove-logo');
-const tabMultiView = getEl<HTMLButtonElement>('tab-multiview');
 const tabArtistic = getEl<HTMLButtonElement>('tab-artistic');
 const tabTextOverlay = getEl<HTMLButtonElement>('tab-text-overlay');
 
 const panelAnalysis = getEl<HTMLDivElement>('panel-analysis');
 const panelNotes = getEl<HTMLDivElement>('panel-notes');
-const panelMultiView = getEl<HTMLDivElement>('panel-multiview');
+// Removed panelMultiView reference
 const panelArtistic = getEl<HTMLDivElement>('panel-artistic');
 const panelRemoveLogoSidebar = getEl<HTMLDivElement>('panel-remove-logo');
 const panelUploadAnalysis = getEl<HTMLDivElement>('panel-upload-analysis');
@@ -426,7 +423,7 @@ const loader = getEl<HTMLDivElement>('loader');
 const analysisCardsWrapper = getEl<HTMLDivElement>('analysis-cards-wrapper');
 const notesResults = getEl<HTMLDivElement>('notes-results');
 const artisticResults = getEl<HTMLDivElement>('artistic-results');
-const multiviewResults = getEl<HTMLDivElement>('multiview-results');
+// Removed multiviewResults reference
 const panelRemoveLogo = getEl<HTMLDivElement>('remove-logo-panel');
 const logoRemovalGrid = getEl<HTMLDivElement>('logo-removal-grid');
 const logoMultiDropZone = getEl<HTMLDivElement>('logo-multi-drop-zone');
@@ -517,16 +514,16 @@ const sketchPromptCard = getEl<HTMLDivElement>('card-sketch-prompt');
 const collageAnalysisCard = getEl<HTMLDivElement>('card-collage-analysis');
 
 // MultiView Elements
-const multiviewContextContainer = getEl<HTMLDivElement>('multiview-context-container');
+// Removed multiviewContextContainer reference
 const lblObjAnalysis = getEl('lbl-obj-analysis');
 const lblObjDesc = getEl('lbl-obj-desc');
 const btnRunObjAnalysis = getEl<HTMLButtonElement>('btn-run-obj-analysis');
 const btnObjAnalysisText = getEl('btn-obj-analysis-text');
 const objAnalysisResult = getEl<HTMLDivElement>('obj-analysis-result');
 const angleInput = getEl<HTMLInputElement>('angle-input');
-const multiViewBtn = getEl<HTMLButtonElement>('multiview-btn');
+// Removed multiViewBtn reference
 const lblAngleCount = getEl('lbl-angle-count');
-const btnMultiViewText = getEl('btn-multiview-text');
+// Removed btnMultiViewText reference
 
 // Custom Angle Elements
 const lblCustomAngle = getEl('lbl-custom-angle');
@@ -1194,7 +1191,6 @@ function updateLanguageUI() {
     setText(loaderTitle, t.loaderTitle);
     setText(loaderSubtitle, t.loaderSubtitle);
     if(tabAnalysis) setText(tabAnalysis, t.tabAnalysis);
-    if(tabMultiView) setText(tabMultiView, t.tabMultiView);
     if(tabNotes) setText(tabNotes, t.tabNotes);
     if(tabArtistic) setText(tabArtistic, t.tabArtistic);
     if(tabRemoveLogo) setText(tabRemoveLogo, t.tabRemoveLogo);
@@ -1256,7 +1252,7 @@ function updateLanguageUI() {
     setHidden(panelNotes, true);
     setHidden(panelUploadAnalysis, true);
     setHidden(sketchContainer, true);
-    setHidden(multiviewContextContainer, true);
+// Removed multiviewContextContainer reference
     setHidden(panelTextOverlaySettings, true);
     setHidden(panelRemoveLogo, true);
     setHidden(panelRemoveLogoSidebar, true);
@@ -1271,7 +1267,7 @@ function updateLanguageUI() {
     setText(btnLogoResetAll, t.btnLogoResetAll);
 
     setHidden(analysisCardsWrapper, true);
-    setHidden(multiviewResults, true);
+// Removed multiviewResults reference
     setHidden(artisticResults, true);
     setHidden(notesResults, true);
     setHidden(overlayGrid, true);
@@ -1280,7 +1276,6 @@ function updateLanguageUI() {
     setHidden(globalActionsBar, true);
 
     removeClass(tabAnalysis, 'active');
-    removeClass(tabMultiView, 'active');
     removeClass(tabNotes, 'active');
     removeClass(tabTextOverlay, 'active');
     removeClass(tabArtistic, 'active');
@@ -1293,14 +1288,6 @@ function updateLanguageUI() {
         setHidden(analysisCardsWrapper, false);
         setHidden(globalActionsBar, false);
         addClass(tabAnalysis, 'active');
-
-    } else if (activeTab === 'multiview') {
-        setHidden(panelMultiView, false);
-        setHidden(panelUploadAnalysis, false);
-        setHidden(multiviewContextContainer, false);
-        setHidden(multiviewResults, false);
-        setHidden(globalActionsBar, false);
-        addClass(tabMultiView, 'active');
 
     } else if (activeTab === 'notes') {
         setHidden(panelNotes, false);
@@ -1359,7 +1346,7 @@ function updateLanguageUI() {
     }
 
     // Render Logic for Views and Notes handled in respective functions
-    if(activeTab === 'multiview') renderMultiViewResults();
+// Removed renderMultiViewResults call
     if(activeTab === 'artistic') renderArtisticResults();
     if(activeTab === 'notes') renderNotesResults();
     if(activeTab === 'removeLogo') renderLogoRemovalSlots();
@@ -1399,8 +1386,7 @@ function setupCollapsibleCards() {
 // but currently createMultiViewCardHTML has built-in logic)
 
 function renderMultiViewResults() {
-    if (!multiviewResults) return;
-    multiviewResults.innerHTML = '';
+// Removed multiviewResults reference
     
     // 1. Custom Angles History
     if (customAnglesHistory.length > 0) {
@@ -1451,7 +1437,7 @@ function renderMultiViewResults() {
                     const card = createMultiViewCardHTML(
                         `mv-${idx}`, angleTitle, content, composition, lighting
                     );
-                    multiviewResults.appendChild(card);
+// Removed multiviewResults reference
                  }
              });
          }
@@ -2246,79 +2232,30 @@ async function processLogoRemoval(index: number) {
     renderLogoRemovalSlots();
 
     try {
+        console.log("Starting logo removal for slot:", index);
         const img = await new Promise<HTMLImageElement>((resolve, reject) => {
             const i = new Image();
             i.onload = () => resolve(i);
             i.onerror = reject;
             i.src = slot.imgSrc!;
         });
+        console.log("Image loaded, dimensions:", img.naturalWidth, "x", img.naturalHeight);
 
         const width = img.naturalWidth;
         const height = img.naturalHeight;
-        const prompt = "Remove the logo (Gemini or RunningHub AI) located at the top of this image. Fill the area seamlessly to match the surrounding architectural details. Do not change anything else. Output the edited image.";
+        const prompt = "Perform high-quality inpainting to remove the logo (Gemini star, RunningHub AI, or any star-shaped watermark) from the image. Carefully reconstruct the underlying architectural details, textures, and lighting in the area where the logo was removed to ensure a seamless, natural-looking result. Do not alter any other part of the image.";
 
-        // If image is large, use patching to preserve resolution
-        if (width > 1536 || height > 1536) {
-            showStatus("High-Res Mode: Processing logo area...");
-            
-            // Define patch size - 1024 is optimal for Gemini
-            const patchSize = 1024;
-            // Target the top area (centered horizontally)
-            const startX = Math.max(0, (width - patchSize) / 2);
-            const startY = 0; // Top
-            const actualPatchWidth = Math.min(patchSize, width);
-            const actualPatchHeight = Math.min(patchSize, height);
-
-            const canvas = document.createElement('canvas');
-            canvas.width = actualPatchWidth;
-            canvas.height = actualPatchHeight;
-            const ctx = canvas.getContext('2d')!;
-            ctx.drawImage(img, startX, startY, actualPatchWidth, actualPatchHeight, 0, 0, actualPatchWidth, actualPatchHeight);
-            
-            const patchBlob = await new Promise<Blob | null>(r => canvas.toBlob(r, 'image/png', 1.0));
-            if (!patchBlob) throw new Error("Patch creation failed");
-            const patchFile = new File([patchBlob], "patch.png", { type: "image/png" });
-
-            const editedPatchSrc = await callGeminiImageEdit(prompt, patchFile);
-
-            if (editedPatchSrc) {
-                const editedPatchImg = await new Promise<HTMLImageElement>((resolve, reject) => {
-                    const i = new Image();
-                    i.onload = () => resolve(i);
-                    i.onerror = reject;
-                    i.src = editedPatchSrc;
-                });
-
-                const finalCanvas = document.createElement('canvas');
-                finalCanvas.width = width;
-                finalCanvas.height = height;
-                const finalCtx = finalCanvas.getContext('2d')!;
-                finalCtx.drawImage(img, 0, 0);
-                // Draw the edited patch back exactly where it came from
-                finalCtx.drawImage(editedPatchImg, 0, 0, editedPatchImg.width, editedPatchImg.height, startX, startY, actualPatchWidth, actualPatchHeight);
-                
-                slot.resultSrc = finalCanvas.toDataURL('image/png', 1.0);
-                showStatus("Logo removed (Original Resolution Preserved)!");
-            } else {
-                showStatus("API Error: Patch processing failed. Retrying with full image...");
-                // Fallback to full image if patch fails
-                const result = await callGeminiImageEdit(prompt, slot.file);
-                if (result) {
-                    slot.resultSrc = result;
-                    showStatus("Logo removed (Standard Resolution).");
-                } else {
-                    showStatus("Failed to remove logo.", true);
-                }
-            }
+        // Always use full image processing for better reliability
+        console.log("Processing logo removal using full image...");
+        showStatus("Processing logo removal...");
+        
+        const result = await callGeminiImageEdit(prompt, slot.file);
+        
+        if (result) {
+            slot.resultSrc = result;
+            showStatus("Logo removed successfully!");
         } else {
-            // Normal processing for smaller images
-            const result = await callGeminiImageEdit(prompt, slot.file);
-            if (result) {
-                slot.resultSrc = result;
-                showStatus("Logo removed successfully!");
-            } else {
-                showStatus("Failed to remove logo.", true);
-            }
+            showStatus("Failed to remove logo.", true);
         }
     } catch (e) {
         console.error("Logo removal failed:", e);
@@ -2724,7 +2661,6 @@ if (langToggleBtn) langToggleBtn.addEventListener('click', () => {
     updateLanguageUI();
 });
 if (tabAnalysis) tabAnalysis.addEventListener('click', () => { activeTab = 'analysis'; updateLanguageUI(); });
-if (tabMultiView) tabMultiView.addEventListener('click', () => { activeTab = 'multiview'; updateLanguageUI(); });
 if (tabArtistic) tabArtistic.addEventListener('click', () => { activeTab = 'artistic'; updateLanguageUI(); });
 if (tabNotes) tabNotes.addEventListener('click', () => { activeTab = 'notes'; updateLanguageUI(); });
 if (tabRemoveLogo) tabRemoveLogo.addEventListener('click', () => { activeTab = 'removeLogo'; updateLanguageUI(); });
@@ -2890,7 +2826,7 @@ if (btnClearResults) {
             initOverlaySlots(); 
             
             // 3. Force Clear DOM Containers (Important fix)
-            if (multiviewResults) multiviewResults.innerHTML = '';
+// Removed multiviewResults reference
             if (notesResults) notesResults.innerHTML = '';
             
             // 4. Reset Static Text Fields
