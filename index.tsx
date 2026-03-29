@@ -25,7 +25,7 @@ let globalSigBgColor = '#00ff00'; // Default Neon Green
 // --- Application State ---
 type Lang = 'en' | 'vi';
 let currentLang: Lang = 'en';
-let activeTab: 'analysis' | 'notes' | 'textOverlay' | 'artistic' | 'removeLogo' = 'analysis';
+let activeTab: 'analysis' | 'multiview' | 'notes' | 'textOverlay' | 'artistic' | 'removeLogo' = 'analysis';
 
 // --- Logo Removal State ---
 interface LogoRemovalSlot {
@@ -233,6 +233,7 @@ const translations = {
         loaderTitle: "ANALYZING...",
         loaderSubtitle: "Gemini is analyzing architectural details...",
         tabAnalysis: "Analysis",
+        tabMultiView: "Multi-View",
         tabNotes: "Notes",
         tabTextOverlay: "Text Overlay",
         tabArtistic: "Artistic Styles",
@@ -303,6 +304,7 @@ const translations = {
         loaderTitle: "ĐANG PHÂN TÍCH...",
         loaderSubtitle: "Gemini đang xử lý chi tiết kiến trúc...",
         tabAnalysis: "Phân Tích",
+        tabMultiView: "Đa Góc Nhìn",
         tabNotes: "Ghi Chú",
         tabTextOverlay: "Chèn Chữ",
         tabArtistic: "Phong Cách Nghệ Thuật",
@@ -361,12 +363,13 @@ const translations = {
 const tabAnalysis = getEl<HTMLButtonElement>('tab-analysis');
 const tabNotes = getEl<HTMLButtonElement>('tab-notes');
 const tabRemoveLogo = getEl<HTMLButtonElement>('tab-remove-logo');
+const tabMultiView = getEl<HTMLButtonElement>('tab-multiview');
 const tabArtistic = getEl<HTMLButtonElement>('tab-artistic');
 const tabTextOverlay = getEl<HTMLButtonElement>('tab-text-overlay');
 
 const panelAnalysis = getEl<HTMLDivElement>('panel-analysis');
 const panelNotes = getEl<HTMLDivElement>('panel-notes');
-// Removed panelMultiView reference
+const panelMultiView = getEl<HTMLDivElement>('panel-multiview');
 const panelArtistic = getEl<HTMLDivElement>('panel-artistic');
 const panelRemoveLogoSidebar = getEl<HTMLDivElement>('panel-remove-logo');
 const panelUploadAnalysis = getEl<HTMLDivElement>('panel-upload-analysis');
@@ -423,7 +426,7 @@ const loader = getEl<HTMLDivElement>('loader');
 const analysisCardsWrapper = getEl<HTMLDivElement>('analysis-cards-wrapper');
 const notesResults = getEl<HTMLDivElement>('notes-results');
 const artisticResults = getEl<HTMLDivElement>('artistic-results');
-// Removed multiviewResults reference
+const multiviewResults = getEl<HTMLDivElement>('multiview-results');
 const panelRemoveLogo = getEl<HTMLDivElement>('remove-logo-panel');
 const logoRemovalGrid = getEl<HTMLDivElement>('logo-removal-grid');
 const logoMultiDropZone = getEl<HTMLDivElement>('logo-multi-drop-zone');
@@ -514,16 +517,16 @@ const sketchPromptCard = getEl<HTMLDivElement>('card-sketch-prompt');
 const collageAnalysisCard = getEl<HTMLDivElement>('card-collage-analysis');
 
 // MultiView Elements
-// Removed multiviewContextContainer reference
+const multiviewContextContainer = getEl<HTMLDivElement>('multiview-context-container');
 const lblObjAnalysis = getEl('lbl-obj-analysis');
 const lblObjDesc = getEl('lbl-obj-desc');
 const btnRunObjAnalysis = getEl<HTMLButtonElement>('btn-run-obj-analysis');
 const btnObjAnalysisText = getEl('btn-obj-analysis-text');
 const objAnalysisResult = getEl<HTMLDivElement>('obj-analysis-result');
 const angleInput = getEl<HTMLInputElement>('angle-input');
-// Removed multiViewBtn reference
+const multiViewBtn = getEl<HTMLButtonElement>('multiview-btn');
 const lblAngleCount = getEl('lbl-angle-count');
-// Removed btnMultiViewText reference
+const btnMultiViewText = getEl('btn-multiview-text');
 
 // Custom Angle Elements
 const lblCustomAngle = getEl('lbl-custom-angle');
@@ -1191,6 +1194,7 @@ function updateLanguageUI() {
     setText(loaderTitle, t.loaderTitle);
     setText(loaderSubtitle, t.loaderSubtitle);
     if(tabAnalysis) setText(tabAnalysis, t.tabAnalysis);
+    if(tabMultiView) setText(tabMultiView, t.tabMultiView);
     if(tabNotes) setText(tabNotes, t.tabNotes);
     if(tabArtistic) setText(tabArtistic, t.tabArtistic);
     if(tabRemoveLogo) setText(tabRemoveLogo, t.tabRemoveLogo);
@@ -1252,7 +1256,7 @@ function updateLanguageUI() {
     setHidden(panelNotes, true);
     setHidden(panelUploadAnalysis, true);
     setHidden(sketchContainer, true);
-// Removed multiviewContextContainer reference
+    setHidden(multiviewContextContainer, true);
     setHidden(panelTextOverlaySettings, true);
     setHidden(panelRemoveLogo, true);
     setHidden(panelRemoveLogoSidebar, true);
@@ -1267,7 +1271,7 @@ function updateLanguageUI() {
     setText(btnLogoResetAll, t.btnLogoResetAll);
 
     setHidden(analysisCardsWrapper, true);
-// Removed multiviewResults reference
+    setHidden(multiviewResults, true);
     setHidden(artisticResults, true);
     setHidden(notesResults, true);
     setHidden(overlayGrid, true);
@@ -1276,6 +1280,7 @@ function updateLanguageUI() {
     setHidden(globalActionsBar, true);
 
     removeClass(tabAnalysis, 'active');
+    removeClass(tabMultiView, 'active');
     removeClass(tabNotes, 'active');
     removeClass(tabTextOverlay, 'active');
     removeClass(tabArtistic, 'active');
@@ -1288,6 +1293,14 @@ function updateLanguageUI() {
         setHidden(analysisCardsWrapper, false);
         setHidden(globalActionsBar, false);
         addClass(tabAnalysis, 'active');
+
+    } else if (activeTab === 'multiview') {
+        setHidden(panelMultiView, false);
+        setHidden(panelUploadAnalysis, false);
+        setHidden(multiviewContextContainer, false);
+        setHidden(multiviewResults, false);
+        setHidden(globalActionsBar, false);
+        addClass(tabMultiView, 'active');
 
     } else if (activeTab === 'notes') {
         setHidden(panelNotes, false);
@@ -1346,7 +1359,7 @@ function updateLanguageUI() {
     }
 
     // Render Logic for Views and Notes handled in respective functions
-// Removed renderMultiViewResults call
+    if(activeTab === 'multiview') renderMultiViewResults();
     if(activeTab === 'artistic') renderArtisticResults();
     if(activeTab === 'notes') renderNotesResults();
     if(activeTab === 'removeLogo') renderLogoRemovalSlots();
@@ -1386,7 +1399,8 @@ function setupCollapsibleCards() {
 // but currently createMultiViewCardHTML has built-in logic)
 
 function renderMultiViewResults() {
-// Removed multiviewResults reference
+    if (!multiviewResults) return;
+    multiviewResults.innerHTML = '';
     
     // 1. Custom Angles History
     if (customAnglesHistory.length > 0) {
@@ -1437,7 +1451,7 @@ function renderMultiViewResults() {
                     const card = createMultiViewCardHTML(
                         `mv-${idx}`, angleTitle, content, composition, lighting
                     );
-// Removed multiviewResults reference
+                    multiviewResults.appendChild(card);
                  }
              });
          }
@@ -2661,6 +2675,7 @@ if (langToggleBtn) langToggleBtn.addEventListener('click', () => {
     updateLanguageUI();
 });
 if (tabAnalysis) tabAnalysis.addEventListener('click', () => { activeTab = 'analysis'; updateLanguageUI(); });
+if (tabMultiView) tabMultiView.addEventListener('click', () => { activeTab = 'multiview'; updateLanguageUI(); });
 if (tabArtistic) tabArtistic.addEventListener('click', () => { activeTab = 'artistic'; updateLanguageUI(); });
 if (tabNotes) tabNotes.addEventListener('click', () => { activeTab = 'notes'; updateLanguageUI(); });
 if (tabRemoveLogo) tabRemoveLogo.addEventListener('click', () => { activeTab = 'removeLogo'; updateLanguageUI(); });
@@ -2826,7 +2841,7 @@ if (btnClearResults) {
             initOverlaySlots(); 
             
             // 3. Force Clear DOM Containers (Important fix)
-// Removed multiviewResults reference
+            if (multiviewResults) multiviewResults.innerHTML = '';
             if (notesResults) notesResults.innerHTML = '';
             
             // 4. Reset Static Text Fields
