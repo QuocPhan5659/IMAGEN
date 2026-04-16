@@ -20,12 +20,15 @@ let overlaySlots: OverlaySlot[] = [];
 let globalFont = 'Inter';
 let globalSignature = '';
 let globalLogoSrc: string | null = null;
+let globalLogoSize = 100;
+let globalLogoOpacity = 100;
+let globalLogoPosition = 'bottom';
 let globalSigBgColor = '#00ff00'; // Default Neon Green
 
 // --- Application State ---
 type Lang = 'en' | 'vi';
 let currentLang: Lang = 'en';
-let activeTab: 'analysis' | 'multiview' | 'notes' | 'textOverlay' | 'artistic' | 'removeLogo' = 'analysis';
+let activeTab: 'analysis' | 'notes' | 'textOverlay' | 'artistic' | 'removeLogo' = 'analysis';
 
 // --- Logo Removal State ---
 interface LogoRemovalSlot {
@@ -233,7 +236,6 @@ const translations = {
         loaderTitle: "ANALYZING...",
         loaderSubtitle: "Gemini is analyzing architectural details...",
         tabAnalysis: "Analysis",
-        tabMultiView: "Multi-View",
         tabNotes: "Notes",
         tabTextOverlay: "Text Overlay",
         tabArtistic: "Artistic Styles",
@@ -304,7 +306,6 @@ const translations = {
         loaderTitle: "ĐANG PHÂN TÍCH...",
         loaderSubtitle: "Gemini đang xử lý chi tiết kiến trúc...",
         tabAnalysis: "Phân Tích",
-        tabMultiView: "Đa Góc Nhìn",
         tabNotes: "Ghi Chú",
         tabTextOverlay: "Chèn Chữ",
         tabArtistic: "Phong Cách Nghệ Thuật",
@@ -363,13 +364,12 @@ const translations = {
 const tabAnalysis = getEl<HTMLButtonElement>('tab-analysis');
 const tabNotes = getEl<HTMLButtonElement>('tab-notes');
 const tabRemoveLogo = getEl<HTMLButtonElement>('tab-remove-logo');
-const tabMultiView = getEl<HTMLButtonElement>('tab-multiview');
 const tabArtistic = getEl<HTMLButtonElement>('tab-artistic');
 const tabTextOverlay = getEl<HTMLButtonElement>('tab-text-overlay');
 
 const panelAnalysis = getEl<HTMLDivElement>('panel-analysis');
 const panelNotes = getEl<HTMLDivElement>('panel-notes');
-const panelMultiView = getEl<HTMLDivElement>('panel-multiview');
+// Removed panelMultiView reference
 const panelArtistic = getEl<HTMLDivElement>('panel-artistic');
 const panelRemoveLogoSidebar = getEl<HTMLDivElement>('panel-remove-logo');
 const panelUploadAnalysis = getEl<HTMLDivElement>('panel-upload-analysis');
@@ -400,6 +400,11 @@ const logoFileInput = getEl<HTMLInputElement>('logo-file-input');
 const logoPreview = getEl<HTMLImageElement>('logo-preview');
 const logoEmpty = getEl<HTMLDivElement>('logo-empty');
 const btnClearLogo = getEl<HTMLButtonElement>('btn-clear-logo');
+const logoSizeSlider = getEl<HTMLInputElement>('logo-size-slider');
+const logoOpacitySlider = getEl<HTMLInputElement>('logo-opacity-slider');
+const logoPositionSelect = getEl<HTMLSelectElement>('logo-position-select');
+const logoSizeVal = getEl('logo-size-val');
+const logoOpacityVal = getEl('logo-opacity-val');
 
 const dropZone = getEl<HTMLDivElement>('drop-zone');
 const emptyState = getEl<HTMLDivElement>('empty-state'); 
@@ -426,7 +431,7 @@ const loader = getEl<HTMLDivElement>('loader');
 const analysisCardsWrapper = getEl<HTMLDivElement>('analysis-cards-wrapper');
 const notesResults = getEl<HTMLDivElement>('notes-results');
 const artisticResults = getEl<HTMLDivElement>('artistic-results');
-const multiviewResults = getEl<HTMLDivElement>('multiview-results');
+// Removed multiviewResults reference
 const panelRemoveLogo = getEl<HTMLDivElement>('remove-logo-panel');
 const logoRemovalGrid = getEl<HTMLDivElement>('logo-removal-grid');
 const logoMultiDropZone = getEl<HTMLDivElement>('logo-multi-drop-zone');
@@ -517,16 +522,16 @@ const sketchPromptCard = getEl<HTMLDivElement>('card-sketch-prompt');
 const collageAnalysisCard = getEl<HTMLDivElement>('card-collage-analysis');
 
 // MultiView Elements
-const multiviewContextContainer = getEl<HTMLDivElement>('multiview-context-container');
+// Removed multiviewContextContainer reference
 const lblObjAnalysis = getEl('lbl-obj-analysis');
 const lblObjDesc = getEl('lbl-obj-desc');
 const btnRunObjAnalysis = getEl<HTMLButtonElement>('btn-run-obj-analysis');
 const btnObjAnalysisText = getEl('btn-obj-analysis-text');
 const objAnalysisResult = getEl<HTMLDivElement>('obj-analysis-result');
 const angleInput = getEl<HTMLInputElement>('angle-input');
-const multiViewBtn = getEl<HTMLButtonElement>('multiview-btn');
+// Removed multiViewBtn reference
 const lblAngleCount = getEl('lbl-angle-count');
-const btnMultiViewText = getEl('btn-multiview-text');
+// Removed btnMultiViewText reference
 
 // Custom Angle Elements
 const lblCustomAngle = getEl('lbl-custom-angle');
@@ -1011,7 +1016,6 @@ function setLoading(isLoading: boolean) {
   if (isLoading) {
     setHidden(loader, false);
     if(analyzeBtn) analyzeBtn.disabled = true;
-    if(multiViewBtn) multiViewBtn.disabled = true;
     if(btnRunObjAnalysis) btnRunObjAnalysis.disabled = true;
     if(analyzeNotesBtn) analyzeNotesBtn.disabled = true;
     if(btnLoadPngInfo) btnLoadPngInfo.disabled = true;
@@ -1020,7 +1024,6 @@ function setLoading(isLoading: boolean) {
   } else {
     setHidden(loader, true);
     if(analyzeBtn) analyzeBtn.disabled = false;
-    if(multiViewBtn) multiViewBtn.disabled = false;
     if(btnRunObjAnalysis) btnRunObjAnalysis.disabled = false;
     if(analyzeNotesBtn) analyzeNotesBtn.disabled = false;
     if(btnLoadPngInfo) btnLoadPngInfo.disabled = false;
@@ -1194,7 +1197,6 @@ function updateLanguageUI() {
     setText(loaderTitle, t.loaderTitle);
     setText(loaderSubtitle, t.loaderSubtitle);
     if(tabAnalysis) setText(tabAnalysis, t.tabAnalysis);
-    if(tabMultiView) setText(tabMultiView, t.tabMultiView);
     if(tabNotes) setText(tabNotes, t.tabNotes);
     if(tabArtistic) setText(tabArtistic, t.tabArtistic);
     if(tabRemoveLogo) setText(tabRemoveLogo, t.tabRemoveLogo);
@@ -1215,7 +1217,6 @@ function updateLanguageUI() {
     setText(lblObjDesc, t.lblObjDesc);
     setText(btnObjAnalysisText, t.btnObjAnalysis);
     setText(btnAnalyzeNotesText, t.btnAnalyzeNotes);
-    setText(btnMultiViewText, t.btnMultiView);
 
     setText(getEl('lbl-artistic'), t.lblArtistic);
     setText(getEl('lbl-artistic-desc'), t.lblArtisticDesc);
@@ -1251,12 +1252,12 @@ function updateLanguageUI() {
 
     // Tab Logic
     setHidden(panelAnalysis, true);
-    setHidden(panelMultiView, true);
+
     setHidden(panelArtistic, true);
     setHidden(panelNotes, true);
     setHidden(panelUploadAnalysis, true);
     setHidden(sketchContainer, true);
-    setHidden(multiviewContextContainer, true);
+// Removed multiviewContextContainer reference
     setHidden(panelTextOverlaySettings, true);
     setHidden(panelRemoveLogo, true);
     setHidden(panelRemoveLogoSidebar, true);
@@ -1271,7 +1272,7 @@ function updateLanguageUI() {
     setText(btnLogoResetAll, t.btnLogoResetAll);
 
     setHidden(analysisCardsWrapper, true);
-    setHidden(multiviewResults, true);
+// Removed multiviewResults reference
     setHidden(artisticResults, true);
     setHidden(notesResults, true);
     setHidden(overlayGrid, true);
@@ -1280,7 +1281,6 @@ function updateLanguageUI() {
     setHidden(globalActionsBar, true);
 
     removeClass(tabAnalysis, 'active');
-    removeClass(tabMultiView, 'active');
     removeClass(tabNotes, 'active');
     removeClass(tabTextOverlay, 'active');
     removeClass(tabArtistic, 'active');
@@ -1293,14 +1293,6 @@ function updateLanguageUI() {
         setHidden(analysisCardsWrapper, false);
         setHidden(globalActionsBar, false);
         addClass(tabAnalysis, 'active');
-
-    } else if (activeTab === 'multiview') {
-        setHidden(panelMultiView, false);
-        setHidden(panelUploadAnalysis, false);
-        setHidden(multiviewContextContainer, false);
-        setHidden(multiviewResults, false);
-        setHidden(globalActionsBar, false);
-        addClass(tabMultiView, 'active');
 
     } else if (activeTab === 'notes') {
         setHidden(panelNotes, false);
@@ -1359,7 +1351,7 @@ function updateLanguageUI() {
     }
 
     // Render Logic for Views and Notes handled in respective functions
-    if(activeTab === 'multiview') renderMultiViewResults();
+// Removed renderMultiViewResults call
     if(activeTab === 'artistic') renderArtisticResults();
     if(activeTab === 'notes') renderNotesResults();
     if(activeTab === 'removeLogo') renderLogoRemovalSlots();
@@ -1399,8 +1391,7 @@ function setupCollapsibleCards() {
 // but currently createMultiViewCardHTML has built-in logic)
 
 function renderMultiViewResults() {
-    if (!multiviewResults) return;
-    multiviewResults.innerHTML = '';
+// Removed multiviewResults reference
     
     // 1. Custom Angles History
     if (customAnglesHistory.length > 0) {
@@ -1412,7 +1403,7 @@ function renderMultiViewResults() {
                     `custom-${idx}`, data.title, data.content, data.composition, data.lighting,
                     () => { customAnglesHistory.splice(realIndex, 1); updateLanguageUI(); }
                 );
-                multiviewResults.appendChild(card);
+
              }
         });
     }
@@ -1451,7 +1442,7 @@ function renderMultiViewResults() {
                     const card = createMultiViewCardHTML(
                         `mv-${idx}`, angleTitle, content, composition, lighting
                     );
-                    multiviewResults.appendChild(card);
+// Removed multiviewResults reference
                  }
              });
          }
@@ -2426,22 +2417,40 @@ function processSlotEmbed(index: number) {
             logoImg.src = globalLogoSrc;
             logoImg.crossOrigin = "anonymous";
             logoImg.onload = () => {
+                // Apply Opacity
+                const oldAlpha = ctx.globalAlpha;
+                ctx.globalAlpha = globalLogoOpacity / 100;
+                
                 // Calculate Logo Position: Centered Horizontally, Above the text box
-                // Increase Logo Size: was 0.26, increased to 0.32
-                const maxLogoW = canvas.width * 0.32; 
+                const maxLogoW = canvas.width * (globalLogoSize / 100); 
                 const scale = Math.min(maxLogoW / logoImg.naturalWidth, 1);
                 const drawW = logoImg.naturalWidth * scale;
                 const drawH = logoImg.naturalHeight * scale;
                 
                 const logoX = (canvas.width - drawW) / 2;
-                // Position just above the black box (boxY) with some margin
-                const logoMargin = canvas.height * 0.02; 
-                const logoY = boxY - drawH - logoMargin;
+                
+                // Position logic based on dropdown
+                let logoY = 0;
+                const canvasPadding = canvas.height * 0.05;
+                if (globalLogoPosition === 'top') {
+                    logoY = (canvas.height / 6) - (drawH / 2);
+                } else if (globalLogoPosition === 'middle') {
+                    logoY = (canvas.height / 2) - (drawH / 2);
+                } else { // bottom - 1/3 from the bottom
+                    logoY = (canvas.height * 5 / 6) - (drawH / 2);
+                }
+                
+                // Clamp within padding
+                if (logoY < canvasPadding) logoY = canvasPadding;
+                if (logoY + drawH > canvas.height - canvasPadding) logoY = canvas.height - canvasPadding - drawH;
 
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = 'rgba(0,0,0,0.5)';
                 ctx.drawImage(logoImg, logoX, logoY, drawW, drawH);
                 ctx.shadowBlur = 0; // Reset shadow
+                
+                // Reset Opacity
+                ctx.globalAlpha = oldAlpha;
 
                 drawContent(); // Proceed to draw text box
             };
@@ -2675,7 +2684,6 @@ if (langToggleBtn) langToggleBtn.addEventListener('click', () => {
     updateLanguageUI();
 });
 if (tabAnalysis) tabAnalysis.addEventListener('click', () => { activeTab = 'analysis'; updateLanguageUI(); });
-if (tabMultiView) tabMultiView.addEventListener('click', () => { activeTab = 'multiview'; updateLanguageUI(); });
 if (tabArtistic) tabArtistic.addEventListener('click', () => { activeTab = 'artistic'; updateLanguageUI(); });
 if (tabNotes) tabNotes.addEventListener('click', () => { activeTab = 'notes'; updateLanguageUI(); });
 if (tabRemoveLogo) tabRemoveLogo.addEventListener('click', () => { activeTab = 'removeLogo'; updateLanguageUI(); });
@@ -2841,7 +2849,7 @@ if (btnClearResults) {
             initOverlaySlots(); 
             
             // 3. Force Clear DOM Containers (Important fix)
-            if (multiviewResults) multiviewResults.innerHTML = '';
+// Removed multiviewResults reference
             if (notesResults) notesResults.innerHTML = '';
             
             // 4. Reset Static Text Fields
@@ -3012,6 +3020,22 @@ if (logoDropZone && logoFileInput) {
         }
     });
 }
+
+// Logo Sliders
+logoSizeSlider?.addEventListener('input', () => {
+    globalLogoSize = parseInt(logoSizeSlider.value);
+    setText(logoSizeVal, logoSizeSlider.value);
+    renderOverlaySlots(); // Re-render to update
+});
+logoOpacitySlider?.addEventListener('input', () => {
+    globalLogoOpacity = parseInt(logoOpacitySlider.value);
+    setText(logoOpacityVal, logoOpacitySlider.value);
+    renderOverlaySlots(); // Re-render to update
+});
+logoPositionSelect?.addEventListener('change', () => {
+    globalLogoPosition = logoPositionSelect.value;
+    renderOverlaySlots(); // Re-render to update
+});
 
 if (btnClearLogo) {
     btnClearLogo.addEventListener('click', (e) => {
@@ -3593,64 +3617,7 @@ if (analyzeNotesBtn) {
 }
 
 
-// Multi-View Generator
-if(multiViewBtn) {
-    multiViewBtn.addEventListener('click', async () => {
-         if (currentFiles.length === 0) { showStatus('Please upload references.', true); return; }
-         setLoading(true);
-         try {
-             const count = angleInput ? angleInput.value : "4";
-             const prompt = `
-                Role: Senior Architectural Photographer.
-                Task: Generate EXACTLY ${count} distinct and creative camera angle prompts for this architectural project.
-                
-                REALISM: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in each prompt.
-                PHOTOREALISM: All prompts must describe photorealistic, high-quality, real-life images.
-                DETAIL PRESERVATION: Ensure strict adherence to the visual details of the uploaded images.
-                CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
-                CONTEXTUAL REALISM: For exteriors, use realistic environments (street, residential, coast, river). For interiors, focus on finished, high-end spaces.
-
-                SPECIAL INSTRUCTION: If you detect any image that is a collage (multiple smaller views or angles combined into one main image), you MUST treat it as a single architectural project or space. 
-                Analyze the relationship between these views to understand the project holistically.
-                The generated angles should complement the views already seen in the collage or provide new, interesting perspectives of the same project.
-
-                Requirements:
-                - Each angle must be unique (e.g., Aerial, Eye-level, Worm's eye, Interior, Detail shot, etc.)
-                - Provide both English and Vietnamese versions.
-                - Output MUST be strictly valid JSON with exactly ${count} items in each language array.
-
-                JSON Structure:
-                {
-                  "multiViewPrompts": {
-                    "en": [
-                      { "angle": "Angle Title", "content": "Visual description...", "composition": "Camera settings...", "lighting": "Light setup..." }
-                    ],
-                    "vi": [
-                      { "angle": "Tiêu đề góc", "content": "Mô tả hình ảnh...", "composition": "Thiết lập camera...", "lighting": "Thiết lập ánh sáng..." }
-                    ]
-                  }
-                }
-             `;
-             
-             const txt = await callGemini(prompt, currentFiles, currentSketchFile);
-             const raw = extractJson(txt);
-             
-             if (!raw.multiViewPrompts || !raw.multiViewPrompts.en || !raw.multiViewPrompts.vi) {
-                 throw new Error("Invalid response format from AI");
-             }
-
-             const fmt = (arr: any[]) => arr.map(i => `===ANGLE: ${i.angle}===\n[CONTENT]: ${i.content}\n[COMPOSITION]: ${i.composition}\n[LIGHTING]: ${i.lighting}`).join('\n\n');
-             
-             if(!lastAnalysisData) lastAnalysisData = {};
-             lastAnalysisData.multiViewPrompts = { 
-                 en: fmt(raw.multiViewPrompts.en), 
-                 vi: fmt(raw.multiViewPrompts.vi) 
-             };
-             updateLanguageUI(); showStatus('');
-         } catch(e) { handleApiError(e, 'Error generating views'); } finally { setLoading(false); }
-    });
-}
-
+// Multi-View Generator REMOVED
 // Custom Angle Generator
 if(btnCustomAngle) {
     btnCustomAngle.addEventListener('click', async () => {
