@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import JSZip from 'jszip';
 
 let customApiKey: string | null = localStorage.getItem('gemini_custom_api_key');
 
@@ -2168,15 +2169,33 @@ async function processLogoDownloadAll() {
         return;
     }
 
-    showStatus(`Downloading ${slotsToDownload.length} images...`);
-    for (const slot of slotsToDownload) {
+    if (slotsToDownload.length === 1) {
+        const slot = slotsToDownload[0];
         const a = document.createElement('a');
         a.href = slot.resultSrc!;
         a.download = `Cleaned_${slot.file?.name || 'image.png'}`;
         a.click();
-        // Small delay to prevent browser blocking multiple downloads
-        await new Promise(r => setTimeout(r, 200));
+        return;
     }
+
+    showStatus(`Preparing ZIP with ${slotsToDownload.length} images...`);
+    const zip = new JSZip();
+    for (const slot of slotsToDownload) {
+        const base64Data = slot.resultSrc!.split(',')[1];
+        const fileName = `Cleaned_${slot.file?.name || 'image.png'}`;
+        zip.file(fileName, base64Data, { base64: true });
+    }
+
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Cleaned_Images_Batch.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showStatus("Download complete!");
 }
 
 function processLogoResetAll() {
@@ -2272,208 +2291,195 @@ async function processLogoRemoval(index: number) {
 }
 
 // Embed Function (Canvas based)
-function processSlotEmbed(index: number) {
+async function processSlotEmbed(index: number): Promise<void> {
     const slot = overlaySlots[index];
-    if (!slot.file || !slot.imgSrc) { showStatus('No image in slot!', true); return; }
+    if (!slot.file || !slot.imgSrc) { 
+        showStatus('No image in slot!', true); 
+        return Promise.resolve(); 
+    }
 
-    const img = new Image();
-    img.src = slot.imgSrc;
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        if(!ctx) return;
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.src = slot.imgSrc!;
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            if(!ctx) { resolve(); return; }
 
-        // Draw Base Image
-        ctx.drawImage(img, 0, 0);
+            // Draw Base Image
+            ctx.drawImage(img, 0, 0);
 
-        // 1/3 Height Logic
-        const boxHeight = Math.floor(canvas.height / 3);
-        const boxY = canvas.height - boxHeight;
-        const padding = Math.floor(canvas.width * 0.05);
-        const maxWidth = canvas.width - (padding * 2);
-        const maxHeight = boxHeight - (padding * 2);
+            // 1/3 Height Logic
+            const boxHeight = Math.floor(canvas.height / 3);
+            const boxY = canvas.height - boxHeight;
+            const padding = Math.floor(canvas.width * 0.05);
+            const maxWidth = canvas.width - (padding * 2);
+            const maxHeight = boxHeight - (padding * 2);
 
-        // Helper for asynchronous drawing steps (logo loading)
-        const drawContent = () => {
-            // Draw Text Box Background (More Transparent: 0.3 - 0.7)
-            if (slot.hasBackground) {
-                const grad = ctx.createLinearGradient(0, boxY, 0, canvas.height);
-                const bgColor = slot.isDarkText ? "255, 255, 255" : "0, 0, 0";
-                grad.addColorStop(0, `rgba(${bgColor}, 0.3)`); 
-                grad.addColorStop(1, `rgba(${bgColor}, 0.7)`);
-                
-                ctx.fillStyle = grad;
-                ctx.fillRect(0, boxY, canvas.width, boxHeight);
-            }
-
-            // Text Drawing with Auto-Scaling 
-            const text = slot.text.trim();
-            if(text) {
-                // Increased base font size (smaller divisor = bigger text)
-                // Was 50, now 42 for a slight increase
-                let fontSize = Math.floor(canvas.width / 42); 
-                const minFontSize = Math.floor(canvas.width / 100); 
-                
-                ctx.font = `bold ${fontSize}px "${globalFont}", sans-serif`;
-                
-                // Helper to measure height
-                const measureTextHeight = (fs: number) => {
-                    ctx.font = `bold ${fs}px "${globalFont}", sans-serif`;
-                    const lineHeight = fs * 1.4;
-                    const pars = text.split('\n');
-                    let lines = 0;
-                    pars.forEach(p => {
-                        const words = p.split(' ');
-                        let l = '';
-                        for(let n=0; n<words.length; n++) {
-                            const tm = ctx.measureText(l + words[n] + ' ');
-                            if(tm.width > maxWidth && n > 0) { lines++; l = words[n] + ' '; }
-                            else { l += words[n] + ' '; }
-                        }
-                        lines++;
-                    });
-                    return lines * lineHeight;
-                };
-
-                // Loop to shrink font if it doesn't fit
-                while (measureTextHeight(fontSize) > maxHeight && fontSize > minFontSize) {
-                    fontSize -= 2;
+            // Helper for asynchronous drawing steps (logo loading)
+            const drawContent = () => {
+                // Draw Text Box Background (More Transparent: 0.3 - 0.7)
+                if (slot.hasBackground) {
+                    const grad = ctx.createLinearGradient(0, boxY, 0, canvas.height);
+                    const bgColor = slot.isDarkText ? "255, 255, 255" : "0, 0, 0";
+                    grad.addColorStop(0, `rgba(${bgColor}, 0.3)`); 
+                    grad.addColorStop(1, `rgba(${bgColor}, 0.7)`);
+                    
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, boxY, canvas.width, boxHeight);
                 }
 
-                // Draw Text
-                ctx.font = `bold ${fontSize}px "${globalFont}", sans-serif`;
-                ctx.fillStyle = slot.isDarkText ? '#1a1a1a' : '#ffffff';
-                ctx.shadowColor = slot.isDarkText ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.8)';
-                ctx.shadowBlur = 4;
-                ctx.textBaseline = 'top';
-                
-                const lineHeight = fontSize * 1.4;
-                // Position high up, near the top of the box (boxY)
-                // Minimal top padding (0.3 of normal padding)
-                let currentY = boxY + (padding * 0.3);
-                
-                wrapText(ctx, text, padding, currentY, maxWidth, lineHeight);
-            }
+                // Text Drawing with Auto-Scaling 
+                const text = slot.text.trim();
+                if(text) {
+                    let fontSize = Math.floor(canvas.width / 42); 
+                    const minFontSize = Math.floor(canvas.width / 100); 
+                    
+                    ctx.font = `bold ${fontSize}px "${globalFont}", sans-serif`;
+                    
+                    const measureTextHeight = (fs: number) => {
+                        ctx.font = `bold ${fs}px "${globalFont}", sans-serif`;
+                        const lineHeight = fs * 1.4;
+                        const pars = text.split('\n');
+                        let lines = 0;
+                        pars.forEach(p => {
+                            const words = p.split(' ');
+                            let l = '';
+                            for(let n=0; n<words.length; n++) {
+                                const tm = ctx.measureText(l + words[n] + ' ');
+                                if(tm.width > maxWidth && n > 0) { lines++; l = words[n] + ' '; }
+                                else { l += words[n] + ' '; }
+                            }
+                            lines++;
+                        });
+                        return lines * lineHeight;
+                    };
 
-            // Global Signature Logic (Rounded Box, Dynamic Color)
-            if (globalSignature.trim()) {
-                 const sigSize = Math.max(14, Math.floor(canvas.width / 60)); 
-                 ctx.font = `bold italic ${sigSize}px "${globalFont}", sans-serif`;
-                 
-                 const sigText = globalSignature;
-                 const paddingX = sigSize * 0.8;
-                 const paddingY = sigSize * 0.5;
-                 
-                 const metrics = ctx.measureText(sigText);
-                 const textWidth = metrics.width;
-                 const textHeight = sigSize; // approx baseline height
-                 
-                 // Positions (Bottom Right with margin)
-                 const rightMargin = canvas.width * 0.03;
-                 const bottomMargin = canvas.width * 0.03;
-                 
-                 const rectWidth = textWidth + (paddingX * 2);
-                 const rectHeight = textHeight + (paddingY * 2);
-                 
-                 const rectX = canvas.width - rightMargin - rectWidth;
-                 const rectY = canvas.height - bottomMargin - rectHeight;
-                 
-                 // Draw Background Box with Rounded Corners and Dynamic Color
-                 ctx.shadowBlur = 4;
-                 ctx.shadowColor = 'rgba(0,0,0,0.3)';
-                 ctx.fillStyle = hexToRgba(globalSigBgColor, 0.85); // Use 85% opacity
-                 
-                 const cornerRadius = rectHeight / 2; // Fully rounded-none sides
-                 roundRect(ctx, rectX, rectY, rectWidth, rectHeight, 8); // 8px radius
-                 
-                 // Determine Text Color for Contrast
-                 const bgHex = globalSigBgColor.toUpperCase();
-                 // Simple contrast check: White/Gold/Red/Blue -> Black or White logic
-                 // For now, simple manual logic: Black/Red/Blue -> White text. Gold/White -> Black text.
-                 let textColor = '#000000';
-                 if (['#000000', '#EF4444', '#3B82F6'].includes(bgHex)) {
-                     textColor = '#FFFFFF';
-                 }
+                    while (measureTextHeight(fontSize) > maxHeight && fontSize > minFontSize) {
+                        fontSize -= 2;
+                    }
 
-                 ctx.shadowBlur = 0;
-                 ctx.fillStyle = textColor;
-                 ctx.textAlign = 'left';
-                 ctx.textBaseline = 'top';
-                 ctx.fillText(sigText, rectX + paddingX, rectY + paddingY);
-            }
-
-            // Output
-            const finalUrl = canvas.toDataURL('image/png');
-            updateSlot(index, { resultSrc: finalUrl });
-            showStatus('Text embedded successfully!');
-        };
-
-        // Check if we need to draw a Logo Image
-        if (globalLogoSrc) {
-            const logoImg = new Image();
-            logoImg.src = globalLogoSrc;
-            logoImg.crossOrigin = "anonymous";
-            logoImg.onload = () => {
-                // Apply Opacity
-                const oldAlpha = ctx.globalAlpha;
-                ctx.globalAlpha = globalLogoOpacity / 100;
-                
-                // Calculate Logo Position: Centered Horizontally, Above the text box
-                const maxLogoW = canvas.width * (globalLogoSize / 100); 
-                const scale = Math.min(maxLogoW / logoImg.naturalWidth, 1);
-                const drawW = logoImg.naturalWidth * scale;
-                const drawH = logoImg.naturalHeight * scale;
-                
-                const logoX = (canvas.width - drawW) / 2;
-                
-                // Position logic based on dropdown
-                let logoY = 0;
-                const canvasPadding = canvas.height * 0.05;
-                if (globalLogoPosition === 'top') {
-                    logoY = (canvas.height / 6) - (drawH / 2);
-                } else if (globalLogoPosition === 'middle') {
-                    logoY = (canvas.height / 2) - (drawH / 2);
-                } else { // bottom - 1/3 from the bottom
-                    logoY = (canvas.height * 5 / 6) - (drawH / 2);
+                    ctx.font = `bold ${fontSize}px "${globalFont}", sans-serif`;
+                    ctx.fillStyle = slot.isDarkText ? '#1a1a1a' : '#ffffff';
+                    ctx.shadowColor = slot.isDarkText ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.8)';
+                    ctx.shadowBlur = 4;
+                    ctx.textBaseline = 'top';
+                    
+                    const lineHeight = fontSize * 1.4;
+                    let currentY = boxY + (padding * 0.3);
+                    
+                    wrapText(ctx, text, padding, currentY, maxWidth, lineHeight);
                 }
-                
-                // Clamp within padding
-                if (logoY < canvasPadding) logoY = canvasPadding;
-                if (logoY + drawH > canvas.height - canvasPadding) logoY = canvas.height - canvasPadding - drawH;
 
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = 'rgba(0,0,0,0.5)';
-                ctx.drawImage(logoImg, logoX, logoY, drawW, drawH);
-                ctx.shadowBlur = 0; // Reset shadow
-                
-                // Reset Opacity
-                ctx.globalAlpha = oldAlpha;
+                // Global Signature Logic (Rounded Box, Dynamic Color)
+                if (globalSignature.trim()) {
+                     const sigSize = Math.max(14, Math.floor(canvas.width / 60)); 
+                     ctx.font = `bold italic ${sigSize}px "${globalFont}", sans-serif`;
+                     
+                     const sigText = globalSignature;
+                     const paddingX = sigSize * 0.8;
+                     const paddingY = sigSize * 0.5;
+                     
+                     const metrics = ctx.measureText(sigText);
+                     const textWidth = metrics.width;
+                     const textHeight = sigSize; 
+                     
+                     const rightMargin = canvas.width * 0.03;
+                     const bottomMargin = canvas.width * 0.03;
+                     
+                     const rectWidth = textWidth + (paddingX * 2);
+                     const rectHeight = textHeight + (paddingY * 2);
+                     
+                     const rectX = canvas.width - rightMargin - rectWidth;
+                     const rectY = canvas.height - bottomMargin - rectHeight;
+                     
+                     ctx.shadowBlur = 4;
+                     ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                     ctx.fillStyle = hexToRgba(globalSigBgColor, 0.85); 
+                     
+                     roundRect(ctx, rectX, rectY, rectWidth, rectHeight, 8); 
+                     
+                     const bgHex = globalSigBgColor.toUpperCase();
+                     let textColor = '#000000';
+                     if (['#000000', '#EF4444', '#3B82F6'].includes(bgHex)) {
+                         textColor = '#FFFFFF';
+                     }
 
-                drawContent(); // Proceed to draw text box
+                     ctx.shadowBlur = 0;
+                     ctx.fillStyle = textColor;
+                     ctx.textAlign = 'left';
+                     ctx.textBaseline = 'top';
+                     ctx.fillText(sigText, rectX + paddingX, rectY + paddingY);
+                }
+
+                const finalUrl = canvas.toDataURL('image/png');
+                updateSlot(index, { resultSrc: finalUrl });
+                resolve();
             };
-            logoImg.onerror = () => {
-                console.error("Failed to load logo image for canvas");
-                drawContent(); // Proceed anyway
+
+            if (globalLogoSrc) {
+                const logoImg = new Image();
+                logoImg.src = globalLogoSrc;
+                logoImg.crossOrigin = "anonymous";
+                logoImg.onload = () => {
+                    const oldAlpha = ctx.globalAlpha;
+                    ctx.globalAlpha = globalLogoOpacity / 100;
+                    
+                    const maxLogoW = canvas.width * (globalLogoSize / 100); 
+                    const scale = Math.min(maxLogoW / logoImg.naturalWidth, 1);
+                    const drawW = logoImg.naturalWidth * scale;
+                    const drawH = logoImg.naturalHeight * scale;
+                    
+                    const logoX = (canvas.width - drawW) / 2;
+                    
+                    let logoY = 0;
+                    const canvasPadding = canvas.height * 0.05;
+                    if (globalLogoPosition === 'top') {
+                        logoY = (canvas.height / 6) - (drawH / 2);
+                    } else if (globalLogoPosition === 'middle') {
+                        logoY = (canvas.height / 2) - (drawH / 2);
+                    } else { 
+                        logoY = (canvas.height * 5 / 6) - (drawH / 2);
+                    }
+                    
+                    if (logoY < canvasPadding) logoY = canvasPadding;
+                    if (logoY + drawH > canvas.height - canvasPadding) logoY = canvas.height - canvasPadding - drawH;
+
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                    ctx.drawImage(logoImg, logoX, logoY, drawW, drawH);
+                    ctx.shadowBlur = 0; 
+                    
+                    ctx.globalAlpha = oldAlpha;
+                    drawContent();
+                };
+                logoImg.onerror = () => {
+                    console.error("Failed to load logo image for canvas");
+                    drawContent(); 
+                }
+            } else {
+                drawContent();
             }
-        } else {
-            drawContent();
-        }
-    };
+        };
+        img.onerror = () => {
+            console.error("Failed to load main image for canvas");
+            resolve();
+        };
+    });
 }
 
 async function processEmbedAll() {
     showStatus('Starting Batch Embed...');
     for (let i = 0; i < overlaySlots.length; i++) {
         const slot = overlaySlots[i];
-        if (slot.file && slot.text) {
-            // Process slots that have file and text. 
-            // We await each to avoid freezing browser too much if heavy, though canvas is sync-ish.
-            // Using a small timeout to allow UI updates between slots if needed.
+        if (slot.file) {
+            // Processing all slots that have files, even if text is empty (to apply logo/signature)
+            await processSlotEmbed(i);
+            // Smaller visual delay
             await new Promise(r => setTimeout(r, 50)); 
-            processSlotEmbed(i);
         }
     }
     showStatus('Batch Embed Completed');
@@ -2784,23 +2790,35 @@ if (btnDownloadAllEmbeds) {
             return;
         }
         
-        showStatus(`Downloading ${slotsToDownload.length} images...`);
-        
-        for (let i = 0; i < slotsToDownload.length; i++) {
-            const slot = slotsToDownload[i];
+        if (slotsToDownload.length === 1) {
+            const slot = slotsToDownload[0];
             const a = document.createElement('a');
             a.href = slot.resultSrc!;
-            const originalBase = slot.originalName ? slot.originalName.replace(/\.[^/.]+$/, "") : `Result_${i + 1}`;
+            const originalBase = slot.originalName ? slot.originalName.replace(/\.[^/.]+$/, "") : `Result_1`;
             a.download = `Overlay_${originalBase}.png`;
-            a.target = '_blank';
-            document.body.appendChild(a);
-            setTimeout(() => {
-                a.click();
-                document.body.removeChild(a);
-            }, 100);
-            // Small delay to prevent browser blocking simultaneous downloads
-            await new Promise(r => setTimeout(r, 500));
+            a.click();
+            return;
         }
+
+        showStatus(`Preparing ZIP with ${slotsToDownload.length} images...`);
+        const zip = new JSZip();
+        for (let i = 0; i < slotsToDownload.length; i++) {
+            const slot = slotsToDownload[i];
+            const base64Data = slot.resultSrc!.split(',')[1];
+            const originalBase = slot.originalName ? slot.originalName.replace(/\.[^/.]+$/, "") : `Result_${i + 1}`;
+            zip.file(`Overlay_${originalBase}.png`, base64Data, { base64: true });
+        }
+
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Embedded_Images_Batch.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showStatus("Download complete!");
     });
 }
 if (globalFontSelect) {

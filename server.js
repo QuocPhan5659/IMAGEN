@@ -184,7 +184,7 @@ app.post('/api/generate', async (req, res) => {
 
 // Catch-all handler for any request that doesn't match the above API routes
 // Returns index.html so React Router works (if used)
-app.get('*', (req, res) => {
+app.get('*all', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
