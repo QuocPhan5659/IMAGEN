@@ -163,6 +163,7 @@
         <!-- Navigation Tabs -->
         <nav class="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             <button id="tab-analysis" class="gold-btn">Analysis</button>
+            <button id="tab-multi-view" class="gold-btn">Multi View</button>
             <button id="tab-artistic" class="gold-btn">Artistic Styles</button>
             <button id="tab-notes" class="gold-btn">Notes</button>
             <button id="tab-remove-logo" class="gold-btn">Remove Logo</button>
@@ -408,6 +409,36 @@
                      <button id="analyze-notes-btn" class="command-btn w-full py-4 px-4 flex items-center justify-center gap-3">
                         <span id="btn-analyze-notes-text" class="text-xs font-bold tracking-[0.2em]">Extract & Translate Notes</span>
                     </button>
+                 </div>
+
+                 <div id="panel-multi-view" class="hidden space-y-4">
+                    <div class="p-4 bg-black border border-green-500/20 rounded-none mb-2">
+                        <h3 class="text-[10px] font-bold text-green-400 uppercase tracking-widest mb-1" id="lbl-obj-analysis">Detailed Object Analysis</h3>
+                        <p class="text-[9px] text-gray-600 leading-tight uppercase tracking-wider" id="lbl-obj-desc">Analyze uploaded images to establish a unified reference (DNA) for consistent angle generation.</p>
+                    </div>
+
+                    <button id="btn-analyze-multi-view" class="command-btn w-full py-4 px-4 flex items-center justify-center gap-3 group">
+                        <span id="btn-obj-analysis-text" class="text-xs font-bold tracking-[0.2em]">Analyze Object DNA</span>
+                    </button>
+
+                    <div class="pt-4 border-t border-gray-800 space-y-4">
+                        <div class="space-y-2">
+                            <label class="text-[10px] text-gray-500 block uppercase font-bold tracking-widest" id="lbl-angle-count">Angle Count</label>
+                            <input type="number" id="angle-count" value="10" min="1" max="20" class="w-full bg-black border border-gray-800 text-xs rounded-none px-3 py-3 text-white outline-none focus:border-green-500 transition-colors">
+                        </div>
+
+                        <button id="btn-analyze-multi-view-gen" class="command-btn w-full py-3 px-4 flex items-center justify-center gap-3 group border-green-500/30 text-green-400">
+                            <span id="btn-multi-view-text" class="text-xs font-bold tracking-[0.2em]">Generate Multi-View</span>
+                        </button>
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-800 space-y-3">
+                         <label class="text-[10px] text-gray-500 block uppercase font-bold tracking-widest" id="lbl-custom-angle">Custom Angle Request</label>
+                         <textarea id="custom-angle-input" class="w-full bg-black border border-gray-800 rounded-none p-3 text-xs text-green-100 font-mono focus:border-green-500 outline-none resize-none h-24" placeholder="VD: 'Góc thấp nhìn lên lối vào...'"></textarea>
+                         <button id="btn-generate-custom-angle" class="command-btn w-full py-3 px-4 flex items-center justify-center gap-3 group border-blue-500/30 text-blue-400">
+                            <span id="btn-custom-angle-text" class="text-xs font-bold tracking-[0.2em]">Generate Custom Angle</span>
+                        </button>
+                    </div>
                  </div>
 
                  <div id="panel-artistic" class="hidden space-y-4">
@@ -741,7 +772,37 @@
 
                 <!-- 2. MULTI-VIEW TAB -->
                 <div id="multiview-results" class="hidden pb-20">
-                    <!-- JS Injected -->
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-lg font-black text-white tracking-tighter uppercase" id="lbl-multi-view-title">Multi-View Generation</h2>
+                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest" id="lbl-multi-view-subtitle">Multiple perspectives derived from unified object DNA.</p>
+                        </div>
+                        <button id="btn-download-all-multiview" class="hidden px-4 py-2 bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold uppercase tracking-widest hover:bg-green-500/20 transition-all">
+                            Download All (.ZIP)
+                        </button>
+                    </div>
+
+                    <!-- Established DNA Card inside MultiView -->
+                    <div id="card-mv-dna" class="hidden w-full border border-green-500/30 rounded-none bg-green-500/5 relative transition hover:border-green-500/50 mb-8 p-6 collapsible-card group">
+                        <div class="flex justify-between items-center mb-4 border-b border-green-500/20 pb-2 cursor-pointer card-header select-none">
+                             <div class="flex items-center gap-2">
+                                <span class="chevron-icon text-green-500 mr-1">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </span>
+                                <h3 class="text-[10px] font-bold text-green-400 uppercase tracking-widest">Master Project DNA (Established Reference)</h3>
+                             </div>
+                             <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                                 <button id="btn-copy-mv-dna" class="p-1.5 text-green-300 hover:text-green-400 transition" title="Copy DNA"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                             </div>
+                        </div>
+                        <div class="card-content">
+                            <p id="res-mv-dna" class="text-xs text-green-100 whitespace-pre-line font-mono leading-relaxed pl-4 border-l border-green-500/20"></p>
+                        </div>
+                    </div>
+
+                    <div id="multiview-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- JS Injected -->
+                    </div>
                 </div>
                 
                  <!-- 3. NOTES TAB -->

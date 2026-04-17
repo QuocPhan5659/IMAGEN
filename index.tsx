@@ -29,7 +29,7 @@ let globalSigBgColor = '#00ff00'; // Default Neon Green
 // --- Application State ---
 type Lang = 'en' | 'vi';
 let currentLang: Lang = 'en';
-let activeTab: 'analysis' | 'notes' | 'textOverlay' | 'artistic' | 'removeLogo' = 'analysis';
+let activeTab: 'analysis' | 'notes' | 'textOverlay' | 'artistic' | 'removeLogo' | 'multiView' = 'analysis';
 
 // --- Logo Removal State ---
 interface LogoRemovalSlot {
@@ -109,32 +109,48 @@ const modelSelect = getEl<HTMLSelectElement>('model-select');
 // --- Helper Functions ---
 // Helper: Extract JSON from markdown or raw text
 function extractJson(text: string): any {
-    try {
-        // Try direct parse first
-        return JSON.parse(text);
-    } catch (e) {
-        // Try to find JSON block
-        const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-        if (match && match[1]) {
+    const tryParse = (s: string) => {
+        try {
+            return JSON.parse(s);
+        } catch (e) {
             try {
-                return JSON.parse(match[1]);
+                // Attempt to clean common LLM JSON errors:
+                // 1. Remove trailing commas
+                // 2. Escape literal newlines in strings
+                const cleaned = s
+                    .trim()
+                    .replace(/,\s*([\]}])/g, '$1')
+                    .replace(/"((?:\\.|[^"\\])*)"/g, (match, p1) => {
+                        return '"' + p1.replace(/\n/g, '\\n').replace(/\r/g, '\\r') + '"';
+                    });
+                return JSON.parse(cleaned);
             } catch (e2) {
-                console.error("Failed to parse extracted JSON block", e2);
+                return null;
             }
         }
-        
-        // Try to find anything between { and }
-        const braceMatch = text.match(/\{[\s\S]*\}/);
-        if (braceMatch) {
-            try {
-                return JSON.parse(braceMatch[0]);
-            } catch (e3) {
-                console.error("Failed to parse text between braces", e3);
-            }
-        }
-        
-        throw new Error("Could not parse JSON from model response");
+    };
+
+    // 1. Try direct parse first
+    let result = tryParse(text);
+    if (result) return result;
+
+    // 2. Try to find JSON block in markdown
+    const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (match && match[1]) {
+        result = tryParse(match[1]);
+        if (result) return result;
     }
+    
+    // 3. Try to find anything between the first { and the last }
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        result = tryParse(text.substring(firstBrace, lastBrace + 1));
+        if (result) return result;
+    }
+    
+    console.error("Critical JSON Parse Failure. Raw Content:", text);
+    throw new Error("Could not parse JSON from model response. Please check the model output or retry.");
 }
 
 async function copyToClipboard(text: string, btnEl?: HTMLElement, successIcon?: string, originalIcon?: string): Promise<boolean> {
@@ -276,7 +292,7 @@ const translations = {
             sketchPrompt: "Sketch Prompt",
             generationPrompt: "Generation Prompt",
             multiViewPrompts: "Multi-View Prompts",
-            collageAnalysis: "Collage & Project Analysis"
+            collageAnalysis: "Project Detailed Analysis (DNA)"
         },
         apiModal: {
             title: "ENCRYPTION KEY",
@@ -346,7 +362,7 @@ const translations = {
             sketchPrompt: "Prompt Phác Thảo",
             generationPrompt: "Prompt Tạo Ảnh",
             multiViewPrompts: "Prompt Đa Góc Nhìn",
-            collageAnalysis: "Phân Tích Ảnh Ghép & Dự Án"
+            collageAnalysis: "Phân Tích Chi Tiết Dự Án (DNA)"
         },
         apiModal: {
             title: "KHÓA MÃ HÓA",
@@ -364,13 +380,14 @@ const translations = {
 // --- DOM Elements ---
 const tabAnalysis = getEl<HTMLButtonElement>('tab-analysis');
 const tabNotes = getEl<HTMLButtonElement>('tab-notes');
+const tabMultiView = getEl<HTMLButtonElement>('tab-multi-view');
 const tabRemoveLogo = getEl<HTMLButtonElement>('tab-remove-logo');
 const tabArtistic = getEl<HTMLButtonElement>('tab-artistic');
 const tabTextOverlay = getEl<HTMLButtonElement>('tab-text-overlay');
 
 const panelAnalysis = getEl<HTMLDivElement>('panel-analysis');
 const panelNotes = getEl<HTMLDivElement>('panel-notes');
-// Removed panelMultiView reference
+const panelMultiView = getEl<HTMLDivElement>('panel-multi-view');
 const panelArtistic = getEl<HTMLDivElement>('panel-artistic');
 const panelRemoveLogoSidebar = getEl<HTMLDivElement>('panel-remove-logo');
 const panelUploadAnalysis = getEl<HTMLDivElement>('panel-upload-analysis');
@@ -432,7 +449,8 @@ const loader = getEl<HTMLDivElement>('loader');
 const analysisCardsWrapper = getEl<HTMLDivElement>('analysis-cards-wrapper');
 const notesResults = getEl<HTMLDivElement>('notes-results');
 const artisticResults = getEl<HTMLDivElement>('artistic-results');
-// Removed multiviewResults reference
+const multiviewResults = getEl<HTMLDivElement>('multiview-results');
+const multiviewGrid = getEl<HTMLDivElement>('multiview-grid');
 const panelRemoveLogo = getEl<HTMLDivElement>('remove-logo-panel');
 const logoRemovalGrid = getEl<HTMLDivElement>('logo-removal-grid');
 const logoMultiDropZone = getEl<HTMLDivElement>('logo-multi-drop-zone');
@@ -450,6 +468,18 @@ const lblLogoDragDrop = getEl('lbl-logo-drag-drop');
 const analyzeBtn = getEl<HTMLButtonElement>('analyze-btn');
 const analyzeViBtn = getEl<HTMLButtonElement>('analyze-vi-btn');
 const analyzeNotesBtn = getEl<HTMLButtonElement>('analyze-notes-btn');
+const btnAnalyzeMultiView = getEl<HTMLButtonElement>('btn-analyze-multi-view');
+const btnAnalyzeMultiViewGen = getEl<HTMLButtonElement>('btn-analyze-multi-view-gen');
+const btnDownloadAllMultiView = getEl<HTMLButtonElement>('btn-download-all-multiview');
+const angleCountInput = getEl<HTMLInputElement>('angle-count');
+const customAngleInput = getEl<HTMLTextAreaElement>('custom-angle-input');
+const btnGenerateCustomAngle = getEl<HTMLButtonElement>('btn-generate-custom-angle');
+const lblAngleCount = getEl('lbl-angle-count');
+const lblCustomAngle = getEl('lbl-custom-angle');
+const btnCustomAngleText = getEl('btn-custom-angle-text');
+const lblObjAnalysis = getEl('lbl-obj-analysis');
+const lblObjDesc = getEl('lbl-obj-desc');
+const btnObjAnalysisText = getEl('btn-obj-analysis-text');
 const btnAnalyzeNotesText = getEl('btn-analyze-notes-text');
 const btnArtisticText = getEl('btn-artistic-text');
 const downloadAllBtn = getEl<HTMLButtonElement>('download-all-btn');
@@ -508,6 +538,9 @@ const btnRunComposition = getEl<HTMLButtonElement>('btn-run-composition');
 const btnCopyCollageAnalysis = getEl<HTMLButtonElement>('btn-copy-collage-analysis');
 const btnDlCollageAnalysis = getEl<HTMLButtonElement>('btn-dl-collage-analysis');
 const btnPngInfoPrompt = getEl<HTMLButtonElement>('btn-png-info-prompt');
+const btnCopyMvDna = getEl<HTMLButtonElement>('btn-copy-mv-dna');
+const resMvDna = getEl<HTMLParagraphElement>('res-mv-dna');
+const cardMvDna = getEl<HTMLDivElement>('card-mv-dna');
 const btnSendBanana = getEl<HTMLButtonElement>('btn-send-banana');
 const btnSelectFolder = getEl<HTMLButtonElement>('btn-select-folder');
 
@@ -521,24 +554,6 @@ const sketchPreviewImg = getEl<HTMLImageElement>('sketch-preview-img');
 const sketchClearBtn = getEl<HTMLButtonElement>('sketch-clear-btn');
 const sketchPromptCard = getEl<HTMLDivElement>('card-sketch-prompt');
 const collageAnalysisCard = getEl<HTMLDivElement>('card-collage-analysis');
-
-// MultiView Elements
-// Removed multiviewContextContainer reference
-const lblObjAnalysis = getEl('lbl-obj-analysis');
-const lblObjDesc = getEl('lbl-obj-desc');
-const btnRunObjAnalysis = getEl<HTMLButtonElement>('btn-run-obj-analysis');
-const btnObjAnalysisText = getEl('btn-obj-analysis-text');
-const objAnalysisResult = getEl<HTMLDivElement>('obj-analysis-result');
-const angleInput = getEl<HTMLInputElement>('angle-input');
-// Removed multiViewBtn reference
-const lblAngleCount = getEl('lbl-angle-count');
-// Removed btnMultiViewText reference
-
-// Custom Angle Elements
-const lblCustomAngle = getEl('lbl-custom-angle');
-const customAngleInput = getEl<HTMLTextAreaElement>('custom-angle-input');
-const btnCustomAngle = getEl<HTMLButtonElement>('btn-custom-angle');
-const btnCustomAngleText = getEl('btn-custom-angle-text');
 
 // Modal Elements (Arrows)
 const imageModal = getEl<HTMLDivElement>('image-modal');
@@ -1017,7 +1032,9 @@ function setLoading(isLoading: boolean) {
   if (isLoading) {
     setHidden(loader, false);
     if(analyzeBtn) analyzeBtn.disabled = true;
-    if(btnRunObjAnalysis) btnRunObjAnalysis.disabled = true;
+    if(btnAnalyzeMultiView) btnAnalyzeMultiView.disabled = true;
+    if(btnAnalyzeMultiViewGen) btnAnalyzeMultiViewGen.disabled = true;
+    if(btnGenerateCustomAngle) btnGenerateCustomAngle.disabled = true;
     if(analyzeNotesBtn) analyzeNotesBtn.disabled = true;
     if(btnLoadPngInfo) btnLoadPngInfo.disabled = true;
     if(dropZone) addClass(dropZone, 'pointer-events-none');
@@ -1025,7 +1042,9 @@ function setLoading(isLoading: boolean) {
   } else {
     setHidden(loader, true);
     if(analyzeBtn) analyzeBtn.disabled = false;
-    if(btnRunObjAnalysis) btnRunObjAnalysis.disabled = false;
+    if(btnAnalyzeMultiView) btnAnalyzeMultiView.disabled = false;
+    if(btnAnalyzeMultiViewGen) btnAnalyzeMultiViewGen.disabled = false;
+    if(btnGenerateCustomAngle) btnGenerateCustomAngle.disabled = false;
     if(analyzeNotesBtn) analyzeNotesBtn.disabled = false;
     if(btnLoadPngInfo) btnLoadPngInfo.disabled = false;
     if(dropZone) removeClass(dropZone, 'pointer-events-none');
@@ -1156,7 +1175,7 @@ async function callGemini(prompt: string, files: File[], sketchFile: File | null
     const response = await generateContentWithRetry(ai, {
         model: currentModel,
         contents: { parts: parts },
-        config: { responseMimeType: "application/json" }
+        generationConfig: { responseMimeType: "application/json" }
     });
     return response.text || "{}";
 }
@@ -1198,6 +1217,7 @@ function updateLanguageUI() {
     setText(loaderTitle, t.loaderTitle);
     setText(loaderSubtitle, t.loaderSubtitle);
     if(tabAnalysis) setText(tabAnalysis, t.tabAnalysis);
+    if(tabMultiView) setText(tabMultiView, t.btnMultiView);
     if(tabNotes) setText(tabNotes, t.tabNotes);
     if(tabArtistic) setText(tabArtistic, t.tabArtistic);
     if(tabRemoveLogo) setText(tabRemoveLogo, t.tabRemoveLogo);
@@ -1217,7 +1237,12 @@ function updateLanguageUI() {
     setText(lblObjAnalysis, t.lblObjAnalysis);
     setText(lblObjDesc, t.lblObjDesc);
     setText(btnObjAnalysisText, t.btnObjAnalysis);
+    setText(getEl('btn-multi-view-text'), t.btnMultiView);
     setText(btnAnalyzeNotesText, t.btnAnalyzeNotes);
+    
+    setText(getEl('lbl-multi-view-title'), currentLang === 'en' ? 'Multi-View Generation' : 'Tạo Đa Góc Nhìn');
+    setText(getEl('lbl-multi-view-subtitle'), currentLang === 'en' ? 'Multiple perspectives derived from unified object DNA.' : 'Nhiều góc nhìn khác nhau được tạo ra từ DNA dự án đồng nhất.');
+    setText(btnDownloadAllMultiView, t.btnDownloadAll + " (.ZIP)");
 
     setText(getEl('lbl-artistic'), t.lblArtistic);
     setText(getEl('lbl-artistic-desc'), t.lblArtisticDesc);
@@ -1253,36 +1278,27 @@ function updateLanguageUI() {
 
     // Tab Logic
     setHidden(panelAnalysis, true);
-
-    setHidden(panelArtistic, true);
     setHidden(panelNotes, true);
+    setHidden(panelArtistic, true);
+    setHidden(panelMultiView, true);
+    setHidden(panelRemoveLogo, true);
+    setHidden(panelTextOverlaySettings, true);
     setHidden(panelUploadAnalysis, true);
     setHidden(sketchContainer, true);
-// Removed multiviewContextContainer reference
-    setHidden(panelTextOverlaySettings, true);
-    setHidden(panelRemoveLogo, true);
-    setHidden(panelRemoveLogoSidebar, true);
     
-    setText(lblRemoveLogoTitle, t.lblRemoveLogoTitle);
-    setText(lblRemoveLogoTitleSidebar, t.lblRemoveLogoTitle);
-    setText(lblRemoveLogoDesc, t.lblRemoveLogoDesc);
-    setText(lblRemoveLogoDescSidebar, t.lblRemoveLogoDesc);
-    setText(lblLogoDragDrop, t.lblLogoDragDrop);
-    setText(btnLogoGenAll, t.btnLogoGenAll);
-    setText(btnLogoDownloadAll, t.btnLogoDownloadAll);
-    setText(btnLogoResetAll, t.btnLogoResetAll);
-
     setHidden(analysisCardsWrapper, true);
-// Removed multiviewResults reference
+    setHidden(multiviewResults, true);
     setHidden(artisticResults, true);
     setHidden(notesResults, true);
     setHidden(overlayGrid, true);
+    setHidden(panelRemoveLogoSidebar, true);
     
     // Hide Global Action Bar by default
     setHidden(globalActionsBar, true);
 
     removeClass(tabAnalysis, 'active');
     removeClass(tabNotes, 'active');
+    removeClass(tabMultiView, 'active');
     removeClass(tabTextOverlay, 'active');
     removeClass(tabArtistic, 'active');
     removeClass(tabRemoveLogo, 'active');
@@ -1317,6 +1333,13 @@ function updateLanguageUI() {
         if (overlaySlots.length === 0) initOverlaySlots();
         renderOverlaySlots();
         setHidden(globalActionsBar, false); // Visible for Text Overlay too
+    } else if (activeTab === 'multiView') {
+        setHidden(panelMultiView, false);
+        setHidden(panelUploadAnalysis, false);
+        setHidden(multiviewResults, false);
+        setHidden(globalActionsBar, false);
+        addClass(tabMultiView, 'active');
+        renderMultiViewResults();
     } else if (activeTab === 'removeLogo') {
         setHidden(panelRemoveLogo, false);
         setHidden(panelRemoveLogoSidebar, false);
@@ -1348,11 +1371,17 @@ function updateLanguageUI() {
             const collageText = lastAnalysisData.collageAnalysis?.[currentLang] || "";
             setText(resCollageAnalysis, collageText);
             setHidden(collageAnalysisCard, !collageText);
+
+            // Sync with MultiView Tab's DNA card
+            if (resMvDna && cardMvDna) {
+                setText(resMvDna, collageText);
+                setHidden(cardMvDna, !collageText);
+            }
         }
     }
 
     // Render Logic for Views and Notes handled in respective functions
-// Removed renderMultiViewResults call
+    if(activeTab === 'multiView') renderMultiViewResults();
     if(activeTab === 'artistic') renderArtisticResults();
     if(activeTab === 'notes') renderNotesResults();
     if(activeTab === 'removeLogo') renderLogoRemovalSlots();
@@ -1392,8 +1421,17 @@ function setupCollapsibleCards() {
 // but currently createMultiViewCardHTML has built-in logic)
 
 function renderMultiViewResults() {
-// Removed multiviewResults reference
+    if (!multiviewGrid) return;
+    multiviewGrid.innerHTML = '';
     
+    if (customAnglesHistory.length === 0 && (!lastAnalysisData || !lastAnalysisData.multiViewPrompts)) {
+        multiviewGrid.innerHTML = `
+        <div class="col-span-full text-center py-20 text-gray-700 font-mono text-[10px] uppercase tracking-[0.2em] border border-gray-900 bg-black/50">
+             ${currentLang === 'en' ? 'Phase 1: Object DNA established. Phase 2: Angles pending initiation.' : 'Phát hiện DNA Project. Đang chờ lệnh tạo đa góc nhìn.'}
+        </div>`;
+        return;
+    }
+
     // 1. Custom Angles History
     if (customAnglesHistory.length > 0) {
         [...customAnglesHistory].reverse().forEach((entry, idx) => {
@@ -1404,7 +1442,7 @@ function renderMultiViewResults() {
                     `custom-${idx}`, data.title, data.content, data.composition, data.lighting,
                     () => { customAnglesHistory.splice(realIndex, 1); updateLanguageUI(); }
                 );
-
+                multiviewGrid.appendChild(card);
              }
         });
     }
@@ -1443,7 +1481,7 @@ function renderMultiViewResults() {
                     const card = createMultiViewCardHTML(
                         `mv-${idx}`, angleTitle, content, composition, lighting
                     );
-// Removed multiviewResults reference
+                    multiviewGrid.appendChild(card);
                  }
              });
          }
@@ -2690,6 +2728,7 @@ if (langToggleBtn) langToggleBtn.addEventListener('click', () => {
     updateLanguageUI();
 });
 if (tabAnalysis) tabAnalysis.addEventListener('click', () => { activeTab = 'analysis'; updateLanguageUI(); });
+if (tabMultiView) tabMultiView.addEventListener('click', () => { activeTab = 'multiView'; updateLanguageUI(); });
 if (tabArtistic) tabArtistic.addEventListener('click', () => { activeTab = 'artistic'; updateLanguageUI(); });
 if (tabNotes) tabNotes.addEventListener('click', () => { activeTab = 'notes'; updateLanguageUI(); });
 if (tabRemoveLogo) tabRemoveLogo.addEventListener('click', () => { activeTab = 'removeLogo'; updateLanguageUI(); });
@@ -3470,8 +3509,29 @@ if(analyzeBtn) {
             }`;
             
             const txt = await callGemini(prompt, currentFiles, currentSketchFile);
-            lastAnalysisData = extractJson(txt);
-            updateLanguageUI(); showStatus('');
+            const newData = extractJson(txt);
+            
+            if (!lastAnalysisData) {
+                lastAnalysisData = {
+                    style: { en: "", vi: "" },
+                    materials: { en: "", vi: "" },
+                    lighting: { en: "", vi: "" },
+                    context: { en: "", vi: "" },
+                    composition: { en: "", vi: "" },
+                    generationPrompt: { en: "", vi: "" }
+                };
+            }
+
+            // Merge new data into bilingual structure
+            const keys = ['style', 'materials', 'lighting', 'context', 'composition', 'generationPrompt', 'collageAnalysis', 'sketchPrompt'];
+            keys.forEach(k => {
+                if (newData[k]) {
+                    lastAnalysisData![k] = newData[k];
+                }
+            });
+
+            updateLanguageUI(); 
+            showStatus('');
         } catch(e) { handleApiError(e, 'Error analyzing'); } finally { setLoading(false); }
     });
 }
@@ -3511,24 +3571,37 @@ if(analyzeImagePromptBtn) {
             `;
             const txt = await callGemini(prompt, currentFiles, null);
             const data = extractJson(txt);
-            lastAnalysisData = data;
             
-            // Populate UI
-            if(resStyle) setText(resStyle, data.style || "No result.");
-            if(resMaterial) setText(resMaterial, data.materials || "No result.");
-            if(resLighting) setText(resLighting, data.lighting || "No result.");
-            if(resContext) setText(resContext, data.context || "No result.");
-            if(resComposition) setText(resComposition, data.composition || "No result.");
-            if(resPrompt) setText(resPrompt, data.generationPrompt || "No result.");
+            if (!lastAnalysisData) {
+                lastAnalysisData = {
+                    style: { en: "", vi: "" },
+                    materials: { en: "", vi: "" },
+                    lighting: { en: "", vi: "" },
+                    context: { en: "", vi: "" },
+                    composition: { en: "", vi: "" },
+                    generationPrompt: { en: "", vi: "" }
+                };
+            }
+
+            // Merge strings into current language in bilingual structure
+            const keys = ['style', 'materials', 'lighting', 'context', 'composition', 'generationPrompt'];
+            keys.forEach(k => {
+                if (data[k]) {
+                    if (!lastAnalysisData![k]) lastAnalysisData![k] = { en: "", vi: "" };
+                    lastAnalysisData![k][currentLang] = data[k];
+                }
+            });
             
+            updateLanguageUI();
             showStatus(currentLang === 'en' ? 'Analysis complete!' : 'Phân tích hoàn tất!');
         } catch(e) { handleApiError(e, 'Error analyzing'); } finally { setLoading(false); }
     });
 }
 
-// Detailed Object Analysis (New Handler)
-if(btnRunObjAnalysis) {
-    btnRunObjAnalysis.addEventListener('click', async () => {
+// --- Multi-View Logic ---
+
+if (btnAnalyzeMultiView) {
+    btnAnalyzeMultiView.addEventListener('click', async () => {
         if (currentFiles.length === 0) {
             showStatus(currentLang === 'en' ? 'Please upload images first.' : 'Vui lòng tải ảnh lên trước.', true);
             return;
@@ -3536,50 +3609,53 @@ if(btnRunObjAnalysis) {
 
         try {
             setLoading(true);
-            if(objAnalysisResult) {
-                setHidden(objAnalysisResult, false);
-                setText(objAnalysisResult, currentLang === 'en' ? "Analyzing DNA..." : "Đang phân tích DNA...");
-            }
-
-            const langInstruction = currentLang === 'vi' ? 'VIETNAMESE' : 'ENGLISH';
+            const langName = currentLang === 'en' ? 'English' : 'Vietnamese';
             const prompt = `
-                Role: Senior Architectural Technical Analyst.
-                Task: Analyze the provided images to extract the "Visual DNA" of the object/building.
-                REALISM: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in descriptions.
-                PHOTOREALISM: The description must emphasize photorealism, high-quality finishes, and realistic textures.
-                DETAIL PRESERVATION: Ensure strict adherence to the visual details of the uploaded images.
-                CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
-                SPECIAL INSTRUCTION: If you detect any image that is a collage (multiple smaller views or angles combined into one main image), you MUST treat it as a single architectural project or space. 
-                Analyze the relationship between these views to understand the project holistically.
-                Focus on:
-                1. Architectural Style & Form.
-                2. Material Palette & Textures.
-                3. Key Distinctive Features (Windows, Roof, Ornamentation).
-                4. Color Consistency.
-                5. Spatial relationship between different views if it's a collage.
-                6. Realistic environmental context (street, residential, coastal, or riverside for exteriors; finished spaces for interiors).
+                Role: Principal Architectural Technical Analyst & Prompt Engineer.
+                Task: Perform a deep "Reconstructive Analysis" of the uploaded images to establish a definitive "Visual DNA" for this project.
+                
+                ANALYSIS CATEGORIES:
+                1. ARCHITECTURAL STYLE & VOLUME: Identify the specific style (e.g., Brutalist, Contemporary Minimalist, Indochine, Tropical Modernism). Describe the massing, geometric complexity, and structural logic.
+                2. FACADE & TEXTURES: Break down the external skin. Specify materials (e.g., board-formed concrete, burnt cedar, low-E glass with black aluminum frames, travertine stone). Note the wear, reflectivity, and grain.
+                3. UNIQUE ARCHITECTURAL FEATURES: Identify identifying markers (e.g., cantilevered balconies, specific trellis patterns, circular windows, recessed entrances).
+                4. LIGHTING & ENVIRONMENT: Describe the exact lighting condition and the surrounding context (e.g., urban density, coastal vegetation, specific street furniture).
+                5. COLOR PALETTE: Define the primary and accent colors with precise descriptors.
 
-                Goal: Create a reference description that ensures future generated angles look exactly like this object, preserving the specific details and character found in the reference views.
+                REALISM & SYNC REQUIREMENTS:
+                - Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in your summary.
+                - The description MUST be of professional "Master Class" quality, suitable for high-end rendering prompts.
+                - If the image is a collage, analyze the 3D relationship between the views to identify it as a single building.
+
+                Goal: Create a MASTER REFERENCE established in ${langName} and English that captures every significant detail. This DNA will be used to generate consistent multi-angle visualizations.
 
                 Output strictly valid JSON:
                 {
-                    "analysis": "Full detailed technical description in ${langInstruction}..."
+                    "en": "EXHAUSTIVE MASTER DNA IN ENGLISH (Include all categories)...",
+                    "vi": "DNA DỰ ÁN CHI TIẾT BẰNG TIẾNG VIỆT (Bao gồm đầy đủ các hạng mục phân tích)..."
                 }
             `;
 
             const responseText = await callGemini(prompt, currentFiles, currentSketchFile);
             const data = extractJson(responseText);
-
-            if(objAnalysisResult) {
-                setText(objAnalysisResult, data.analysis || "No result.");
+            
+            if (!lastAnalysisData) {
+                lastAnalysisData = {
+                    style: { en: "", vi: "" },
+                    materials: { en: "", vi: "" },
+                    lighting: { en: "", vi: "" },
+                    context: { en: "", vi: "" },
+                    composition: { en: "", vi: "" },
+                    generationPrompt: { en: "", vi: "" }
+                };
             }
-            showStatus('');
-
-        } catch (e) {
-            handleApiError(e, 'Analysis Error');
-            if(objAnalysisResult) setText(objAnalysisResult, "Error.");
-        } finally {
-            setLoading(false);
+            lastAnalysisData.collageAnalysis = data;
+            
+            updateLanguageUI();
+            showStatus(currentLang === 'en' ? 'Object DNA established!' : 'Đã thiết lập DNA Project!');
+        } catch(e) { 
+            handleApiError(e, 'Error established DNA'); 
+        } finally { 
+            setLoading(false); 
         }
     });
 }
@@ -3611,7 +3687,7 @@ if (analyzeNotesBtn) {
                     const response = await generateContentWithRetry(ai, {
                         model: currentModel,
                         contents: { parts: parts },
-                        config: { responseMimeType: "application/json" }
+                        generationConfig: { responseMimeType: "application/json" }
                     });
                     const txt = response.text || "{}";
                     const json = extractJson(txt);
@@ -3635,27 +3711,140 @@ if (analyzeNotesBtn) {
 }
 
 
-// Multi-View Generator REMOVED
-// Custom Angle Generator
-if(btnCustomAngle) {
-    btnCustomAngle.addEventListener('click', async () => {
-        const req = customAngleInput?.value.trim();
-        if(!req || currentFiles.length === 0) return;
-        setLoading(true);
+if (btnAnalyzeMultiViewGen) {
+    btnAnalyzeMultiViewGen.addEventListener('click', async () => {
+        if (!lastAnalysisData || !lastAnalysisData.collageAnalysis) {
+            showStatus(currentLang === 'en' ? 'Phase 1: Object DNA must be established first.' : 'Giai đoạn 1: Cần thiết lập DNA Project trước.', true);
+            return;
+        }
+
         try {
-            const prompt = `Generate 1 detailed prompt for angle: "${req}". Follow annotations if any.
-            REALISM: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in the prompt.
-            PHOTOREALISM: The prompt must describe a photorealistic, high-quality real-life image.
-            DETAIL PRESERVATION: Ensure strict adherence to the visual details of the uploaded images.
-            CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
-            CONTEXT: If exterior, use realistic settings (street, residential, coast, river). If interior, focus on finished spaces.
-            Output JSON: { "en": { "title": "...", "content": "...", "composition": "...", "lighting": "..." }, "vi": { ... } }`;
+            setLoading(true);
+            const count = angleCountInput?.value || "10";
+            const dna = lastAnalysisData.collageAnalysis.en;
+            const prompt = `
+                Role: Master Architectural Photographer & Visualization Prompt Architect.
+                Task: Generate ${count} diverse and compositionally sophisticated photographic angles for the project defined by the DNA.
+                
+                DNA REFERENCE (CRITICAL): ${dna}
+                
+                PROMPT GENERATION RULES:
+                - ABSOLUTE CONSISTENCY: Every prompt must mathematically strictly adhere to the architectural DNA above (Materials, Style, Features).
+                - GRANULAR DETAIL: Do not just list materials; describe how light interacts with them (e.g., "The warm sun glancing off the raked travertine texture").
+                - DIVERSITY OF ANGLES:
+                    * MASTER SHOTS: Wide angles showing the building in its environment.
+                    * HERO SHOTS: Dynamic low-angle shots emphasizing volume and grandeur.
+                    * DETAIL SHOTS: Macro-style shots focusing on specific textures or facade intersections.
+                    * AERIAL/DRONE: High-angle bird's eye views for site context.
+                - REALISM MANDATE: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên".
+                - PHOTOREALISM: Use camera terminology like f/8, 35mm lens, sharp focus, hyper-realistic, 8k resolution.
+                
+                Output Format: 
+                ===ANGLE: [Descriptive Name]
+                [CONTENT]: A highly descriptive architectural visualization prompt in prose. Start with the realism phrases then describe the building's view, ensuring all DNA details are visible and correctly placed.
+                [COMPOSITION]: Specify the lens (e.g., 24mm wide angle, 85mm prime), depth of field, and camera height.
+                [LIGHTING]: Masterful lighting settings (e.g., Golden hour, Soft overcast, Cinematic twilight with internal glow).
+                
+                Repeat this for ${count} angles. Provide the full structured result for each angle in both English and Vietnamese.
+                
+                Output Strictly valid JSON:
+                {
+                   "en": "...",
+                   "vi": "..."
+                }
+            `;
+
+            const responseText = await callGemini(prompt, currentFiles, currentSketchFile);
+            const data = extractJson(responseText);
+            
+            if (lastAnalysisData) {
+                lastAnalysisData.multiViewPrompts = data;
+                updateLanguageUI();
+                showStatus(currentLang === 'en' ? 'Multi-View Generation Complete!' : 'Đã tạo xong đa góc nhìn!');
+            }
+        } catch(e) { 
+            handleApiError(e, 'Error generating multi-view'); 
+        } finally { 
+            setLoading(false); 
+        }
+    });
+}
+
+if (btnGenerateCustomAngle) {
+    btnGenerateCustomAngle.addEventListener('click', async () => {
+        const req = customAngleInput?.value.trim();
+        if (!req) return;
+        if (!lastAnalysisData || !lastAnalysisData.collageAnalysis) {
+             showStatus(currentLang === 'en' ? 'Object DNA must be established first.' : 'Cần thiết lập DNA Project trước.', true);
+             return;
+        }
+
+        try {
+            setLoading(true);
+            const dna = lastAnalysisData.collageAnalysis.en;
+            const prompt = `
+                Role: Master Architectural Photographer.
+                Task: Generate a single, ultra-detailed architectural prompt for a custom angle: "${req}".
+                
+                DNA REFERENCE: ${dna}
+                
+                REQUIREMENTS:
+                1. STRICT ADHERENCE: Use the materials, style, and features from the DNA.
+                2. RICH DESCRIPTION: Provide a cinematic, highly descriptive prose. Describe textures, reflections, and structural details.
+                3. REALISM: Start with "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên".
+                4. CAMERA & LIGHTING: Specify a professional camera setup and cinematic lighting that enhances the details.
+
+                Output JSON: 
+                { 
+                  "en": { "title": "Custom Angle - ${req}", "content": "...", "composition": "...", "lighting": "..." }, 
+                  "vi": { "title": "Góc Tùy Chỉnh - ${req}", "content": "...", "composition": "...", "lighting": "..." } 
+                }
+            `;
             const txt = await callGemini(prompt, currentFiles, currentSketchFile);
             const raw = extractJson(txt);
             customAnglesHistory.push({ en: raw.en, vi: raw.vi });
-            updateLanguageUI(); showStatus('Generated!');
-            if(customAngleInput) customAngleInput.value = '';
-        } catch(e) { handleApiError(e, 'Error generating angle'); } finally { setLoading(false); }
+            updateLanguageUI(); 
+            showStatus(currentLang === 'en' ? 'Custom Angle Generated!' : 'Góc tùy chỉnh đã được tạo!');
+            if (customAngleInput) customAngleInput.value = '';
+        } catch(e) { 
+            handleApiError(e, 'Error generating custom angle'); 
+        } finally { 
+            setLoading(false); 
+        }
+    });
+}
+
+if (btnDownloadAllMultiView) {
+    btnDownloadAllMultiView.addEventListener('click', async () => {
+        const cards = multiviewGrid?.querySelectorAll('.card-content');
+        if (!cards || cards.length === 0) {
+            showStatus('No angles to download.', true);
+            return;
+        }
+
+        try {
+            const zip = new JSZip();
+            const rootFolder = zip.folder("MultiView_Prototypes");
+            
+            const cardWrappers = multiviewGrid?.querySelectorAll('.collapsible-card');
+            cardWrappers?.forEach((card, idx) => {
+                const title = (card.querySelector('h3')?.textContent || `Angle_${idx}`).replace(/\s+/g, '_');
+                const content = card.querySelector('.card-content p')?.textContent || "";
+                if (content && rootFolder) {
+                    rootFolder.file(`${title}.txt`, content);
+                }
+            });
+
+            const content = await zip.generateAsync({ type: "blob" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(content);
+            link.download = `MultiView_Prototypes_${new Date().getTime()}.zip`;
+            link.click();
+            showStatus('Downloading ZIP...');
+        } catch (e) {
+            console.error("ZIP Error:", e);
+            showStatus('ZIP Generation Failed', true);
+        }
     });
 }
 
@@ -3761,6 +3950,7 @@ setupCardActions('res-prompt', 'btn-copy-prompt', 'btn-dl-prompt', 'Generation_P
 setupCardActions('res-sketch-prompt', 'btn-copy-sketch-prompt', 'btn-dl-sketch-prompt', 'Sketch_Prompt');
 setupCardActions('res-photo-to-sketch', 'btn-copy-photo-to-sketch', 'btn-dl-photo-to-sketch', 'Photo_to_Sketch_Prompt');
 setupCardActions('res-collage-analysis', 'btn-copy-collage-analysis', 'btn-dl-collage-analysis', 'Collage_Analysis');
+setupCardActions('res-mv-dna', 'btn-copy-mv-dna', '', 'Multi_View_DNA');
 
 // PNG Info Button Logic
 if (btnPngInfoPrompt) {
