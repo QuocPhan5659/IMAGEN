@@ -7,12 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js"
   },
   "dependencies": {
     "@google/genai": "^1.40.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "firebase": "^12.10.0",
-    "jszip": "^3.10.1",
     "lucide-react": "^0.577.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
