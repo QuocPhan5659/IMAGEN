@@ -1069,60 +1069,90 @@ async function fileToGenerativePart(file: File): Promise<{
   });
 }
 
-// Image processing (Canvas arrows burning)
+// Image processing (Resizing & Canvas arrows burning)
 async function processFileForGemini(file: File): Promise<{
   inlineData: {data: string; mimeType: string};
 }> {
     const arrows = fileArrowMap.get(file);
-    if (!arrows || arrows.length === 0) {
-        return fileToGenerativePart(file);
-    }
+    
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
             const canvas = document.createElement('canvas');
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
+            
+            // Optimization: Limit maximum dimension to 1024px for faster processing
+            const MAX_DIM = 1024;
+            let width = img.naturalWidth;
+            let height = img.naturalHeight;
+            
+            if (width > height) {
+                if (width > MAX_DIM) {
+                    height *= MAX_DIM / width;
+                    width = MAX_DIM;
+                }
+            } else {
+                if (height > MAX_DIM) {
+                    width *= MAX_DIM / height;
+                    height = MAX_DIM;
+                }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
             const ctx = canvas.getContext('2d');
-            if(!ctx) { resolve(fileToGenerativePart(file)); return; }
+            if(!ctx) { 
+                fileToGenerativePart(file).then(resolve).catch(reject);
+                return;
+            }
 
-            ctx.drawImage(img, 0, 0);
-            arrows.forEach(arrow => {
-                const x1 = arrow.nx1 * canvas.width;
-                const y1 = arrow.ny1 * canvas.height;
-                const x2 = arrow.nx2 * canvas.width;
-                const y2 = arrow.ny2 * canvas.height;
-                // Draw Arrow Logic
-                const headLength = Math.max(15, canvas.width * 0.03); 
-                const dx = x2 - x1;
-                const dy = y2 - y1;
-                const angle = Math.atan2(dy, dx);
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.lineWidth = Math.max(3, canvas.width * 0.005);
-                ctx.strokeStyle = '#ff0000';
-                ctx.stroke();
-                // Head
-                ctx.beginPath();
-                ctx.moveTo(x2, y2);
-                ctx.lineTo(x2 - headLength * Math.cos(angle - Math.PI / 6), y2 - headLength * Math.sin(angle - Math.PI / 6));
-                ctx.lineTo(x2 - headLength * Math.cos(angle + Math.PI / 6), y2 - headLength * Math.sin(angle + Math.PI / 6));
-                ctx.lineTo(x2, y2);
-                ctx.fillStyle = '#ff0000';
-                ctx.fill();
-                // Dot
-                ctx.beginPath();
-                ctx.arc(x1, y1, Math.max(5, canvas.width * 0.008), 0, Math.PI * 2);
-                ctx.fillStyle = '#ff0000';
-                ctx.fill();
-            });
+            ctx.drawImage(img, 0, 0, width, height);
 
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            if (arrows && arrows.length > 0) {
+                arrows.forEach(arrow => {
+                    const x1 = arrow.nx1 * canvas.width;
+                    const y1 = arrow.ny1 * canvas.height;
+                    const x2 = arrow.nx2 * canvas.width;
+                    const y2 = arrow.ny2 * canvas.height;
+                    
+                    const headLength = Math.max(15, canvas.width * 0.03); 
+                    const dx = x2 - x1;
+                    const dy = y2 - y1;
+                    const angle = Math.atan2(dy, dx);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.lineWidth = Math.max(3, canvas.width * 0.005);
+                    ctx.strokeStyle = '#ff0000';
+                    ctx.stroke();
+                    
+                    // Head
+                    ctx.beginPath();
+                    ctx.moveTo(x2, y2);
+                    ctx.lineTo(x2 - headLength * Math.cos(angle - Math.PI / 6), y2 - headLength * Math.sin(angle - Math.PI / 6));
+                    ctx.lineTo(x2 - headLength * Math.cos(angle + Math.PI / 6), y2 - headLength * Math.sin(angle + Math.PI / 6));
+                    ctx.lineTo(x2, y2);
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fill();
+                    
+                    // Dot
+                    ctx.beginPath();
+                    ctx.arc(x1, y1, Math.max(5, canvas.width * 0.008), 0, Math.PI * 2);
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fill();
+                });
+            }
+
+            // Always compress as JPEG 0.8 to save bandwidth
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
             const base64Content = dataUrl.split(',')[1];
             resolve({ inlineData: { data: base64Content, mimeType: 'image/jpeg' } });
+            URL.revokeObjectURL(img.src);
         };
-        img.onerror = reject;
+        img.onerror = (e) => {
+            URL.revokeObjectURL(img.src);
+            reject(e);
+        };
         img.src = URL.createObjectURL(file);
     });
 }
@@ -2650,7 +2680,9 @@ function handleSignatureFile(file: File) {
 
 // Model Selector Listener
 if (modelSelect) {
-    modelSelect.value = currentModel;
+    if (localStorage.getItem('gemini_selected_model')) {
+        modelSelect.value = localStorage.getItem('gemini_selected_model') || "";
+    }
     // Fallback if the stored model is no longer in the list
     if (modelSelect.selectedIndex === -1) {
         currentModel = customApiKey ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview';
