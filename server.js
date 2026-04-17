@@ -17,10 +17,10 @@ app.use(express.json({ limit: '50mb' }));
 
 // Initialize Gemini Client (Server-side only)
 const getAiClient = () => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    console.error("API Key is missing in environment variables.");
-    throw new Error("API Key is missing on server.");
+    console.error("GEMINI_API_KEY is missing in environment variables.");
+    throw new Error("GEMINI_API_KEY is missing on server.");
   }
   return new GoogleGenAI({ apiKey });
 };
@@ -184,7 +184,7 @@ app.post('/api/generate', async (req, res) => {
 
 // Catch-all handler for any request that doesn't match the above API routes
 // Returns index.html so React Router works (if used)
-app.get('*', (req, res) => {
+app.get('*all', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
