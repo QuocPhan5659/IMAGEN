@@ -1,3 +1,4 @@
+import { GoogleGenAI } from "@google/genai";
 import JSZip from 'jszip';
 
 let customApiKey: string | null = localStorage.getItem('gemini_custom_api_key');
@@ -28,7 +29,7 @@ let globalSigBgColor = '#00ff00'; // Default Neon Green
 // --- Application State ---
 type Lang = 'en' | 'vi';
 let currentLang: Lang = 'en';
-let activeTab: 'analysis' | 'notes' | 'textOverlay' | 'artistic' | 'removeLogo' | 'multiView' = 'analysis';
+let activeTab: 'analysis' | 'multiview' | 'notes' | 'textOverlay' | 'artistic' | 'removeLogo' = 'analysis';
 
 // --- Logo Removal State ---
 interface LogoRemovalSlot {
@@ -108,48 +109,32 @@ const modelSelect = getEl<HTMLSelectElement>('model-select');
 // --- Helper Functions ---
 // Helper: Extract JSON from markdown or raw text
 function extractJson(text: string): any {
-    const tryParse = (s: string) => {
-        try {
-            return JSON.parse(s);
-        } catch (e) {
+    try {
+        // Try direct parse first
+        return JSON.parse(text);
+    } catch (e) {
+        // Try to find JSON block
+        const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        if (match && match[1]) {
             try {
-                // Attempt to clean common LLM JSON errors:
-                // 1. Remove trailing commas
-                // 2. Escape literal newlines in strings
-                const cleaned = s
-                    .trim()
-                    .replace(/,\s*([\]}])/g, '$1')
-                    .replace(/"((?:\\.|[^"\\])*)"/g, (match, p1) => {
-                        return '"' + p1.replace(/\n/g, '\\n').replace(/\r/g, '\\r') + '"';
-                    });
-                return JSON.parse(cleaned);
+                return JSON.parse(match[1]);
             } catch (e2) {
-                return null;
+                console.error("Failed to parse extracted JSON block", e2);
             }
         }
-    };
-
-    // 1. Try direct parse first
-    let result = tryParse(text);
-    if (result) return result;
-
-    // 2. Try to find JSON block in markdown
-    const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (match && match[1]) {
-        result = tryParse(match[1]);
-        if (result) return result;
+        
+        // Try to find anything between { and }
+        const braceMatch = text.match(/\{[\s\S]*\}/);
+        if (braceMatch) {
+            try {
+                return JSON.parse(braceMatch[0]);
+            } catch (e3) {
+                console.error("Failed to parse text between braces", e3);
+            }
+        }
+        
+        throw new Error("Could not parse JSON from model response");
     }
-    
-    // 3. Try to find anything between the first { and the last }
-    const firstBrace = text.indexOf('{');
-    const lastBrace = text.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-        result = tryParse(text.substring(firstBrace, lastBrace + 1));
-        if (result) return result;
-    }
-    
-    console.error("Critical JSON Parse Failure. Raw Content:", text);
-    throw new Error("Could not parse JSON from model response. Please check the model output or retry.");
 }
 
 async function copyToClipboard(text: string, btnEl?: HTMLElement, successIcon?: string, originalIcon?: string): Promise<boolean> {
@@ -252,6 +237,7 @@ const translations = {
         loaderTitle: "ANALYZING...",
         loaderSubtitle: "Gemini is analyzing architectural details...",
         tabAnalysis: "Analysis",
+        tabMultiView: "Multi-View",
         tabNotes: "Notes",
         tabTextOverlay: "Text Overlay",
         tabArtistic: "Artistic Styles",
@@ -291,7 +277,7 @@ const translations = {
             sketchPrompt: "Sketch Prompt",
             generationPrompt: "Generation Prompt",
             multiViewPrompts: "Multi-View Prompts",
-            collageAnalysis: "Project Detailed Analysis (DNA)"
+            collageAnalysis: "Collage & Project Analysis"
         },
         apiModal: {
             title: "ENCRYPTION KEY",
@@ -322,6 +308,7 @@ const translations = {
         loaderTitle: "ĐANG PHÂN TÍCH...",
         loaderSubtitle: "Gemini đang xử lý chi tiết kiến trúc...",
         tabAnalysis: "Phân Tích",
+        tabMultiView: "Đa Góc Nhìn",
         tabNotes: "Ghi Chú",
         tabTextOverlay: "Chèn Chữ",
         tabArtistic: "Phong Cách Nghệ Thuật",
@@ -361,7 +348,7 @@ const translations = {
             sketchPrompt: "Prompt Phác Thảo",
             generationPrompt: "Prompt Tạo Ảnh",
             multiViewPrompts: "Prompt Đa Góc Nhìn",
-            collageAnalysis: "Phân Tích Chi Tiết Dự Án (DNA)"
+            collageAnalysis: "Phân Tích Ảnh Ghép & Dự Án"
         },
         apiModal: {
             title: "KHÓA MÃ HÓA",
@@ -379,14 +366,14 @@ const translations = {
 // --- DOM Elements ---
 const tabAnalysis = getEl<HTMLButtonElement>('tab-analysis');
 const tabNotes = getEl<HTMLButtonElement>('tab-notes');
-const tabMultiView = getEl<HTMLButtonElement>('tab-multi-view');
 const tabRemoveLogo = getEl<HTMLButtonElement>('tab-remove-logo');
+const tabMultiView = getEl<HTMLButtonElement>('tab-multiview');
 const tabArtistic = getEl<HTMLButtonElement>('tab-artistic');
 const tabTextOverlay = getEl<HTMLButtonElement>('tab-text-overlay');
 
 const panelAnalysis = getEl<HTMLDivElement>('panel-analysis');
 const panelNotes = getEl<HTMLDivElement>('panel-notes');
-const panelMultiView = getEl<HTMLDivElement>('panel-multi-view');
+const panelMultiView = getEl<HTMLDivElement>('panel-multiview');
 const panelArtistic = getEl<HTMLDivElement>('panel-artistic');
 const panelRemoveLogoSidebar = getEl<HTMLDivElement>('panel-remove-logo');
 const panelUploadAnalysis = getEl<HTMLDivElement>('panel-upload-analysis');
@@ -404,6 +391,7 @@ const btnToggleAllBg = getEl<HTMLButtonElement>('btn-toggle-all-bg');
 const btnAddSlot = getEl<HTMLButtonElement>('btn-add-slot');
 const btnEmbedAll = getEl<HTMLButtonElement>('btn-embed-all');
 const btnDownloadAllEmbeds = getEl<HTMLButtonElement>('btn-download-all-embeds');
+const btnDownloadAllZip = getEl<HTMLButtonElement>('btn-download-all-zip');
 const globalFontSelect = getEl<HTMLSelectElement>('global-font-select');
 const globalSignatureInput = getEl<HTMLInputElement>('global-signature');
 const signatureDropIndicator = getEl<HTMLDivElement>('signature-drop-indicator');
@@ -449,7 +437,6 @@ const analysisCardsWrapper = getEl<HTMLDivElement>('analysis-cards-wrapper');
 const notesResults = getEl<HTMLDivElement>('notes-results');
 const artisticResults = getEl<HTMLDivElement>('artistic-results');
 const multiviewResults = getEl<HTMLDivElement>('multiview-results');
-const multiviewGrid = getEl<HTMLDivElement>('multiview-grid');
 const panelRemoveLogo = getEl<HTMLDivElement>('remove-logo-panel');
 const logoRemovalGrid = getEl<HTMLDivElement>('logo-removal-grid');
 const logoMultiDropZone = getEl<HTMLDivElement>('logo-multi-drop-zone');
@@ -467,18 +454,6 @@ const lblLogoDragDrop = getEl('lbl-logo-drag-drop');
 const analyzeBtn = getEl<HTMLButtonElement>('analyze-btn');
 const analyzeViBtn = getEl<HTMLButtonElement>('analyze-vi-btn');
 const analyzeNotesBtn = getEl<HTMLButtonElement>('analyze-notes-btn');
-const btnAnalyzeMultiView = getEl<HTMLButtonElement>('btn-analyze-multi-view');
-const btnAnalyzeMultiViewGen = getEl<HTMLButtonElement>('btn-analyze-multi-view-gen');
-const btnDownloadAllMultiView = getEl<HTMLButtonElement>('btn-download-all-multiview');
-const angleCountInput = getEl<HTMLInputElement>('angle-count');
-const customAngleInput = getEl<HTMLTextAreaElement>('custom-angle-input');
-const btnGenerateCustomAngle = getEl<HTMLButtonElement>('btn-generate-custom-angle');
-const lblAngleCount = getEl('lbl-angle-count');
-const lblCustomAngle = getEl('lbl-custom-angle');
-const btnCustomAngleText = getEl('btn-custom-angle-text');
-const lblObjAnalysis = getEl('lbl-obj-analysis');
-const lblObjDesc = getEl('lbl-obj-desc');
-const btnObjAnalysisText = getEl('btn-obj-analysis-text');
 const btnAnalyzeNotesText = getEl('btn-analyze-notes-text');
 const btnArtisticText = getEl('btn-artistic-text');
 const downloadAllBtn = getEl<HTMLButtonElement>('download-all-btn');
@@ -537,9 +512,6 @@ const btnRunComposition = getEl<HTMLButtonElement>('btn-run-composition');
 const btnCopyCollageAnalysis = getEl<HTMLButtonElement>('btn-copy-collage-analysis');
 const btnDlCollageAnalysis = getEl<HTMLButtonElement>('btn-dl-collage-analysis');
 const btnPngInfoPrompt = getEl<HTMLButtonElement>('btn-png-info-prompt');
-const btnCopyMvDna = getEl<HTMLButtonElement>('btn-copy-mv-dna');
-const resMvDna = getEl<HTMLParagraphElement>('res-mv-dna');
-const cardMvDna = getEl<HTMLDivElement>('card-mv-dna');
 const btnSendBanana = getEl<HTMLButtonElement>('btn-send-banana');
 const btnSelectFolder = getEl<HTMLButtonElement>('btn-select-folder');
 
@@ -553,6 +525,24 @@ const sketchPreviewImg = getEl<HTMLImageElement>('sketch-preview-img');
 const sketchClearBtn = getEl<HTMLButtonElement>('sketch-clear-btn');
 const sketchPromptCard = getEl<HTMLDivElement>('card-sketch-prompt');
 const collageAnalysisCard = getEl<HTMLDivElement>('card-collage-analysis');
+
+// MultiView Elements
+const multiviewContextContainer = getEl<HTMLDivElement>('multiview-context-container');
+const lblObjAnalysis = getEl('lbl-obj-analysis');
+const lblObjDesc = getEl('lbl-obj-desc');
+const btnRunObjAnalysis = getEl<HTMLButtonElement>('btn-run-obj-analysis');
+const btnObjAnalysisText = getEl('btn-obj-analysis-text');
+const objAnalysisResult = getEl<HTMLDivElement>('obj-analysis-result');
+const angleInput = getEl<HTMLInputElement>('angle-input');
+const multiViewBtn = getEl<HTMLButtonElement>('multiview-btn');
+const lblAngleCount = getEl('lbl-angle-count');
+const btnMultiViewText = getEl('btn-multiview-text');
+
+// Custom Angle Elements
+const lblCustomAngle = getEl('lbl-custom-angle');
+const customAngleInput = getEl<HTMLTextAreaElement>('custom-angle-input');
+const btnCustomAngle = getEl<HTMLButtonElement>('btn-custom-angle');
+const btnCustomAngleText = getEl('btn-custom-angle-text');
 
 // Modal Elements (Arrows)
 const imageModal = getEl<HTMLDivElement>('image-modal');
@@ -1031,9 +1021,8 @@ function setLoading(isLoading: boolean) {
   if (isLoading) {
     setHidden(loader, false);
     if(analyzeBtn) analyzeBtn.disabled = true;
-    if(btnAnalyzeMultiView) btnAnalyzeMultiView.disabled = true;
-    if(btnAnalyzeMultiViewGen) btnAnalyzeMultiViewGen.disabled = true;
-    if(btnGenerateCustomAngle) btnGenerateCustomAngle.disabled = true;
+    if(multiViewBtn) multiViewBtn.disabled = true;
+    if(btnRunObjAnalysis) btnRunObjAnalysis.disabled = true;
     if(analyzeNotesBtn) analyzeNotesBtn.disabled = true;
     if(btnLoadPngInfo) btnLoadPngInfo.disabled = true;
     if(dropZone) addClass(dropZone, 'pointer-events-none');
@@ -1041,9 +1030,8 @@ function setLoading(isLoading: boolean) {
   } else {
     setHidden(loader, true);
     if(analyzeBtn) analyzeBtn.disabled = false;
-    if(btnAnalyzeMultiView) btnAnalyzeMultiView.disabled = false;
-    if(btnAnalyzeMultiViewGen) btnAnalyzeMultiViewGen.disabled = false;
-    if(btnGenerateCustomAngle) btnGenerateCustomAngle.disabled = false;
+    if(multiViewBtn) multiViewBtn.disabled = false;
+    if(btnRunObjAnalysis) btnRunObjAnalysis.disabled = false;
     if(analyzeNotesBtn) analyzeNotesBtn.disabled = false;
     if(btnLoadPngInfo) btnLoadPngInfo.disabled = false;
     if(dropZone) removeClass(dropZone, 'pointer-events-none');
@@ -1068,117 +1056,92 @@ async function fileToGenerativePart(file: File): Promise<{
   });
 }
 
-// Image processing (Resizing & Canvas arrows burning)
+// Image processing (Canvas arrows burning)
 async function processFileForGemini(file: File): Promise<{
   inlineData: {data: string; mimeType: string};
 }> {
     const arrows = fileArrowMap.get(file);
-    
+    if (!arrows || arrows.length === 0) {
+        return fileToGenerativePart(file);
+    }
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
             const canvas = document.createElement('canvas');
-            
-            // Optimization: Limit maximum dimension to 1024px for faster processing
-            const MAX_DIM = 1024;
-            let width = img.naturalWidth;
-            let height = img.naturalHeight;
-            
-            if (width > height) {
-                if (width > MAX_DIM) {
-                    height *= MAX_DIM / width;
-                    width = MAX_DIM;
-                }
-            } else {
-                if (height > MAX_DIM) {
-                    width *= MAX_DIM / height;
-                    height = MAX_DIM;
-                }
-            }
-            
-            canvas.width = width;
-            canvas.height = height;
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
             const ctx = canvas.getContext('2d');
-            if(!ctx) { 
-                fileToGenerativePart(file).then(resolve).catch(reject);
-                return;
-            }
+            if(!ctx) { resolve(fileToGenerativePart(file)); return; }
 
-            ctx.drawImage(img, 0, 0, width, height);
+            ctx.drawImage(img, 0, 0);
+            arrows.forEach(arrow => {
+                const x1 = arrow.nx1 * canvas.width;
+                const y1 = arrow.ny1 * canvas.height;
+                const x2 = arrow.nx2 * canvas.width;
+                const y2 = arrow.ny2 * canvas.height;
+                // Draw Arrow Logic
+                const headLength = Math.max(15, canvas.width * 0.03); 
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const angle = Math.atan2(dy, dx);
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.lineWidth = Math.max(3, canvas.width * 0.005);
+                ctx.strokeStyle = '#ff0000';
+                ctx.stroke();
+                // Head
+                ctx.beginPath();
+                ctx.moveTo(x2, y2);
+                ctx.lineTo(x2 - headLength * Math.cos(angle - Math.PI / 6), y2 - headLength * Math.sin(angle - Math.PI / 6));
+                ctx.lineTo(x2 - headLength * Math.cos(angle + Math.PI / 6), y2 - headLength * Math.sin(angle + Math.PI / 6));
+                ctx.lineTo(x2, y2);
+                ctx.fillStyle = '#ff0000';
+                ctx.fill();
+                // Dot
+                ctx.beginPath();
+                ctx.arc(x1, y1, Math.max(5, canvas.width * 0.008), 0, Math.PI * 2);
+                ctx.fillStyle = '#ff0000';
+                ctx.fill();
+            });
 
-            if (arrows && arrows.length > 0) {
-                arrows.forEach(arrow => {
-                    const x1 = arrow.nx1 * canvas.width;
-                    const y1 = arrow.ny1 * canvas.height;
-                    const x2 = arrow.nx2 * canvas.width;
-                    const y2 = arrow.ny2 * canvas.height;
-                    
-                    const headLength = Math.max(15, canvas.width * 0.03); 
-                    const dx = x2 - x1;
-                    const dy = y2 - y1;
-                    const angle = Math.atan2(dy, dx);
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(x1, y1);
-                    ctx.lineTo(x2, y2);
-                    ctx.lineWidth = Math.max(3, canvas.width * 0.005);
-                    ctx.strokeStyle = '#ff0000';
-                    ctx.stroke();
-                    
-                    // Head
-                    ctx.beginPath();
-                    ctx.moveTo(x2, y2);
-                    ctx.lineTo(x2 - headLength * Math.cos(angle - Math.PI / 6), y2 - headLength * Math.sin(angle - Math.PI / 6));
-                    ctx.lineTo(x2 - headLength * Math.cos(angle + Math.PI / 6), y2 - headLength * Math.sin(angle + Math.PI / 6));
-                    ctx.lineTo(x2, y2);
-                    ctx.fillStyle = '#ff0000';
-                    ctx.fill();
-                    
-                    // Dot
-                    ctx.beginPath();
-                    ctx.arc(x1, y1, Math.max(5, canvas.width * 0.008), 0, Math.PI * 2);
-                    ctx.fillStyle = '#ff0000';
-                    ctx.fill();
-                });
-            }
-
-            // Always compress as JPEG 0.8 to save bandwidth
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
             const base64Content = dataUrl.split(',')[1];
             resolve({ inlineData: { data: base64Content, mimeType: 'image/jpeg' } });
-            URL.revokeObjectURL(img.src);
         };
-        img.onerror = (e) => {
-            URL.revokeObjectURL(img.src);
-            reject(e);
-        };
+        img.onerror = reject;
         img.src = URL.createObjectURL(file);
     });
 }
 
-// Internal AI process - now calling the server
-async function generateContentWithRetry(params: any): Promise<any> {
-    const response = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            prompt: params.prompt,
-            contents: params.contents.parts,
-            model: params.model,
-            config: params.generationConfig,
-            apiKey: customApiKey
-        })
-    });
-    
-    if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "AI Server Error");
+// Wrapper for exponential backoff retry
+async function generateContentWithRetry(ai: GoogleGenAI, params: any, retries = 3, delay = 1000): Promise<any> {
+    try {
+        return await ai.models.generateContent(params);
+    } catch (e: any) {
+        if (retries > 0) {
+            const eStr = e.toString() + (e.message || "") + JSON.stringify(e);
+            // Retry on 429 (Quota) or 503 (Overloaded)
+            if (eStr.includes("429") || eStr.includes("RESOURCE_EXHAUSTED") || eStr.includes("503") || eStr.includes("overloaded")) {
+                console.warn(`API Error ${e.status || 'unknown'}. Retrying in ${delay}ms... (${retries} retries left)`);
+                // Wait for delay
+                await new Promise(resolve => setTimeout(resolve, delay));
+                // Retry with double delay
+                return generateContentWithRetry(ai, params, retries - 1, delay * 2);
+            }
+        }
+        throw e;
     }
-    
-    return await response.json();
 }
 
 async function callGemini(prompt: string, files: File[], sketchFile: File | null = null): Promise<string> {
+    const apiKey = customApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey.trim() === "") { 
+        await openApiKeyDialog(); 
+        throw new Error("API Key is missing. Please provide a valid API Key.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
     const parts: any[] = [];
     
     if (files.length > 0) {
@@ -1195,14 +1158,13 @@ async function callGemini(prompt: string, files: File[], sketchFile: File | null
     
     parts.push({ text: prompt });
 
-    const data = await generateContentWithRetry({
-        prompt: prompt,
+    // Use retry wrapper
+    const response = await generateContentWithRetry(ai, {
         model: currentModel,
         contents: { parts: parts },
-        generationConfig: { responseMimeType: "application/json" }
+        config: { responseMimeType: "application/json" }
     });
-    
-    return data.text || "{}";
+    return response.text || "{}";
 }
 
 // --- UI Logic ---
@@ -1242,7 +1204,7 @@ function updateLanguageUI() {
     setText(loaderTitle, t.loaderTitle);
     setText(loaderSubtitle, t.loaderSubtitle);
     if(tabAnalysis) setText(tabAnalysis, t.tabAnalysis);
-    if(tabMultiView) setText(tabMultiView, t.btnMultiView);
+    if(tabMultiView) setText(tabMultiView, t.tabMultiView);
     if(tabNotes) setText(tabNotes, t.tabNotes);
     if(tabArtistic) setText(tabArtistic, t.tabArtistic);
     if(tabRemoveLogo) setText(tabRemoveLogo, t.tabRemoveLogo);
@@ -1262,12 +1224,8 @@ function updateLanguageUI() {
     setText(lblObjAnalysis, t.lblObjAnalysis);
     setText(lblObjDesc, t.lblObjDesc);
     setText(btnObjAnalysisText, t.btnObjAnalysis);
-    setText(getEl('btn-multi-view-text'), t.btnMultiView);
     setText(btnAnalyzeNotesText, t.btnAnalyzeNotes);
-    
-    setText(getEl('lbl-multi-view-title'), currentLang === 'en' ? 'Multi-View Generation' : 'Tạo Đa Góc Nhìn');
-    setText(getEl('lbl-multi-view-subtitle'), currentLang === 'en' ? 'Multiple perspectives derived from unified object DNA.' : 'Nhiều góc nhìn khác nhau được tạo ra từ DNA dự án đồng nhất.');
-    setText(btnDownloadAllMultiView, t.btnDownloadAll + " (.ZIP)");
+    setText(btnMultiViewText, t.btnMultiView);
 
     setText(getEl('lbl-artistic'), t.lblArtistic);
     setText(getEl('lbl-artistic-desc'), t.lblArtisticDesc);
@@ -1303,27 +1261,37 @@ function updateLanguageUI() {
 
     // Tab Logic
     setHidden(panelAnalysis, true);
-    setHidden(panelNotes, true);
-    setHidden(panelArtistic, true);
     setHidden(panelMultiView, true);
-    setHidden(panelRemoveLogo, true);
-    setHidden(panelTextOverlaySettings, true);
+    setHidden(panelArtistic, true);
+    setHidden(panelNotes, true);
     setHidden(panelUploadAnalysis, true);
     setHidden(sketchContainer, true);
+    setHidden(multiviewContextContainer, true);
+    setHidden(panelTextOverlaySettings, true);
+    setHidden(panelRemoveLogo, true);
+    setHidden(panelRemoveLogoSidebar, true);
     
+    setText(lblRemoveLogoTitle, t.lblRemoveLogoTitle);
+    setText(lblRemoveLogoTitleSidebar, t.lblRemoveLogoTitle);
+    setText(lblRemoveLogoDesc, t.lblRemoveLogoDesc);
+    setText(lblRemoveLogoDescSidebar, t.lblRemoveLogoDesc);
+    setText(lblLogoDragDrop, t.lblLogoDragDrop);
+    setText(btnLogoGenAll, t.btnLogoGenAll);
+    setText(btnLogoDownloadAll, t.btnLogoDownloadAll);
+    setText(btnLogoResetAll, t.btnLogoResetAll);
+
     setHidden(analysisCardsWrapper, true);
     setHidden(multiviewResults, true);
     setHidden(artisticResults, true);
     setHidden(notesResults, true);
     setHidden(overlayGrid, true);
-    setHidden(panelRemoveLogoSidebar, true);
     
     // Hide Global Action Bar by default
     setHidden(globalActionsBar, true);
 
     removeClass(tabAnalysis, 'active');
-    removeClass(tabNotes, 'active');
     removeClass(tabMultiView, 'active');
+    removeClass(tabNotes, 'active');
     removeClass(tabTextOverlay, 'active');
     removeClass(tabArtistic, 'active');
     removeClass(tabRemoveLogo, 'active');
@@ -1335,6 +1303,14 @@ function updateLanguageUI() {
         setHidden(analysisCardsWrapper, false);
         setHidden(globalActionsBar, false);
         addClass(tabAnalysis, 'active');
+
+    } else if (activeTab === 'multiview') {
+        setHidden(panelMultiView, false);
+        setHidden(panelUploadAnalysis, false);
+        setHidden(multiviewContextContainer, false);
+        setHidden(multiviewResults, false);
+        setHidden(globalActionsBar, false);
+        addClass(tabMultiView, 'active');
 
     } else if (activeTab === 'notes') {
         setHidden(panelNotes, false);
@@ -1358,13 +1334,6 @@ function updateLanguageUI() {
         if (overlaySlots.length === 0) initOverlaySlots();
         renderOverlaySlots();
         setHidden(globalActionsBar, false); // Visible for Text Overlay too
-    } else if (activeTab === 'multiView') {
-        setHidden(panelMultiView, false);
-        setHidden(panelUploadAnalysis, false);
-        setHidden(multiviewResults, false);
-        setHidden(globalActionsBar, false);
-        addClass(tabMultiView, 'active');
-        renderMultiViewResults();
     } else if (activeTab === 'removeLogo') {
         setHidden(panelRemoveLogo, false);
         setHidden(panelRemoveLogoSidebar, false);
@@ -1396,17 +1365,11 @@ function updateLanguageUI() {
             const collageText = lastAnalysisData.collageAnalysis?.[currentLang] || "";
             setText(resCollageAnalysis, collageText);
             setHidden(collageAnalysisCard, !collageText);
-
-            // Sync with MultiView Tab's DNA card
-            if (resMvDna && cardMvDna) {
-                setText(resMvDna, collageText);
-                setHidden(cardMvDna, !collageText);
-            }
         }
     }
 
     // Render Logic for Views and Notes handled in respective functions
-    if(activeTab === 'multiView') renderMultiViewResults();
+    if(activeTab === 'multiview') renderMultiViewResults();
     if(activeTab === 'artistic') renderArtisticResults();
     if(activeTab === 'notes') renderNotesResults();
     if(activeTab === 'removeLogo') renderLogoRemovalSlots();
@@ -1446,17 +1409,9 @@ function setupCollapsibleCards() {
 // but currently createMultiViewCardHTML has built-in logic)
 
 function renderMultiViewResults() {
-    if (!multiviewGrid) return;
-    multiviewGrid.innerHTML = '';
+    if (!multiviewResults) return;
+    multiviewResults.innerHTML = '';
     
-    if (customAnglesHistory.length === 0 && (!lastAnalysisData || !lastAnalysisData.multiViewPrompts)) {
-        multiviewGrid.innerHTML = `
-        <div class="col-span-full text-center py-20 text-gray-700 font-mono text-[10px] uppercase tracking-[0.2em] border border-gray-900 bg-black/50">
-             ${currentLang === 'en' ? 'Phase 1: Object DNA established. Phase 2: Angles pending initiation.' : 'Phát hiện DNA Project. Đang chờ lệnh tạo đa góc nhìn.'}
-        </div>`;
-        return;
-    }
-
     // 1. Custom Angles History
     if (customAnglesHistory.length > 0) {
         [...customAnglesHistory].reverse().forEach((entry, idx) => {
@@ -1467,42 +1422,49 @@ function renderMultiViewResults() {
                     `custom-${idx}`, data.title, data.content, data.composition, data.lighting,
                     () => { customAnglesHistory.splice(realIndex, 1); updateLanguageUI(); }
                 );
-                multiviewGrid.appendChild(card);
+                multiviewResults.appendChild(card);
              }
         });
     }
 
-    // 2. Batch Analysis (String Format)
+    // 2. Batch Analysis
     if (lastAnalysisData && lastAnalysisData.multiViewPrompts) {
-         const mvDataEn = lastAnalysisData.multiViewPrompts.en || "";
-         const mvDataVi = lastAnalysisData.multiViewPrompts.vi || "";
-         
-         const parsePrompts = (text: string) => {
-             const items: {title: string, content: string, composition: string, lighting: string}[] = [];
-             const sections = text.split('===ANGLE:');
-             sections.forEach(sec => {
+         const mvData = lastAnalysisData.multiViewPrompts[currentLang] || "";
+         if (mvData) {
+             const sections = mvData.split('===ANGLE:');
+             sections.forEach((sec, idx) => {
                  if(!sec.trim()) return;
                  const lines = sec.split('\n');
-                 const title = lines[0].trim().replace('===', '');
-                 let content = "", composition = "", lighting = "";
-                 const cIdx = sec.indexOf('[CONTENT]:'), cmpIdx = sec.indexOf('[COMPOSITION]:'), lIdx = sec.indexOf('[LIGHTING]:');
-                 if (cIdx !== -1) content = sec.substring(cIdx+10, cmpIdx !== -1 ? cmpIdx : (lIdx !== -1 ? lIdx : sec.length)).trim();
-                 if (cmpIdx !== -1) composition = sec.substring(cmpIdx+14, lIdx !== -1 ? lIdx : sec.length).trim();
-                 if (lIdx !== -1) lighting = sec.substring(lIdx+11).trim();
-                 if (title) items.push({title, content, composition, lighting});
+                 const angleTitle = lines[0].trim().replace('===', '');
+                 
+                 let content = "";
+                 let composition = "";
+                 let lighting = "";
+                 
+                 const contentIdx = sec.indexOf('[CONTENT]:');
+                 const compIdx = sec.indexOf('[COMPOSITION]:');
+                 const lightIdx = sec.indexOf('[LIGHTING]:');
+                 
+                 if (contentIdx !== -1) {
+                     const end = compIdx !== -1 ? compIdx : (lightIdx !== -1 ? lightIdx : sec.length);
+                     content = sec.substring(contentIdx + 10, end).trim();
+                 }
+                 if (compIdx !== -1) {
+                     const end = lightIdx !== -1 ? lightIdx : sec.length;
+                     composition = sec.substring(compIdx + 14, end).trim();
+                 }
+                 if (lightIdx !== -1) {
+                     lighting = sec.substring(lightIdx + 11).trim();
+                 }
+                 
+                 if(angleTitle) {
+                    const card = createMultiViewCardHTML(
+                        `mv-${idx}`, angleTitle, content, composition, lighting
+                    );
+                    multiviewResults.appendChild(card);
+                 }
              });
-             return items;
-         };
-
-         const enItems = parsePrompts(mvDataEn);
-         const viItems = parsePrompts(mvDataVi);
-
-         // Display based on current language
-         const items = currentLang === 'en' ? enItems : viItems;
-         items.forEach((item, idx) => {
-             const card = createMultiViewCardHTML(`mv-${idx}`, item.title, item.content, item.composition, item.lighting);
-             multiviewGrid.appendChild(card);
-         });
+         }
     }
 }
 
@@ -1950,13 +1912,17 @@ async function handleTranslate(index: number) {
     updateSlot(index, { isTranslating: true });
     
     try {
-        const data = await generateContentWithRetry({
-            prompt: `Translate the following text to English if it is Vietnamese, or to Vietnamese if it is English. Maintain the tone and style. Return ONLY the translated text.\n\nText: ${text}`,
+        const apiKey = customApiKey || process.env.API_KEY;
+        if (!apiKey) { await openApiKeyDialog(); updateSlot(index, { isTranslating: false }); return; }
+        const ai = new GoogleGenAI({ apiKey });
+        
+        // Use retry wrapper
+        const response = await generateContentWithRetry(ai, {
             model: currentModel,
-            contents: { parts: [{ text: `Translate the following text to English if it is Vietnamese, or to Vietnamese if it is English. Maintain the tone and style. Return ONLY the translated text.\n\nText: ${text}` }] }
+            contents: `Translate the following text to English if it is Vietnamese, or to Vietnamese if it is English. Maintain the tone and style. Return ONLY the translated text.\n\nText: ${text}`,
         });
         
-        const translated = data.text || text;
+        const translated = response.text || text;
         updateSlot(index, { text: translated, isTranslating: false });
         showStatus('Translated!');
     } catch (e) {
@@ -2221,33 +2187,15 @@ async function processLogoDownloadAll() {
         return;
     }
 
-    if (slotsToDownload.length === 1) {
-        const slot = slotsToDownload[0];
+    showStatus(`Downloading ${slotsToDownload.length} images...`);
+    for (const slot of slotsToDownload) {
         const a = document.createElement('a');
         a.href = slot.resultSrc!;
         a.download = `Cleaned_${slot.file?.name || 'image.png'}`;
         a.click();
-        return;
+        // Small delay to prevent browser blocking multiple downloads
+        await new Promise(r => setTimeout(r, 200));
     }
-
-    showStatus(`Preparing ZIP with ${slotsToDownload.length} images...`);
-    const zip = new JSZip();
-    for (const slot of slotsToDownload) {
-        const base64Data = slot.resultSrc!.split(',')[1];
-        const fileName = `Cleaned_${slot.file?.name || 'image.png'}`;
-        zip.file(fileName, base64Data, { base64: true });
-    }
-
-    const content = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(content);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Cleaned_Images_Batch.zip`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showStatus("Download complete!");
 }
 
 function processLogoResetAll() {
@@ -2269,21 +2217,33 @@ async function handleLogoSlotFile(index: number, file: File) {
 }
 
 async function callGeminiImageEdit(prompt: string, file: File): Promise<string | null> {
+    const apiKey = customApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey.trim() === "") { 
+        await openApiKeyDialog(); 
+        throw new Error("API Key is missing. Please provide a valid API Key.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
     const parts: any[] = [
         await processFileForGemini(file),
         { text: prompt }
     ];
 
     try {
-        const data = await generateContentWithRetry({
-            prompt: prompt,
+        const response = await generateContentWithRetry(ai, {
             model: 'gemini-2.5-flash-image',
             contents: { parts: parts }
         });
 
-        return data.imageUrl || null;
+        if (response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts) {
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData) {
+                    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                }
+            }
+        }
     } catch (err) {
-        console.error("Server-side Gemini call failed:", err);
+        console.error("Gemini API call failed:", err);
     }
     return null;
 }
@@ -2296,30 +2256,79 @@ async function processLogoRemoval(index: number) {
     renderLogoRemovalSlots();
 
     try {
-        console.log("Starting logo removal for slot:", index);
         const img = await new Promise<HTMLImageElement>((resolve, reject) => {
             const i = new Image();
             i.onload = () => resolve(i);
             i.onerror = reject;
             i.src = slot.imgSrc!;
         });
-        console.log("Image loaded, dimensions:", img.naturalWidth, "x", img.naturalHeight);
 
         const width = img.naturalWidth;
         const height = img.naturalHeight;
-        const prompt = "Perform high-quality inpainting to remove the logo (Gemini star, RunningHub AI, or any star-shaped watermark) from the image. Carefully reconstruct the underlying architectural details, textures, and lighting in the area where the logo was removed to ensure a seamless, natural-looking result. Do not alter any other part of the image.";
+        const prompt = "Remove the logo (Gemini or RunningHub AI) located at the top of this image. Fill the area seamlessly to match the surrounding architectural details. Do not change anything else. Output the edited image.";
 
-        // Always use full image processing for better reliability
-        console.log("Processing logo removal using full image...");
-        showStatus("Processing logo removal...");
-        
-        const result = await callGeminiImageEdit(prompt, slot.file);
-        
-        if (result) {
-            slot.resultSrc = result;
-            showStatus("Logo removed successfully!");
+        // If image is large, use patching to preserve resolution
+        if (width > 1536 || height > 1536) {
+            showStatus("High-Res Mode: Processing logo area...");
+            
+            // Define patch size - 1024 is optimal for Gemini
+            const patchSize = 1024;
+            // Target the top area (centered horizontally)
+            const startX = Math.max(0, (width - patchSize) / 2);
+            const startY = 0; // Top
+            const actualPatchWidth = Math.min(patchSize, width);
+            const actualPatchHeight = Math.min(patchSize, height);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = actualPatchWidth;
+            canvas.height = actualPatchHeight;
+            const ctx = canvas.getContext('2d')!;
+            ctx.drawImage(img, startX, startY, actualPatchWidth, actualPatchHeight, 0, 0, actualPatchWidth, actualPatchHeight);
+            
+            const patchBlob = await new Promise<Blob | null>(r => canvas.toBlob(r, 'image/png', 1.0));
+            if (!patchBlob) throw new Error("Patch creation failed");
+            const patchFile = new File([patchBlob], "patch.png", { type: "image/png" });
+
+            const editedPatchSrc = await callGeminiImageEdit(prompt, patchFile);
+
+            if (editedPatchSrc) {
+                const editedPatchImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+                    const i = new Image();
+                    i.onload = () => resolve(i);
+                    i.onerror = reject;
+                    i.src = editedPatchSrc;
+                });
+
+                const finalCanvas = document.createElement('canvas');
+                finalCanvas.width = width;
+                finalCanvas.height = height;
+                const finalCtx = finalCanvas.getContext('2d')!;
+                finalCtx.drawImage(img, 0, 0);
+                // Draw the edited patch back exactly where it came from
+                finalCtx.drawImage(editedPatchImg, 0, 0, editedPatchImg.width, editedPatchImg.height, startX, startY, actualPatchWidth, actualPatchHeight);
+                
+                slot.resultSrc = finalCanvas.toDataURL('image/png', 1.0);
+                showStatus("Logo removed (Original Resolution Preserved)!");
+            } else {
+                showStatus("API Error: Patch processing failed. Retrying with full image...");
+                // Fallback to full image if patch fails
+                const result = await callGeminiImageEdit(prompt, slot.file);
+                if (result) {
+                    slot.resultSrc = result;
+                    showStatus("Logo removed (Standard Resolution).");
+                } else {
+                    showStatus("Failed to remove logo.", true);
+                }
+            }
         } else {
-            showStatus("Failed to remove logo.", true);
+            // Normal processing for smaller images
+            const result = await callGeminiImageEdit(prompt, slot.file);
+            if (result) {
+                slot.resultSrc = result;
+                showStatus("Logo removed successfully!");
+            } else {
+                showStatus("Failed to remove logo.", true);
+            }
         }
     } catch (e) {
         console.error("Logo removal failed:", e);
@@ -2331,195 +2340,208 @@ async function processLogoRemoval(index: number) {
 }
 
 // Embed Function (Canvas based)
-async function processSlotEmbed(index: number): Promise<void> {
+function processSlotEmbed(index: number) {
     const slot = overlaySlots[index];
-    if (!slot.file || !slot.imgSrc) { 
-        showStatus('No image in slot!', true); 
-        return Promise.resolve(); 
-    }
+    if (!slot.file || !slot.imgSrc) { showStatus('No image in slot!', true); return; }
 
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.src = slot.imgSrc!;
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
-            const ctx = canvas.getContext('2d');
-            if(!ctx) { resolve(); return; }
+    const img = new Image();
+    img.src = slot.imgSrc;
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if(!ctx) return;
 
-            // Draw Base Image
-            ctx.drawImage(img, 0, 0);
+        // Draw Base Image
+        ctx.drawImage(img, 0, 0);
 
-            // 1/3 Height Logic
-            const boxHeight = Math.floor(canvas.height / 3);
-            const boxY = canvas.height - boxHeight;
-            const padding = Math.floor(canvas.width * 0.05);
-            const maxWidth = canvas.width - (padding * 2);
-            const maxHeight = boxHeight - (padding * 2);
+        // 1/3 Height Logic
+        const boxHeight = Math.floor(canvas.height / 3);
+        const boxY = canvas.height - boxHeight;
+        const padding = Math.floor(canvas.width * 0.05);
+        const maxWidth = canvas.width - (padding * 2);
+        const maxHeight = boxHeight - (padding * 2);
 
-            // Helper for asynchronous drawing steps (logo loading)
-            const drawContent = () => {
-                // Draw Text Box Background (More Transparent: 0.3 - 0.7)
-                if (slot.hasBackground) {
-                    const grad = ctx.createLinearGradient(0, boxY, 0, canvas.height);
-                    const bgColor = slot.isDarkText ? "255, 255, 255" : "0, 0, 0";
-                    grad.addColorStop(0, `rgba(${bgColor}, 0.3)`); 
-                    grad.addColorStop(1, `rgba(${bgColor}, 0.7)`);
-                    
-                    ctx.fillStyle = grad;
-                    ctx.fillRect(0, boxY, canvas.width, boxHeight);
-                }
-
-                // Text Drawing with Auto-Scaling 
-                const text = slot.text.trim();
-                if(text) {
-                    let fontSize = Math.floor(canvas.width / 42); 
-                    const minFontSize = Math.floor(canvas.width / 100); 
-                    
-                    ctx.font = `bold ${fontSize}px "${globalFont}", sans-serif`;
-                    
-                    const measureTextHeight = (fs: number) => {
-                        ctx.font = `bold ${fs}px "${globalFont}", sans-serif`;
-                        const lineHeight = fs * 1.4;
-                        const pars = text.split('\n');
-                        let lines = 0;
-                        pars.forEach(p => {
-                            const words = p.split(' ');
-                            let l = '';
-                            for(let n=0; n<words.length; n++) {
-                                const tm = ctx.measureText(l + words[n] + ' ');
-                                if(tm.width > maxWidth && n > 0) { lines++; l = words[n] + ' '; }
-                                else { l += words[n] + ' '; }
-                            }
-                            lines++;
-                        });
-                        return lines * lineHeight;
-                    };
-
-                    while (measureTextHeight(fontSize) > maxHeight && fontSize > minFontSize) {
-                        fontSize -= 2;
-                    }
-
-                    ctx.font = `bold ${fontSize}px "${globalFont}", sans-serif`;
-                    ctx.fillStyle = slot.isDarkText ? '#1a1a1a' : '#ffffff';
-                    ctx.shadowColor = slot.isDarkText ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.8)';
-                    ctx.shadowBlur = 4;
-                    ctx.textBaseline = 'top';
-                    
-                    const lineHeight = fontSize * 1.4;
-                    let currentY = boxY + (padding * 0.3);
-                    
-                    wrapText(ctx, text, padding, currentY, maxWidth, lineHeight);
-                }
-
-                // Global Signature Logic (Rounded Box, Dynamic Color)
-                if (globalSignature.trim()) {
-                     const sigSize = Math.max(14, Math.floor(canvas.width / 60)); 
-                     ctx.font = `bold italic ${sigSize}px "${globalFont}", sans-serif`;
-                     
-                     const sigText = globalSignature;
-                     const paddingX = sigSize * 0.8;
-                     const paddingY = sigSize * 0.5;
-                     
-                     const metrics = ctx.measureText(sigText);
-                     const textWidth = metrics.width;
-                     const textHeight = sigSize; 
-                     
-                     const rightMargin = canvas.width * 0.03;
-                     const bottomMargin = canvas.width * 0.03;
-                     
-                     const rectWidth = textWidth + (paddingX * 2);
-                     const rectHeight = textHeight + (paddingY * 2);
-                     
-                     const rectX = canvas.width - rightMargin - rectWidth;
-                     const rectY = canvas.height - bottomMargin - rectHeight;
-                     
-                     ctx.shadowBlur = 4;
-                     ctx.shadowColor = 'rgba(0,0,0,0.3)';
-                     ctx.fillStyle = hexToRgba(globalSigBgColor, 0.85); 
-                     
-                     roundRect(ctx, rectX, rectY, rectWidth, rectHeight, 8); 
-                     
-                     const bgHex = globalSigBgColor.toUpperCase();
-                     let textColor = '#000000';
-                     if (['#000000', '#EF4444', '#3B82F6'].includes(bgHex)) {
-                         textColor = '#FFFFFF';
-                     }
-
-                     ctx.shadowBlur = 0;
-                     ctx.fillStyle = textColor;
-                     ctx.textAlign = 'left';
-                     ctx.textBaseline = 'top';
-                     ctx.fillText(sigText, rectX + paddingX, rectY + paddingY);
-                }
-
-                const finalUrl = canvas.toDataURL('image/png');
-                updateSlot(index, { resultSrc: finalUrl });
-                resolve();
-            };
-
-            if (globalLogoSrc) {
-                const logoImg = new Image();
-                logoImg.src = globalLogoSrc;
-                logoImg.crossOrigin = "anonymous";
-                logoImg.onload = () => {
-                    const oldAlpha = ctx.globalAlpha;
-                    ctx.globalAlpha = globalLogoOpacity / 100;
-                    
-                    const maxLogoW = canvas.width * (globalLogoSize / 100); 
-                    const scale = Math.min(maxLogoW / logoImg.naturalWidth, 1);
-                    const drawW = logoImg.naturalWidth * scale;
-                    const drawH = logoImg.naturalHeight * scale;
-                    
-                    const logoX = (canvas.width - drawW) / 2;
-                    
-                    let logoY = 0;
-                    const canvasPadding = canvas.height * 0.05;
-                    if (globalLogoPosition === 'top') {
-                        logoY = (canvas.height / 6) - (drawH / 2);
-                    } else if (globalLogoPosition === 'middle') {
-                        logoY = (canvas.height / 2) - (drawH / 2);
-                    } else { 
-                        logoY = (canvas.height * 5 / 6) - (drawH / 2);
-                    }
-                    
-                    if (logoY < canvasPadding) logoY = canvasPadding;
-                    if (logoY + drawH > canvas.height - canvasPadding) logoY = canvas.height - canvasPadding - drawH;
-
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-                    ctx.drawImage(logoImg, logoX, logoY, drawW, drawH);
-                    ctx.shadowBlur = 0; 
-                    
-                    ctx.globalAlpha = oldAlpha;
-                    drawContent();
-                };
-                logoImg.onerror = () => {
-                    console.error("Failed to load logo image for canvas");
-                    drawContent(); 
-                }
-            } else {
-                drawContent();
+        // Helper for asynchronous drawing steps (logo loading)
+        const drawContent = () => {
+            // Draw Text Box Background (More Transparent: 0.3 - 0.7)
+            if (slot.hasBackground) {
+                const grad = ctx.createLinearGradient(0, boxY, 0, canvas.height);
+                const bgColor = slot.isDarkText ? "255, 255, 255" : "0, 0, 0";
+                grad.addColorStop(0, `rgba(${bgColor}, 0.3)`); 
+                grad.addColorStop(1, `rgba(${bgColor}, 0.7)`);
+                
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, boxY, canvas.width, boxHeight);
             }
+
+            // Text Drawing with Auto-Scaling 
+            const text = slot.text.trim();
+            if(text) {
+                // Increased base font size (smaller divisor = bigger text)
+                // Was 50, now 42 for a slight increase
+                let fontSize = Math.floor(canvas.width / 42); 
+                const minFontSize = Math.floor(canvas.width / 100); 
+                
+                ctx.font = `bold ${fontSize}px "${globalFont}", sans-serif`;
+                
+                // Helper to measure height
+                const measureTextHeight = (fs: number) => {
+                    ctx.font = `bold ${fs}px "${globalFont}", sans-serif`;
+                    const lineHeight = fs * 1.4;
+                    const pars = text.split('\n');
+                    let lines = 0;
+                    pars.forEach(p => {
+                        const words = p.split(' ');
+                        let l = '';
+                        for(let n=0; n<words.length; n++) {
+                            const tm = ctx.measureText(l + words[n] + ' ');
+                            if(tm.width > maxWidth && n > 0) { lines++; l = words[n] + ' '; }
+                            else { l += words[n] + ' '; }
+                        }
+                        lines++;
+                    });
+                    return lines * lineHeight;
+                };
+
+                // Loop to shrink font if it doesn't fit
+                while (measureTextHeight(fontSize) > maxHeight && fontSize > minFontSize) {
+                    fontSize -= 2;
+                }
+
+                // Draw Text
+                ctx.font = `bold ${fontSize}px "${globalFont}", sans-serif`;
+                ctx.fillStyle = slot.isDarkText ? '#1a1a1a' : '#ffffff';
+                ctx.shadowColor = slot.isDarkText ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.8)';
+                ctx.shadowBlur = 4;
+                ctx.textBaseline = 'top';
+                
+                const lineHeight = fontSize * 1.4;
+                // Position high up, near the top of the box (boxY)
+                // Minimal top padding (0.3 of normal padding)
+                let currentY = boxY + (padding * 0.3);
+                
+                wrapText(ctx, text, padding, currentY, maxWidth, lineHeight);
+            }
+
+            // Global Signature Logic (Rounded Box, Dynamic Color)
+            if (globalSignature.trim()) {
+                 const sigSize = Math.max(14, Math.floor(canvas.width / 60)); 
+                 ctx.font = `bold italic ${sigSize}px "${globalFont}", sans-serif`;
+                 
+                 const sigText = globalSignature;
+                 const paddingX = sigSize * 0.8;
+                 const paddingY = sigSize * 0.5;
+                 
+                 const metrics = ctx.measureText(sigText);
+                 const textWidth = metrics.width;
+                 const textHeight = sigSize; // approx baseline height
+                 
+                 // Positions (Bottom Right with margin)
+                 const rightMargin = canvas.width * 0.03;
+                 const bottomMargin = canvas.width * 0.03;
+                 
+                 const rectWidth = textWidth + (paddingX * 2);
+                 const rectHeight = textHeight + (paddingY * 2);
+                 
+                 const rectX = canvas.width - rightMargin - rectWidth;
+                 const rectY = canvas.height - bottomMargin - rectHeight;
+                 
+                 // Draw Background Box with Rounded Corners and Dynamic Color
+                 ctx.shadowBlur = 4;
+                 ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                 ctx.fillStyle = hexToRgba(globalSigBgColor, 0.85); // Use 85% opacity
+                 
+                 const cornerRadius = rectHeight / 2; // Fully rounded-none sides
+                 roundRect(ctx, rectX, rectY, rectWidth, rectHeight, 8); // 8px radius
+                 
+                 // Determine Text Color for Contrast
+                 const bgHex = globalSigBgColor.toUpperCase();
+                 // Simple contrast check: White/Gold/Red/Blue -> Black or White logic
+                 // For now, simple manual logic: Black/Red/Blue -> White text. Gold/White -> Black text.
+                 let textColor = '#000000';
+                 if (['#000000', '#EF4444', '#3B82F6'].includes(bgHex)) {
+                     textColor = '#FFFFFF';
+                 }
+
+                 ctx.shadowBlur = 0;
+                 ctx.fillStyle = textColor;
+                 ctx.textAlign = 'left';
+                 ctx.textBaseline = 'top';
+                 ctx.fillText(sigText, rectX + paddingX, rectY + paddingY);
+            }
+
+            // Output
+            const finalUrl = canvas.toDataURL('image/png');
+            updateSlot(index, { resultSrc: finalUrl });
+            showStatus('Text embedded successfully!');
         };
-        img.onerror = () => {
-            console.error("Failed to load main image for canvas");
-            resolve();
-        };
-    });
+
+        // Check if we need to draw a Logo Image
+        if (globalLogoSrc) {
+            const logoImg = new Image();
+            logoImg.src = globalLogoSrc;
+            logoImg.crossOrigin = "anonymous";
+            logoImg.onload = () => {
+                // Apply Opacity
+                const oldAlpha = ctx.globalAlpha;
+                ctx.globalAlpha = globalLogoOpacity / 100;
+                
+                // Calculate Logo Position: Centered Horizontally
+                const maxLogoW = canvas.width * (globalLogoSize / 100); 
+                const scale = Math.min(maxLogoW / logoImg.naturalWidth, 1);
+                const drawW = logoImg.naturalWidth * scale;
+                const drawH = logoImg.naturalHeight * scale;
+                
+                const logoX = (canvas.width - drawW) / 2;
+                
+                let logoY = 0;
+                const canvasPadding = canvas.height * 0.05;
+                if (globalLogoPosition === 'top') {
+                    logoY = (canvas.height / 6) - (drawH / 2);
+                } else if (globalLogoPosition === 'middle') {
+                    logoY = (canvas.height / 2) - (drawH / 2);
+                } else { 
+                    // Bottom position: just above the black text box (boxY)
+                    logoY = boxY - drawH - (canvas.height * 0.02);
+                }
+                
+                // Clamp positions
+                if (logoY < canvasPadding) logoY = canvasPadding;
+                if (logoY + drawH > canvas.height - canvasPadding) logoY = canvas.height - canvasPadding - drawH;
+
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.drawImage(logoImg, logoX, logoY, drawW, drawH);
+                ctx.shadowBlur = 0; // Reset shadow
+                
+                // Reset Opacity
+                ctx.globalAlpha = oldAlpha;
+
+                drawContent(); // Proceed to draw text box
+            };
+            logoImg.onerror = () => {
+                console.error("Failed to load logo image for canvas");
+                drawContent(); // Proceed anyway
+            }
+        } else {
+            drawContent();
+        }
+    };
 }
 
 async function processEmbedAll() {
     showStatus('Starting Batch Embed...');
     for (let i = 0; i < overlaySlots.length; i++) {
         const slot = overlaySlots[i];
-        if (slot.file) {
-            // Processing all slots that have files, even if text is empty (to apply logo/signature)
-            await processSlotEmbed(i);
-            // Smaller visual delay
+        if (slot.file && slot.text) {
+            // Process slots that have file and text. 
+            // We await each to avoid freezing browser too much if heavy, though canvas is sync-ish.
+            // Using a small timeout to allow UI updates between slots if needed.
             await new Promise(r => setTimeout(r, 50)); 
+            processSlotEmbed(i);
         }
     }
     showStatus('Batch Embed Completed');
@@ -2659,9 +2681,7 @@ function handleSignatureFile(file: File) {
 
 // Model Selector Listener
 if (modelSelect) {
-    if (localStorage.getItem('gemini_selected_model')) {
-        modelSelect.value = localStorage.getItem('gemini_selected_model') || "";
-    }
+    modelSelect.value = currentModel;
     // Fallback if the stored model is no longer in the list
     if (modelSelect.selectedIndex === -1) {
         currentModel = customApiKey ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview';
@@ -2732,7 +2752,7 @@ if (langToggleBtn) langToggleBtn.addEventListener('click', () => {
     updateLanguageUI();
 });
 if (tabAnalysis) tabAnalysis.addEventListener('click', () => { activeTab = 'analysis'; updateLanguageUI(); });
-if (tabMultiView) tabMultiView.addEventListener('click', () => { activeTab = 'multiView'; updateLanguageUI(); });
+if (tabMultiView) tabMultiView.addEventListener('click', () => { activeTab = 'multiview'; updateLanguageUI(); });
 if (tabArtistic) tabArtistic.addEventListener('click', () => { activeTab = 'artistic'; updateLanguageUI(); });
 if (tabNotes) tabNotes.addEventListener('click', () => { activeTab = 'notes'; updateLanguageUI(); });
 if (tabRemoveLogo) tabRemoveLogo.addEventListener('click', () => { activeTab = 'removeLogo'; updateLanguageUI(); });
@@ -2833,35 +2853,48 @@ if (btnDownloadAllEmbeds) {
             return;
         }
         
-        if (slotsToDownload.length === 1) {
-            const slot = slotsToDownload[0];
-            const a = document.createElement('a');
-            a.href = slot.resultSrc!;
-            const originalBase = slot.originalName ? slot.originalName.replace(/\.[^/.]+$/, "") : `Result_1`;
-            a.download = `Overlay_${originalBase}.png`;
-            a.click();
-            return;
-        }
-
-        showStatus(`Preparing ZIP with ${slotsToDownload.length} images...`);
-        const zip = new JSZip();
+        showStatus(`Downloading ${slotsToDownload.length} images...`);
+        
         for (let i = 0; i < slotsToDownload.length; i++) {
             const slot = slotsToDownload[i];
-            const base64Data = slot.resultSrc!.split(',')[1];
+            const a = document.createElement('a');
+            a.href = slot.resultSrc!;
             const originalBase = slot.originalName ? slot.originalName.replace(/\.[^/.]+$/, "") : `Result_${i + 1}`;
-            zip.file(`Overlay_${originalBase}.png`, base64Data, { base64: true });
+            a.download = `Overlay_${originalBase}.png`;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            setTimeout(() => {
+                a.click();
+                document.body.removeChild(a);
+            }, 100);
+            // Small delay to prevent browser blocking simultaneous downloads
+            await new Promise(r => setTimeout(r, 500));
         }
-
-        const content = await zip.generateAsync({ type: 'blob' });
+    });
+}
+if (btnDownloadAllZip) {
+    btnDownloadAllZip.addEventListener('click', async () => {
+        const slotsToDownload = overlaySlots.filter(s => s.resultSrc);
+        if (slotsToDownload.length === 0) {
+            showStatus('No embedded images to download.', true);
+            return;
+        }
+        showStatus('Creating ZIP...');
+        const zip = new JSZip();
+        for (let i = 0; i < slotsToDownload.length; i++) {
+            const response = await fetch(slotsToDownload[i].resultSrc!);
+            const blob = await response.blob();
+            const originalBase = slotsToDownload[i].originalName ? slotsToDownload[i].originalName.replace(/\.[^/.]+$/, "") : `Result_${i + 1}`;
+            zip.file(`Overlay_${originalBase}.png`, blob);
+        }
+        const content = await zip.generateAsync({ type: "blob" });
         const url = URL.createObjectURL(content);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `Embedded_Images_Batch.zip`;
-        document.body.appendChild(a);
+        a.download = "processed_images.zip";
         a.click();
-        document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        showStatus("Download complete!");
+        showStatus('ZIP downloaded!');
     });
 }
 if (globalFontSelect) {
@@ -2910,7 +2943,7 @@ if (btnClearResults) {
             initOverlaySlots(); 
             
             // 3. Force Clear DOM Containers (Important fix)
-// Removed multiviewResults reference
+            if (multiviewResults) multiviewResults.innerHTML = '';
             if (notesResults) notesResults.innerHTML = '';
             
             // 4. Reset Static Text Fields
@@ -3024,7 +3057,21 @@ sigColorBtns.forEach(btn => {
     });
 });
 
-// Logo Handling
+// Logo Sliders
+logoSizeSlider?.addEventListener('input', () => {
+    globalLogoSize = parseInt(logoSizeSlider.value);
+    setText(logoSizeVal, logoSizeSlider.value);
+    renderOverlaySlots(); // Re-render to update
+});
+logoOpacitySlider?.addEventListener('input', () => {
+    globalLogoOpacity = parseInt(logoOpacitySlider.value);
+    setText(logoOpacityVal, logoOpacitySlider.value);
+    renderOverlaySlots(); // Re-render to update
+});
+logoPositionSelect?.addEventListener('change', () => {
+    globalLogoPosition = logoPositionSelect.value;
+    renderOverlaySlots(); // Re-render to update
+});
 if (logoDropZone && logoFileInput) {
     logoDropZone.addEventListener('click', (e) => {
         if((e.target as HTMLElement).tagName !== 'BUTTON') logoFileInput.click();
@@ -3081,22 +3128,6 @@ if (logoDropZone && logoFileInput) {
         }
     });
 }
-
-// Logo Sliders
-logoSizeSlider?.addEventListener('input', () => {
-    globalLogoSize = parseInt(logoSizeSlider.value);
-    setText(logoSizeVal, logoSizeSlider.value);
-    renderOverlaySlots(); // Re-render to update
-});
-logoOpacitySlider?.addEventListener('input', () => {
-    globalLogoOpacity = parseInt(logoOpacitySlider.value);
-    setText(logoOpacityVal, logoOpacitySlider.value);
-    renderOverlaySlots(); // Re-render to update
-});
-logoPositionSelect?.addEventListener('change', () => {
-    globalLogoPosition = logoPositionSelect.value;
-    renderOverlaySlots(); // Re-render to update
-});
 
 if (btnClearLogo) {
     btnClearLogo.addEventListener('click', (e) => {
@@ -3513,29 +3544,8 @@ if(analyzeBtn) {
             }`;
             
             const txt = await callGemini(prompt, currentFiles, currentSketchFile);
-            const newData = extractJson(txt);
-            
-            if (!lastAnalysisData) {
-                lastAnalysisData = {
-                    style: { en: "", vi: "" },
-                    materials: { en: "", vi: "" },
-                    lighting: { en: "", vi: "" },
-                    context: { en: "", vi: "" },
-                    composition: { en: "", vi: "" },
-                    generationPrompt: { en: "", vi: "" }
-                };
-            }
-
-            // Merge new data into bilingual structure
-            const keys = ['style', 'materials', 'lighting', 'context', 'composition', 'generationPrompt', 'collageAnalysis', 'sketchPrompt'];
-            keys.forEach(k => {
-                if (newData[k]) {
-                    lastAnalysisData![k] = newData[k];
-                }
-            });
-
-            updateLanguageUI(); 
-            showStatus('');
+            lastAnalysisData = extractJson(txt);
+            updateLanguageUI(); showStatus('');
         } catch(e) { handleApiError(e, 'Error analyzing'); } finally { setLoading(false); }
     });
 }
@@ -3575,37 +3585,24 @@ if(analyzeImagePromptBtn) {
             `;
             const txt = await callGemini(prompt, currentFiles, null);
             const data = extractJson(txt);
+            lastAnalysisData = data;
             
-            if (!lastAnalysisData) {
-                lastAnalysisData = {
-                    style: { en: "", vi: "" },
-                    materials: { en: "", vi: "" },
-                    lighting: { en: "", vi: "" },
-                    context: { en: "", vi: "" },
-                    composition: { en: "", vi: "" },
-                    generationPrompt: { en: "", vi: "" }
-                };
-            }
-
-            // Merge strings into current language in bilingual structure
-            const keys = ['style', 'materials', 'lighting', 'context', 'composition', 'generationPrompt'];
-            keys.forEach(k => {
-                if (data[k]) {
-                    if (!lastAnalysisData![k]) lastAnalysisData![k] = { en: "", vi: "" };
-                    lastAnalysisData![k][currentLang] = data[k];
-                }
-            });
+            // Populate UI
+            if(resStyle) setText(resStyle, data.style || "No result.");
+            if(resMaterial) setText(resMaterial, data.materials || "No result.");
+            if(resLighting) setText(resLighting, data.lighting || "No result.");
+            if(resContext) setText(resContext, data.context || "No result.");
+            if(resComposition) setText(resComposition, data.composition || "No result.");
+            if(resPrompt) setText(resPrompt, data.generationPrompt || "No result.");
             
-            updateLanguageUI();
             showStatus(currentLang === 'en' ? 'Analysis complete!' : 'Phân tích hoàn tất!');
         } catch(e) { handleApiError(e, 'Error analyzing'); } finally { setLoading(false); }
     });
 }
 
-// --- Multi-View Logic ---
-
-if (btnAnalyzeMultiView) {
-    btnAnalyzeMultiView.addEventListener('click', async () => {
+// Detailed Object Analysis (New Handler)
+if(btnRunObjAnalysis) {
+    btnRunObjAnalysis.addEventListener('click', async () => {
         if (currentFiles.length === 0) {
             showStatus(currentLang === 'en' ? 'Please upload images first.' : 'Vui lòng tải ảnh lên trước.', true);
             return;
@@ -3613,53 +3610,50 @@ if (btnAnalyzeMultiView) {
 
         try {
             setLoading(true);
-            const langName = currentLang === 'en' ? 'English' : 'Vietnamese';
+            if(objAnalysisResult) {
+                setHidden(objAnalysisResult, false);
+                setText(objAnalysisResult, currentLang === 'en' ? "Analyzing DNA..." : "Đang phân tích DNA...");
+            }
+
+            const langInstruction = currentLang === 'vi' ? 'VIETNAMESE' : 'ENGLISH';
             const prompt = `
-                Role: Principal Architectural Technical Analyst & Prompt Engineer.
-                Task: Perform a deep "Reconstructive Analysis" of the uploaded images to establish a definitive "Visual DNA" for this project.
-                
-                ANALYSIS CATEGORIES:
-                1. ARCHITECTURAL STYLE & VOLUME: Identify the specific style (e.g., Brutalist, Contemporary Minimalist, Indochine, Tropical Modernism). Describe the massing, geometric complexity, and structural logic.
-                2. FACADE & TEXTURES: Break down the external skin. Specify materials (e.g., board-formed concrete, burnt cedar, low-E glass with black aluminum frames, travertine stone). Note the wear, reflectivity, and grain.
-                3. UNIQUE ARCHITECTURAL FEATURES: Identify identifying markers (e.g., cantilevered balconies, specific trellis patterns, circular windows, recessed entrances).
-                4. LIGHTING & ENVIRONMENT: Describe the exact lighting condition and the surrounding context (e.g., urban density, coastal vegetation, specific street furniture).
-                5. COLOR PALETTE: Define the primary and accent colors with precise descriptors.
+                Role: Senior Architectural Technical Analyst.
+                Task: Analyze the provided images to extract the "Visual DNA" of the object/building.
+                REALISM: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in descriptions.
+                PHOTOREALISM: The description must emphasize photorealism, high-quality finishes, and realistic textures.
+                DETAIL PRESERVATION: Ensure strict adherence to the visual details of the uploaded images.
+                CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
+                SPECIAL INSTRUCTION: If you detect any image that is a collage (multiple smaller views or angles combined into one main image), you MUST treat it as a single architectural project or space. 
+                Analyze the relationship between these views to understand the project holistically.
+                Focus on:
+                1. Architectural Style & Form.
+                2. Material Palette & Textures.
+                3. Key Distinctive Features (Windows, Roof, Ornamentation).
+                4. Color Consistency.
+                5. Spatial relationship between different views if it's a collage.
+                6. Realistic environmental context (street, residential, coastal, or riverside for exteriors; finished spaces for interiors).
 
-                REALISM & SYNC REQUIREMENTS:
-                - Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in your summary.
-                - The description MUST be of professional "Master Class" quality, suitable for high-end rendering prompts.
-                - If the image is a collage, analyze the 3D relationship between the views to identify it as a single building.
-
-                Goal: Create a MASTER REFERENCE established in ${langName} and English that captures every significant detail. This DNA will be used to generate consistent multi-angle visualizations.
+                Goal: Create a reference description that ensures future generated angles look exactly like this object, preserving the specific details and character found in the reference views.
 
                 Output strictly valid JSON:
                 {
-                    "en": "EXHAUSTIVE MASTER DNA IN ENGLISH (Include all categories)...",
-                    "vi": "DNA DỰ ÁN CHI TIẾT BẰNG TIẾNG VIỆT (Bao gồm đầy đủ các hạng mục phân tích)..."
+                    "analysis": "Full detailed technical description in ${langInstruction}..."
                 }
             `;
 
             const responseText = await callGemini(prompt, currentFiles, currentSketchFile);
             const data = extractJson(responseText);
-            
-            if (!lastAnalysisData) {
-                lastAnalysisData = {
-                    style: { en: "", vi: "" },
-                    materials: { en: "", vi: "" },
-                    lighting: { en: "", vi: "" },
-                    context: { en: "", vi: "" },
-                    composition: { en: "", vi: "" },
-                    generationPrompt: { en: "", vi: "" }
-                };
+
+            if(objAnalysisResult) {
+                setText(objAnalysisResult, data.analysis || "No result.");
             }
-            lastAnalysisData.collageAnalysis = data;
-            
-            updateLanguageUI();
-            showStatus(currentLang === 'en' ? 'Object DNA established!' : 'Đã thiết lập DNA Project!');
-        } catch(e) { 
-            handleApiError(e, 'Error established DNA'); 
-        } finally { 
-            setLoading(false); 
+            showStatus('');
+
+        } catch (e) {
+            handleApiError(e, 'Analysis Error');
+            if(objAnalysisResult) setText(objAnalysisResult, "Error.");
+        } finally {
+            setLoading(false);
         }
     });
 }
@@ -3675,7 +3669,11 @@ if (analyzeNotesBtn) {
         notesHistory = [];
         
         try {
-            // Process images concurrently via server proxy
+            const apiKey = customApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+            if (!apiKey || apiKey.trim() === "") { await openApiKeyDialog(); setLoading(false); return; }
+            const ai = new GoogleGenAI({ apiKey });
+
+            // Process images concurrently
             const promises = currentFiles.map(async (file) => {
                 const parts = [
                     await processFileForGemini(file),
@@ -3683,12 +3681,13 @@ if (analyzeNotesBtn) {
                 ];
                 
                 try {
-                    const data = await generateContentWithRetry({
+                    // Use retry wrapper
+                    const response = await generateContentWithRetry(ai, {
                         model: currentModel,
                         contents: { parts: parts },
-                        generationConfig: { responseMimeType: "application/json" }
+                        config: { responseMimeType: "application/json" }
                     });
-                    const txt = data.text || "{}";
+                    const txt = response.text || "{}";
                     const json = extractJson(txt);
                     return { file: file, vi: json.vi || "No text detected", en: json.en || "No text detected" };
                 } catch (e) {
@@ -3710,147 +3709,84 @@ if (analyzeNotesBtn) {
 }
 
 
-if (btnAnalyzeMultiViewGen) {
-    btnAnalyzeMultiViewGen.addEventListener('click', async () => {
-        if (!lastAnalysisData || !lastAnalysisData.collageAnalysis) {
-            showStatus(currentLang === 'en' ? 'Phase 1: Object DNA must be established first.' : 'Giai đoạn 1: Cần thiết lập DNA Project trước.', true);
-            return;
-        }
+// Multi-View Generator
+if(multiViewBtn) {
+    multiViewBtn.addEventListener('click', async () => {
+         if (currentFiles.length === 0) { showStatus('Please upload references.', true); return; }
+         setLoading(true);
+         try {
+             const count = angleInput ? angleInput.value : "4";
+             const prompt = `
+                Role: Senior Architectural Photographer.
+                Task: Generate EXACTLY ${count} distinct and creative camera angle prompts for this architectural project.
+                
+                REALISM: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in each prompt.
+                PHOTOREALISM: All prompts must describe photorealistic, high-quality, real-life images.
+                DETAIL PRESERVATION: Ensure strict adherence to the visual details of the uploaded images.
+                CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
+                CONTEXTUAL REALISM: For exteriors, use realistic environments (street, residential, coast, river). For interiors, focus on finished, high-end spaces.
 
-        try {
-            setLoading(true);
-            const totalCount = parseInt(angleCountInput?.value || "10", 10);
-            const dnaEn = lastAnalysisData.collageAnalysis.en;
-            const dnaVi = lastAnalysisData.collageAnalysis.vi;
-            
-            // Optimization: Parallel generation (Bandwidth check: Use text-only because DNA is established)
-            // Divide into chunks of 2-3 to manage token limits and speed
-            const batchSize = 2; // 2 angles per call
-            const numBatches = Math.ceil(totalCount / batchSize);
-            const promises = [];
+                SPECIAL INSTRUCTION: If you detect any image that is a collage (multiple smaller views or angles combined into one main image), you MUST treat it as a single architectural project or space. 
+                Analyze the relationship between these views to understand the project holistically.
+                The generated angles should complement the views already seen in the collage or provide new, interesting perspectives of the same project.
 
-            for (let i = 0; i < numBatches; i++) {
-                const countThisBatch = Math.min(batchSize, totalCount - i * batchSize);
-                const prompt = `
-                    Role: Master Architectural Visualization Architect.
-                    DNA REFS: (EN: ${dnaEn}), (VI: ${dnaVi})
-                    Task: Generate ${countThisBatch} distinct high-end architectural visualization prompts.
-                    
-                    RULES:
-                    - Absolute sync with DNA.
-                    - Start each strictly with: "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên".
-                    - Provide 3 sections: [CONTENT], [COMPOSITION], [LIGHTING].
-                    
-                    Output format:
-                    ===ANGLE: [Name]
-                    [CONTENT]: ...
-                    [COMPOSITION]: ...
-                    [LIGHTING]: ...
+                Requirements:
+                - Each angle must be unique (e.g., Aerial, Eye-level, Worm's eye, Interior, Detail shot, etc.)
+                - Provide both English and Vietnamese versions.
+                - Output MUST be strictly valid JSON with exactly ${count} items in each language array.
 
-                    Return exactly ${countThisBatch} angles in valid JSON: {"en": "...", "vi": "..."}
-                `;
-                // Text-only call is significantly faster and saves bandwidth
-                promises.push(callGemini(prompt, [], null));
-            }
+                JSON Structure:
+                {
+                  "multiViewPrompts": {
+                    "en": [
+                      { "angle": "Angle Title", "content": "Visual description...", "composition": "Camera settings...", "lighting": "Light setup..." }
+                    ],
+                    "vi": [
+                      { "angle": "Tiêu đề góc", "content": "Mô tả hình ảnh...", "composition": "Thiết lập camera...", "lighting": "Thiết lập ánh sáng..." }
+                    ]
+                  }
+                }
+             `;
+             
+             const txt = await callGemini(prompt, currentFiles, currentSketchFile);
+             const raw = extractJson(txt);
+             
+             if (!raw.multiViewPrompts || !raw.multiViewPrompts.en || !raw.multiViewPrompts.vi) {
+                 throw new Error("Invalid response format from AI");
+             }
 
-            const results = await Promise.all(promises);
-            let finalEn = "";
-            let finalVi = "";
-
-            results.forEach(txt => {
-                const data = extractJson(txt);
-                if (data.en) finalEn += "\n" + data.en;
-                if (data.vi) finalVi += "\n" + data.vi;
-            });
-
-            if (lastAnalysisData) {
-                lastAnalysisData.multiViewPrompts = { en: finalEn.trim(), vi: finalVi.trim() };
-                updateLanguageUI();
-                showStatus(currentLang === 'en' ? 'Multi-View Generation Fast & Complete!' : 'Đã tăng tốc tạo đa góc nhìn xong!');
-            }
-        } catch (e) {
-            handleApiError(e, 'Error in accelerated multi-view generation');
-        } finally {
-            setLoading(false);
-        }
+             const fmt = (arr: any[]) => arr.map(i => `===ANGLE: ${i.angle}===\n[CONTENT]: ${i.content}\n[COMPOSITION]: ${i.composition}\n[LIGHTING]: ${i.lighting}`).join('\n\n');
+             
+             if(!lastAnalysisData) lastAnalysisData = {};
+             lastAnalysisData.multiViewPrompts = { 
+                 en: fmt(raw.multiViewPrompts.en), 
+                 vi: fmt(raw.multiViewPrompts.vi) 
+             };
+             updateLanguageUI(); showStatus('');
+         } catch(e) { handleApiError(e, 'Error generating views'); } finally { setLoading(false); }
     });
 }
 
-if (btnGenerateCustomAngle) {
-    btnGenerateCustomAngle.addEventListener('click', async () => {
+// Custom Angle Generator
+if(btnCustomAngle) {
+    btnCustomAngle.addEventListener('click', async () => {
         const req = customAngleInput?.value.trim();
-        if (!req) return;
-        if (!lastAnalysisData || !lastAnalysisData.collageAnalysis) {
-             showStatus(currentLang === 'en' ? 'Object DNA must be established first.' : 'Cần thiết lập DNA Project trước.', true);
-             return;
-        }
-
+        if(!req || currentFiles.length === 0) return;
+        setLoading(true);
         try {
-            setLoading(true);
-            const dna = lastAnalysisData.collageAnalysis.en;
-            const prompt = `
-                Role: Master Architectural Photographer.
-                Task: Generate a single, ultra-detailed architectural prompt for a custom angle: "${req}".
-                
-                DNA REFERENCE: ${dna}
-                
-                REQUIREMENTS:
-                1. STRICT ADHERENCE: Use the materials, style, and features from the DNA.
-                2. RICH DESCRIPTION: Provide a cinematic, highly descriptive prose. Describe textures, reflections, and structural details.
-                3. REALISM: Start with "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên".
-                4. CAMERA & LIGHTING: Specify a professional camera setup and cinematic lighting that enhances the details.
-
-                Output JSON: 
-                { 
-                  "en": { "title": "Custom Angle - ${req}", "content": "...", "composition": "...", "lighting": "..." }, 
-                  "vi": { "title": "Góc Tùy Chỉnh - ${req}", "content": "...", "composition": "...", "lighting": "..." } 
-                }
-            `;
+            const prompt = `Generate 1 detailed prompt for angle: "${req}". Follow annotations if any.
+            REALISM: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in the prompt.
+            PHOTOREALISM: The prompt must describe a photorealistic, high-quality real-life image.
+            DETAIL PRESERVATION: Ensure strict adherence to the visual details of the uploaded images.
+            CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
+            CONTEXT: If exterior, use realistic settings (street, residential, coast, river). If interior, focus on finished spaces.
+            Output JSON: { "en": { "title": "...", "content": "...", "composition": "...", "lighting": "..." }, "vi": { ... } }`;
             const txt = await callGemini(prompt, currentFiles, currentSketchFile);
             const raw = extractJson(txt);
             customAnglesHistory.push({ en: raw.en, vi: raw.vi });
-            updateLanguageUI(); 
-            showStatus(currentLang === 'en' ? 'Custom Angle Generated!' : 'Góc tùy chỉnh đã được tạo!');
-            if (customAngleInput) customAngleInput.value = '';
-        } catch(e) { 
-            handleApiError(e, 'Error generating custom angle'); 
-        } finally { 
-            setLoading(false); 
-        }
-    });
-}
-
-if (btnDownloadAllMultiView) {
-    btnDownloadAllMultiView.addEventListener('click', async () => {
-        const cards = multiviewGrid?.querySelectorAll('.card-content');
-        if (!cards || cards.length === 0) {
-            showStatus('No angles to download.', true);
-            return;
-        }
-
-        try {
-            const zip = new JSZip();
-            const rootFolder = zip.folder("MultiView_Prototypes");
-            
-            const cardWrappers = multiviewGrid?.querySelectorAll('.collapsible-card');
-            cardWrappers?.forEach((card, idx) => {
-                const title = (card.querySelector('h3')?.textContent || `Angle_${idx}`).replace(/\s+/g, '_');
-                const content = card.querySelector('.card-content p')?.textContent || "";
-                if (content && rootFolder) {
-                    rootFolder.file(`${title}.txt`, content);
-                }
-            });
-
-            const content = await zip.generateAsync({ type: "blob" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(content);
-            link.download = `MultiView_Prototypes_${new Date().getTime()}.zip`;
-            link.click();
-            showStatus('Downloading ZIP...');
-        } catch (e) {
-            console.error("ZIP Error:", e);
-            showStatus('ZIP Generation Failed', true);
-        }
+            updateLanguageUI(); showStatus('Generated!');
+            if(customAngleInput) customAngleInput.value = '';
+        } catch(e) { handleApiError(e, 'Error generating angle'); } finally { setLoading(false); }
     });
 }
 
@@ -3956,7 +3892,6 @@ setupCardActions('res-prompt', 'btn-copy-prompt', 'btn-dl-prompt', 'Generation_P
 setupCardActions('res-sketch-prompt', 'btn-copy-sketch-prompt', 'btn-dl-sketch-prompt', 'Sketch_Prompt');
 setupCardActions('res-photo-to-sketch', 'btn-copy-photo-to-sketch', 'btn-dl-photo-to-sketch', 'Photo_to_Sketch_Prompt');
 setupCardActions('res-collage-analysis', 'btn-copy-collage-analysis', 'btn-dl-collage-analysis', 'Collage_Analysis');
-setupCardActions('res-mv-dna', 'btn-copy-mv-dna', '', 'Multi_View_DNA');
 
 // PNG Info Button Logic
 if (btnPngInfoPrompt) {
