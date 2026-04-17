@@ -1447,44 +1447,37 @@ function renderMultiViewResults() {
         });
     }
 
-    // 2. Batch Analysis
+    // 2. Batch Analysis (String Format)
     if (lastAnalysisData && lastAnalysisData.multiViewPrompts) {
-         const mvData = lastAnalysisData.multiViewPrompts[currentLang] || "";
-         if (mvData) {
-             const sections = mvData.split('===ANGLE:');
-             sections.forEach((sec, idx) => {
+         const mvDataEn = lastAnalysisData.multiViewPrompts.en || "";
+         const mvDataVi = lastAnalysisData.multiViewPrompts.vi || "";
+         
+         const parsePrompts = (text: string) => {
+             const items: {title: string, content: string, composition: string, lighting: string}[] = [];
+             const sections = text.split('===ANGLE:');
+             sections.forEach(sec => {
                  if(!sec.trim()) return;
                  const lines = sec.split('\n');
-                 const angleTitle = lines[0].trim().replace('===', '');
-                 
-                 let content = "";
-                 let composition = "";
-                 let lighting = "";
-                 
-                 const contentIdx = sec.indexOf('[CONTENT]:');
-                 const compIdx = sec.indexOf('[COMPOSITION]:');
-                 const lightIdx = sec.indexOf('[LIGHTING]:');
-                 
-                 if (contentIdx !== -1) {
-                     const end = compIdx !== -1 ? compIdx : (lightIdx !== -1 ? lightIdx : sec.length);
-                     content = sec.substring(contentIdx + 10, end).trim();
-                 }
-                 if (compIdx !== -1) {
-                     const end = lightIdx !== -1 ? lightIdx : sec.length;
-                     composition = sec.substring(compIdx + 14, end).trim();
-                 }
-                 if (lightIdx !== -1) {
-                     lighting = sec.substring(lightIdx + 11).trim();
-                 }
-                 
-                 if(angleTitle) {
-                    const card = createMultiViewCardHTML(
-                        `mv-${idx}`, angleTitle, content, composition, lighting
-                    );
-                    multiviewGrid.appendChild(card);
-                 }
+                 const title = lines[0].trim().replace('===', '');
+                 let content = "", composition = "", lighting = "";
+                 const cIdx = sec.indexOf('[CONTENT]:'), cmpIdx = sec.indexOf('[COMPOSITION]:'), lIdx = sec.indexOf('[LIGHTING]:');
+                 if (cIdx !== -1) content = sec.substring(cIdx+10, cmpIdx !== -1 ? cmpIdx : (lIdx !== -1 ? lIdx : sec.length)).trim();
+                 if (cmpIdx !== -1) composition = sec.substring(cmpIdx+14, lIdx !== -1 ? lIdx : sec.length).trim();
+                 if (lIdx !== -1) lighting = sec.substring(lIdx+11).trim();
+                 if (title) items.push({title, content, composition, lighting});
              });
-         }
+             return items;
+         };
+
+         const enItems = parsePrompts(mvDataEn);
+         const viItems = parsePrompts(mvDataVi);
+
+         // Display based on current language
+         const items = currentLang === 'en' ? enItems : viItems;
+         items.forEach((item, idx) => {
+             const card = createMultiViewCardHTML(`mv-${idx}`, item.title, item.content, item.composition, item.lighting);
+             multiviewGrid.appendChild(card);
+         });
     }
 }
 
@@ -3720,52 +3713,59 @@ if (btnAnalyzeMultiViewGen) {
 
         try {
             setLoading(true);
-            const count = angleCountInput?.value || "10";
-            const dna = lastAnalysisData.collageAnalysis.en;
-            const prompt = `
-                Role: Master Architectural Photographer & Visualization Prompt Architect.
-                Task: Generate ${count} diverse and compositionally sophisticated photographic angles for the project defined by the DNA.
-                
-                DNA REFERENCE (CRITICAL): ${dna}
-                
-                PROMPT GENERATION RULES:
-                - ABSOLUTE CONSISTENCY: Every prompt must mathematically strictly adhere to the architectural DNA above (Materials, Style, Features).
-                - GRANULAR DETAIL: Do not just list materials; describe how light interacts with them (e.g., "The warm sun glancing off the raked travertine texture").
-                - DIVERSITY OF ANGLES:
-                    * MASTER SHOTS: Wide angles showing the building in its environment.
-                    * HERO SHOTS: Dynamic low-angle shots emphasizing volume and grandeur.
-                    * DETAIL SHOTS: Macro-style shots focusing on specific textures or facade intersections.
-                    * AERIAL/DRONE: High-angle bird's eye views for site context.
-                - REALISM MANDATE: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên".
-                - PHOTOREALISM: Use camera terminology like f/8, 35mm lens, sharp focus, hyper-realistic, 8k resolution.
-                
-                Output Format: 
-                ===ANGLE: [Descriptive Name]
-                [CONTENT]: A highly descriptive architectural visualization prompt in prose. Start with the realism phrases then describe the building's view, ensuring all DNA details are visible and correctly placed.
-                [COMPOSITION]: Specify the lens (e.g., 24mm wide angle, 85mm prime), depth of field, and camera height.
-                [LIGHTING]: Masterful lighting settings (e.g., Golden hour, Soft overcast, Cinematic twilight with internal glow).
-                
-                Repeat this for ${count} angles. Provide the full structured result for each angle in both English and Vietnamese.
-                
-                Output Strictly valid JSON:
-                {
-                   "en": "...",
-                   "vi": "..."
-                }
-            `;
-
-            const responseText = await callGemini(prompt, currentFiles, currentSketchFile);
-            const data = extractJson(responseText);
+            const totalCount = parseInt(angleCountInput?.value || "10", 10);
+            const dnaEn = lastAnalysisData.collageAnalysis.en;
+            const dnaVi = lastAnalysisData.collageAnalysis.vi;
             
-            if (lastAnalysisData) {
-                lastAnalysisData.multiViewPrompts = data;
-                updateLanguageUI();
-                showStatus(currentLang === 'en' ? 'Multi-View Generation Complete!' : 'Đã tạo xong đa góc nhìn!');
+            // Optimization: Parallel generation (Bandwidth check: Use text-only because DNA is established)
+            // Divide into chunks of 2-3 to manage token limits and speed
+            const batchSize = 2; // 2 angles per call
+            const numBatches = Math.ceil(totalCount / batchSize);
+            const promises = [];
+
+            for (let i = 0; i < numBatches; i++) {
+                const countThisBatch = Math.min(batchSize, totalCount - i * batchSize);
+                const prompt = `
+                    Role: Master Architectural Visualization Architect.
+                    DNA REFS: (EN: ${dnaEn}), (VI: ${dnaVi})
+                    Task: Generate ${countThisBatch} distinct high-end architectural visualization prompts.
+                    
+                    RULES:
+                    - Absolute sync with DNA.
+                    - Start each strictly with: "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên".
+                    - Provide 3 sections: [CONTENT], [COMPOSITION], [LIGHTING].
+                    
+                    Output format:
+                    ===ANGLE: [Name]
+                    [CONTENT]: ...
+                    [COMPOSITION]: ...
+                    [LIGHTING]: ...
+
+                    Return exactly ${countThisBatch} angles in valid JSON: {"en": "...", "vi": "..."}
+                `;
+                // Text-only call is significantly faster and saves bandwidth
+                promises.push(callGemini(prompt, [], null));
             }
-        } catch(e) { 
-            handleApiError(e, 'Error generating multi-view'); 
-        } finally { 
-            setLoading(false); 
+
+            const results = await Promise.all(promises);
+            let finalEn = "";
+            let finalVi = "";
+
+            results.forEach(txt => {
+                const data = extractJson(txt);
+                if (data.en) finalEn += "\n" + data.en;
+                if (data.vi) finalVi += "\n" + data.vi;
+            });
+
+            if (lastAnalysisData) {
+                lastAnalysisData.multiViewPrompts = { en: finalEn.trim(), vi: finalVi.trim() };
+                updateLanguageUI();
+                showStatus(currentLang === 'en' ? 'Multi-View Generation Fast & Complete!' : 'Đã tăng tốc tạo đa góc nhìn xong!');
+            }
+        } catch (e) {
+            handleApiError(e, 'Error in accelerated multi-view generation');
+        } finally {
+            setLoading(false);
         }
     });
 }
