@@ -1,4 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
 import JSZip from 'jszip';
 
 let customApiKey: string | null = localStorage.getItem('gemini_custom_api_key');
@@ -1157,34 +1156,29 @@ async function processFileForGemini(file: File): Promise<{
     });
 }
 
-// Wrapper for exponential backoff retry
-async function generateContentWithRetry(ai: GoogleGenAI, params: any, retries = 3, delay = 1000): Promise<any> {
-    try {
-        return await ai.models.generateContent(params);
-    } catch (e: any) {
-        if (retries > 0) {
-            const eStr = e.toString() + (e.message || "") + JSON.stringify(e);
-            // Retry on 429 (Quota) or 503 (Overloaded)
-            if (eStr.includes("429") || eStr.includes("RESOURCE_EXHAUSTED") || eStr.includes("503") || eStr.includes("overloaded")) {
-                console.warn(`API Error ${e.status || 'unknown'}. Retrying in ${delay}ms... (${retries} retries left)`);
-                // Wait for delay
-                await new Promise(resolve => setTimeout(resolve, delay));
-                // Retry with double delay
-                return generateContentWithRetry(ai, params, retries - 1, delay * 2);
-            }
-        }
-        throw e;
+// Internal AI process - now calling the server
+async function generateContentWithRetry(params: any): Promise<any> {
+    const response = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            prompt: params.prompt,
+            contents: params.contents.parts,
+            model: params.model,
+            config: params.generationConfig,
+            apiKey: customApiKey
+        })
+    });
+    
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "AI Server Error");
     }
+    
+    return await response.json();
 }
 
 async function callGemini(prompt: string, files: File[], sketchFile: File | null = null): Promise<string> {
-    const apiKey = customApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
-    if (!apiKey || apiKey.trim() === "") { 
-        await openApiKeyDialog(); 
-        throw new Error("API Key is missing. Please provide a valid API Key.");
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
     const parts: any[] = [];
     
     if (files.length > 0) {
@@ -1201,13 +1195,14 @@ async function callGemini(prompt: string, files: File[], sketchFile: File | null
     
     parts.push({ text: prompt });
 
-    // Use retry wrapper
-    const response = await generateContentWithRetry(ai, {
+    const data = await generateContentWithRetry({
+        prompt: prompt,
         model: currentModel,
         contents: { parts: parts },
         generationConfig: { responseMimeType: "application/json" }
     });
-    return response.text || "{}";
+    
+    return data.text || "{}";
 }
 
 // --- UI Logic ---
@@ -1955,17 +1950,13 @@ async function handleTranslate(index: number) {
     updateSlot(index, { isTranslating: true });
     
     try {
-        const apiKey = customApiKey || process.env.API_KEY;
-        if (!apiKey) { await openApiKeyDialog(); updateSlot(index, { isTranslating: false }); return; }
-        const ai = new GoogleGenAI({ apiKey });
-        
-        // Use retry wrapper
-        const response = await generateContentWithRetry(ai, {
+        const data = await generateContentWithRetry({
+            prompt: `Translate the following text to English if it is Vietnamese, or to Vietnamese if it is English. Maintain the tone and style. Return ONLY the translated text.\n\nText: ${text}`,
             model: currentModel,
-            contents: `Translate the following text to English if it is Vietnamese, or to Vietnamese if it is English. Maintain the tone and style. Return ONLY the translated text.\n\nText: ${text}`,
+            contents: { parts: [{ text: `Translate the following text to English if it is Vietnamese, or to Vietnamese if it is English. Maintain the tone and style. Return ONLY the translated text.\n\nText: ${text}` }] }
         });
         
-        const translated = response.text || text;
+        const translated = data.text || text;
         updateSlot(index, { text: translated, isTranslating: false });
         showStatus('Translated!');
     } catch (e) {
@@ -2278,33 +2269,21 @@ async function handleLogoSlotFile(index: number, file: File) {
 }
 
 async function callGeminiImageEdit(prompt: string, file: File): Promise<string | null> {
-    const apiKey = customApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
-    if (!apiKey || apiKey.trim() === "") { 
-        await openApiKeyDialog(); 
-        throw new Error("API Key is missing. Please provide a valid API Key.");
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
     const parts: any[] = [
         await processFileForGemini(file),
         { text: prompt }
     ];
 
     try {
-        const response = await generateContentWithRetry(ai, {
+        const data = await generateContentWithRetry({
+            prompt: prompt,
             model: 'gemini-2.5-flash-image',
             contents: { parts: parts }
         });
 
-        if (response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts) {
-            for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData) {
-                    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                }
-            }
-        }
+        return data.imageUrl || null;
     } catch (err) {
-        console.error("Gemini API call failed:", err);
+        console.error("Server-side Gemini call failed:", err);
     }
     return null;
 }
@@ -3696,11 +3675,7 @@ if (analyzeNotesBtn) {
         notesHistory = [];
         
         try {
-            const apiKey = customApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
-            if (!apiKey || apiKey.trim() === "") { await openApiKeyDialog(); setLoading(false); return; }
-            const ai = new GoogleGenAI({ apiKey });
-
-            // Process images concurrently
+            // Process images concurrently via server proxy
             const promises = currentFiles.map(async (file) => {
                 const parts = [
                     await processFileForGemini(file),
@@ -3708,13 +3683,12 @@ if (analyzeNotesBtn) {
                 ];
                 
                 try {
-                    // Use retry wrapper
-                    const response = await generateContentWithRetry(ai, {
+                    const data = await generateContentWithRetry({
                         model: currentModel,
                         contents: { parts: parts },
                         generationConfig: { responseMimeType: "application/json" }
                     });
-                    const txt = response.text || "{}";
+                    const txt = data.text || "{}";
                     const json = extractJson(txt);
                     return { file: file, vi: json.vi || "No text detected", en: json.en || "No text detected" };
                 } catch (e) {
