@@ -3544,33 +3544,31 @@ const btnAnalyzeImagePromptText = getEl('btn-analyze-image-prompt-text');
 
 if(analyzeImagePromptBtn) {
     analyzeImagePromptBtn.addEventListener('click', async () => {
-        if (currentFiles.length === 0) { showStatus('Please upload files.', true); return; }
+        if (!currentSketchFile) { 
+            showStatus(currentLang === 'en' ? 'Please upload a STYLE Reference image first.' : 'Vui lòng tải ảnh STYLE Reference trước.', true); 
+            return; 
+        }
         setLoading(true);
         try {
             const lang = currentLang === 'vi' ? 'VIETNAMESE' : 'ENGLISH';
             const prompt = `
-                Role: Senior Architectural Technical Analyst.
-                Task: Analyze the provided images and provide a detailed architectural analysis in ${lang}.
-                Focus on:
-                1. Architectural Style & Form.
-                2. Material Palette & Textures.
-                3. Key Distinctive Features.
-                4. Lighting & Atmosphere.
-                5. Context & Environment.
-                6. Composition & Camera.
-                7. Generation Prompt: Provide a detailed prompt for AI image generation based on this analysis.
+                Role: Master Architectural Prompt Engineer.
+                Task: Analyze the provided STYLE REFERENCE image and write a highly detailed architectural visualization prompt that exactly "copies its settings". 
+                The prompt must describe the architectural style, material palette, precise lighting conditions, environmental context, and camera composition so accurately that it could be used to recreate this exact aesthetic.
                 
-                Output strictly valid JSON:
+                Language: ${lang}.
+
+                Output format (JSON):
                 {
-                    "style": "...",
-                    "materials": "...",
-                    "lighting": "...",
-                    "context": "...",
-                    "composition": "...",
-                    "generationPrompt": "..."
+                    "style": "Exact style copy",
+                    "materials": "Exact material copy",
+                    "lighting": "Exact lighting copy",
+                    "context": "Exact context copy",
+                    "composition": "Exact composition copy",
+                    "generationPrompt": "The full photorealistic prompt to recreate this image's settings"
                 }
             `;
-            const txt = await callGemini(prompt, currentFiles, null);
+            const txt = await callGemini(prompt, [], currentSketchFile);
             const data = extractJson(txt);
             
             if (!lastAnalysisData) {
@@ -3595,8 +3593,8 @@ if(analyzeImagePromptBtn) {
             });
             
             updateLanguageUI();
-            showStatus(currentLang === 'en' ? 'Analysis complete!' : 'Phân tích hoàn tất!');
-        } catch(e) { handleApiError(e, 'Error analyzing'); } finally { setLoading(false); }
+            showStatus(currentLang === 'en' ? 'Style settings copied!' : 'Đã sao chép thiết lập hình mẫu!');
+        } catch(e) { handleApiError(e, 'Error analyzing style'); } finally { setLoading(false); }
     });
 }
 
