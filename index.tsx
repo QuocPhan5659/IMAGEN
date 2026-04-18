@@ -240,7 +240,7 @@ const translations = {
         appSubtitle: "Deep analysis powered by Gemini Vision",
         uploadTitle: "Upload Images",
         uploadDrag: "Drag & Drop, Click or Paste (Ctrl+V)",
-        uploadSketch: "Upload Sketch (Optional)",
+        uploadSketch: "STYLE Reference",
         btnAnalyze: "Analyze Images",
         btnAnalyzeImagePrompt: "IMAGE PROMPT",
         btnDownloadAll: "Download All",
@@ -289,7 +289,7 @@ const translations = {
             context: "Context & Environment",
             composition: "Composition & Camera",
             prompt: "Generation Prompt",
-            sketchPrompt: "Sketch Prompt",
+            sketchPrompt: "Style Reference Analysis",
             generationPrompt: "Generation Prompt",
             multiViewPrompts: "Multi-View Prompts",
             collageAnalysis: "Project Detailed Analysis (DNA)"
@@ -310,7 +310,7 @@ const translations = {
         appSubtitle: "Phân tích sâu hỗ trợ bởi Gemini Vision",
         uploadTitle: "Tải Ảnh Lên",
         uploadDrag: "Kéo thả, Nhấn hoặc Dán (Ctrl+V)",
-        uploadSketch: "Tải Phác Thảo (Tùy chọn)",
+        uploadSketch: "STYLE Reference",
         btnAnalyze: "Phân Tích Ảnh",
         btnAnalyzeImagePrompt: "IMAGE PROMPT",
         btnDownloadAll: "Tải Tất Cả",
@@ -359,7 +359,7 @@ const translations = {
             context: "Bối Cảnh & Môi Trường",
             composition: "Bố Cục & Camera",
             prompt: "Prompt Tạo Ảnh",
-            sketchPrompt: "Prompt Phác Thảo",
+            sketchPrompt: "Phân Tích Hình Mẫu",
             generationPrompt: "Prompt Tạo Ảnh",
             multiViewPrompts: "Prompt Đa Góc Nhìn",
             collageAnalysis: "Phân Tích Chi Tiết Dự Án (DNA)"
@@ -1165,7 +1165,7 @@ async function callGemini(prompt: string, files: File[], sketchFile: File | null
     }
     
     if (sketchFile) {
-        parts.push({ text: "SKETCH IMAGE (to be rendered based on references):" });
+        parts.push({ text: "STYLE REFERENCE IMAGE (extract style, lighting, materials, and context from this):" });
         parts.push(await processFileForGemini(sketchFile));
     }
     
@@ -1363,9 +1363,9 @@ function updateLanguageUI() {
             setHidden(cardPhotoToSketch, !ptsText);
         }
         if(resSketchPrompt) {
-            const sketchText = lastAnalysisData.sketchPrompt?.[currentLang] || "";
-            setText(resSketchPrompt, sketchText);
-            setHidden(sketchPromptCard, !sketchText);
+            const styleRefText = (lastAnalysisData as any).styleReferenceAnalysis?.[currentLang] || "";
+            setText(resSketchPrompt, styleRefText);
+            setHidden(sketchPromptCard, !styleRefText);
         }
         if(resCollageAnalysis) {
             const collageText = lastAnalysisData.collageAnalysis?.[currentLang] || "";
@@ -3473,7 +3473,7 @@ if(analyzeBtn) {
             const hasSketch = !!currentSketchFile;
             let prompt = `Role: Architectural Photographer & Prompt Engineer. 
             Analyze the provided images. 
-            REALISM REQUIREMENT: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in the generated prompts.
+            REALISM REQUIREMENT: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên" or "Ảnh chụp thực tế từ hình ảnh tải lên" in the generated prompts.
             PHOTOREALISM: All generated prompts must describe photorealistic, high-quality, real-life images.
             DETAIL PRESERVATION: Ensure strict adherence to the visual details of the uploaded images.
             CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
@@ -3486,15 +3486,15 @@ if(analyzeBtn) {
             if (hasSketch) {
                 if (currentFiles.length > 0) {
                     prompt += ` 
-                    SKETCH ANALYSIS: One of the provided images is a SKETCH. 
-                    Your task is to create a 'sketchPrompt' that describes how to render this specific SKETCH into a photorealistic architectural visualization.
-                    The 'sketchPrompt' MUST use the architectural style, materials, lighting, and context extracted from the other REFERENCE IMAGES.
-                    Ensure the 'sketchPrompt' is detailed enough for an AI image generator to accurately interpret the sketch's lines while applying the reference DNA.`;
+                    STYLE REFERENCE ANALYSIS: One of the provided images is a STYLE REFERENCE. 
+                    Your task is to extract the specific Style, Lighting, Material Palette, and Context/Background details from this style reference image.
+                    Then, incorporate these extracted aesthetic details into the 'generationPrompt' for the main project images provided in the other reference images.
+                    Ensure the generated prompts describe the original architectural form but with the Style, Lighting, and Materials from the Style Reference.`;
                 } else {
                     prompt += `
-                    SKETCH ANALYSIS: The provided image is a SKETCH.
-                    Your task is to create a 'sketchPrompt' that describes how to render this specific SKETCH into a photorealistic architectural visualization.
-                    Since no other reference images are provided, use your architectural knowledge to suggest a high-quality style, materials, and context that would suit the design in the sketch.`;
+                    STYLE REFERENCE ANALYSIS: The provided image is a STYLE REFERENCE.
+                    Your task is to analyze this image for its Style, Lighting, Material Palette, and Context/Background details.
+                    Create high-quality descriptive prompts that capture this specific aesthetic DNA so it can be applied to other architectural designs.`;
                 }
             }
             prompt += ` JSON: { 
@@ -3505,7 +3505,7 @@ if(analyzeBtn) {
                 "composition": {"en":"", "vi":""}, 
                 "generationPrompt": {"en":"", "vi":""},
                 "collageAnalysis": {"en":"", "vi":""}
-                ${hasSketch ? ', "sketchPrompt": {"en":"", "vi":""}':''} 
+                ${hasSketch ? ', "styleReferenceAnalysis": {"en":"", "vi":""}':''} 
             }`;
             
             const txt = await callGemini(prompt, currentFiles, currentSketchFile);
@@ -3518,12 +3518,13 @@ if(analyzeBtn) {
                     lighting: { en: "", vi: "" },
                     context: { en: "", vi: "" },
                     composition: { en: "", vi: "" },
-                    generationPrompt: { en: "", vi: "" }
+                    generationPrompt: { en: "", vi: "" },
+                    styleReferenceAnalysis: { en: "", vi: "" }
                 };
             }
 
             // Merge new data into bilingual structure
-            const keys = ['style', 'materials', 'lighting', 'context', 'composition', 'generationPrompt', 'collageAnalysis', 'sketchPrompt'];
+            const keys = ['style', 'materials', 'lighting', 'context', 'composition', 'generationPrompt', 'collageAnalysis', 'styleReferenceAnalysis'];
             keys.forEach(k => {
                 if (newData[k]) {
                     lastAnalysisData![k] = newData[k];
@@ -3579,7 +3580,8 @@ if(analyzeImagePromptBtn) {
                     lighting: { en: "", vi: "" },
                     context: { en: "", vi: "" },
                     composition: { en: "", vi: "" },
-                    generationPrompt: { en: "", vi: "" }
+                    generationPrompt: { en: "", vi: "" },
+                    styleReferenceAnalysis: { en: "", vi: "" }
                 };
             }
 
@@ -3622,7 +3624,7 @@ if (btnAnalyzeMultiView) {
                 5. COLOR PALETTE: Define the primary and accent colors with precise descriptors.
 
                 REALISM & SYNC REQUIREMENTS:
-                - Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên" in your summary.
+                - Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên" or "Ảnh chụp thực tế từ hình ảnh tải lên" in your summary.
                 - The description MUST be of professional "Master Class" quality, suitable for high-end rendering prompts.
                 - If the image is a collage, analyze the 3D relationship between the views to identify it as a single building.
 
@@ -3736,7 +3738,7 @@ if (btnAnalyzeMultiViewGen) {
                     * HERO SHOTS: Dynamic low-angle shots emphasizing volume and grandeur.
                     * DETAIL SHOTS: Macro-style shots focusing on specific textures or facade intersections.
                     * AERIAL/DRONE: High-angle bird's eye views for site context.
-                - REALISM MANDATE: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên".
+                - REALISM MANDATE: Always include phrases like "Tạo ảnh siêu thực từ hình ảnh tải lên" or "Ảnh chụp thực tế từ hình ảnh tải lên".
                 - PHOTOREALISM: Use camera terminology like f/8, 35mm lens, sharp focus, hyper-realistic, 8k resolution.
                 
                 Output Format: 
@@ -3791,7 +3793,7 @@ if (btnGenerateCustomAngle) {
                 REQUIREMENTS:
                 1. STRICT ADHERENCE: Use the materials, style, and features from the DNA.
                 2. RICH DESCRIPTION: Provide a cinematic, highly descriptive prose. Describe textures, reflections, and structural details.
-                3. REALISM: Start with "Tạo ảnh siêu thực từ hình ảnh tải lên", "Ảnh chụp thực tế từ hình ảnh tải lên", or "Hình ảnh siêu thực của hình ảnh sketch tải lên".
+                3. REALISM: Start with "Tạo ảnh siêu thực từ hình ảnh tải lên" or "Ảnh chụp thực tế từ hình ảnh tải lên".
                 4. CAMERA & LIGHTING: Specify a professional camera setup and cinematic lighting that enhances the details.
 
                 Output JSON: 
@@ -3863,11 +3865,10 @@ const runSingle = async (key: keyof AnalysisResult) => {
         CONTEXTUAL CONSISTENCY: Maintain consistency with the surrounding environment (context) across different angles.
         CONTEXT: If exterior, use realistic settings (street, residential, coast, river). If interior, focus on finished spaces.`;
 
-        if (key === 'sketchPrompt') {
+        if (key === 'styleReferenceAnalysis') {
             prompt += `
-            TASK: Create a prompt to render the provided SKETCH into a photorealistic image.
-            If REFERENCE IMAGES are provided, use their style/materials/context.
-            If no references are provided, suggest a high-quality architectural style.`;
+            TASK: Extract specific Style, Lighting, Material Palette, and Context/Background details from the provided STYLE REFERENCE IMAGE.
+            The goal is to create a detailed description of these aesthetic elements so they can be applied to other project designs.`;
         }
         
         if (key === 'photoToSketchPrompt') {
@@ -3895,7 +3896,7 @@ if(btnRunLighting) btnRunLighting.addEventListener('click', (e) => { e.stopPropa
 if(btnRunContext) btnRunContext.addEventListener('click', (e) => { e.stopPropagation(); runSingle('context'); });
 if(btnRunComposition) btnRunComposition.addEventListener('click', (e) => { e.stopPropagation(); runSingle('composition'); });
 if(btnRunPrompt) btnRunPrompt.addEventListener('click', (e) => { e.stopPropagation(); runSingle('generationPrompt'); });
-if(btnRunSketchPrompt) btnRunSketchPrompt.addEventListener('click', (e) => { e.stopPropagation(); runSingle('sketchPrompt'); });
+if(btnRunSketchPrompt) btnRunSketchPrompt.addEventListener('click', (e) => { e.stopPropagation(); runSingle('styleReferenceAnalysis'); });
 if(btnToSketchPrompt) btnToSketchPrompt.addEventListener('click', (e) => { e.stopPropagation(); runSingle('photoToSketchPrompt'); });
 
 // --- Helper for Single Card Actions (Copy/Download) ---
@@ -3947,7 +3948,7 @@ setupCardActions('res-lighting', 'btn-copy-lighting', 'btn-dl-lighting', 'Lighti
 setupCardActions('res-context', 'btn-copy-context', 'btn-dl-context', 'Context_Analysis');
 setupCardActions('res-composition', 'btn-copy-composition', 'btn-dl-composition', 'Composition_Analysis');
 setupCardActions('res-prompt', 'btn-copy-prompt', 'btn-dl-prompt', 'Generation_Prompt');
-setupCardActions('res-sketch-prompt', 'btn-copy-sketch-prompt', 'btn-dl-sketch-prompt', 'Sketch_Prompt');
+setupCardActions('res-sketch-prompt', 'btn-copy-sketch-prompt', 'btn-dl-sketch-prompt', 'Style_Reference_Analysis');
 setupCardActions('res-photo-to-sketch', 'btn-copy-photo-to-sketch', 'btn-dl-photo-to-sketch', 'Photo_to_Sketch_Prompt');
 setupCardActions('res-collage-analysis', 'btn-copy-collage-analysis', 'btn-dl-collage-analysis', 'Collage_Analysis');
 setupCardActions('res-mv-dna', 'btn-copy-mv-dna', '', 'Multi_View_DNA');
@@ -4065,7 +4066,7 @@ if (downloadAllBtn) {
         if (lastAnalysisData.context?.[currentLang]) content += `=== ${t.titles.context} ===\n${lastAnalysisData.context[currentLang]}\n\n`;
         if (lastAnalysisData.composition?.[currentLang]) content += `=== ${t.titles.composition} ===\n${lastAnalysisData.composition[currentLang]}\n\n`;
         if (lastAnalysisData.generationPrompt?.[currentLang]) content += `=== ${t.titles.generationPrompt} ===\n${lastAnalysisData.generationPrompt[currentLang]}\n\n`;
-        if (lastAnalysisData.sketchPrompt?.[currentLang]) content += `=== ${t.titles.sketchPrompt} ===\n${lastAnalysisData.sketchPrompt[currentLang]}\n\n`;
+        if ((lastAnalysisData as any).styleReferenceAnalysis?.[currentLang]) content += `=== ${t.titles.sketchPrompt} ===\n${(lastAnalysisData as any).styleReferenceAnalysis[currentLang]}\n\n`;
         if (lastAnalysisData.collageAnalysis?.[currentLang]) content += `=== ${t.titles.collageAnalysis} ===\n${lastAnalysisData.collageAnalysis[currentLang]}\n\n`;
 
         triggerDownload(content, 'Full_Architectural_Analysis.txt');
@@ -4090,7 +4091,7 @@ if (copyAllBtn) {
         if (lastAnalysisData.context?.[currentLang]) content += `=== ${t.titles.context} ===\n${lastAnalysisData.context[currentLang]}\n\n`;
         if (lastAnalysisData.composition?.[currentLang]) content += `=== ${t.titles.composition} ===\n${lastAnalysisData.composition[currentLang]}\n\n`;
         if (lastAnalysisData.generationPrompt?.[currentLang]) content += `=== ${t.titles.generationPrompt} ===\n${lastAnalysisData.generationPrompt[currentLang]}\n\n`;
-        if (lastAnalysisData.sketchPrompt?.[currentLang]) content += `=== ${t.titles.sketchPrompt} ===\n${lastAnalysisData.sketchPrompt[currentLang]}\n\n`;
+        if ((lastAnalysisData as any).styleReferenceAnalysis?.[currentLang]) content += `=== ${t.titles.sketchPrompt} ===\n${(lastAnalysisData as any).styleReferenceAnalysis[currentLang]}\n\n`;
         if (lastAnalysisData.collageAnalysis?.[currentLang]) content += `=== ${t.titles.collageAnalysis} ===\n${lastAnalysisData.collageAnalysis[currentLang]}\n\n`;
 
         const success = await copyToClipboard(content, copyAllBtn, iconCheckAll, iconCopyAll);

@@ -208,13 +208,13 @@
                 <!-- Sketch Upload Container (Visible in Analysis Mode) -->
                 <div id="sketch-container">
                      <div class="flex justify-between items-center mb-2">
-                        <label class="text-xs font-bold text-purple-400 uppercase tracking-wider" id="lbl-upload-sketch">Upload Sketch (Optional)</label>
+                        <label class="text-xs font-bold text-purple-400 uppercase tracking-wider" id="lbl-upload-sketch">STYLE Reference</label>
                         <button id="sketch-clear-btn" class="text-xs text-red-400 hover:text-red-300 hidden">Clear</button>
                     </div>
                     <div id="sketch-drop-zone" class="h-[120px] flex flex-col justify-center border-2 border-dashed border-gray-700 rounded-none p-4 text-center hover:border-gray-500 hover:bg-gray-800/50 transition-all cursor-pointer relative overflow-hidden group">
                         <input type="file" id="sketch-input" accept="image/*" class="hidden">
                         <div id="sketch-empty-state">
-                            <p class="text-xs text-gray-200 group-hover:text-white transition-colors">Drag Sketch Here</p>
+                            <p class="text-xs text-gray-200 group-hover:text-white transition-colors">Drag STYLE Reference Here</p>
                         </div>
                         <img id="sketch-preview-img" class="absolute inset-0 w-full h-full object-contain bg-[#18181a] hidden" />
                     </div>
@@ -373,7 +373,7 @@
                             <span id="btn-analyze-image-prompt-text" class="text-xs font-bold tracking-[0.2em]">IMAGE PROMPT</span>
                         </button>
                         <button id="btn-to-sketch-prompt" class="command-btn py-4 px-4 flex items-center justify-center gap-3 group border-gray-800 text-gray-500 hover:border-green-500 hover:text-green-400">
-                            <span id="btn-to-sketch-text" class="text-xs font-bold tracking-[0.2em]">Sketch Protocol</span>
+                            <span id="btn-to-sketch-text" class="text-xs font-bold tracking-[0.2em]">Style Protocol</span>
                         </button>
                     </div>
                     
@@ -658,7 +658,7 @@
                                 <span class="chevron-icon text-green-400 mr-1">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                 </span>
-                                <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest" id="title-sketch-prompt">Sketch Prompt</h3>
+                                <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest" id="title-sketch-prompt">Style Reference Analysis</h3>
                              </div>
                              <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
                                  <button id="btn-run-sketch-prompt" class="p-1.5 text-gray-700 hover:text-green-400 transition"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
