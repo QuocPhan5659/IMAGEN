@@ -241,6 +241,7 @@ const translations = {
         uploadTitle: "Upload Images",
         uploadDrag: "Drag & Drop, Click or Paste (Ctrl+V)",
         uploadSketch: "STYLE Reference",
+        uploadSketchDrag: "Drag STYLE Reference Here or Alt+V to paste",
         btnAnalyze: "Analyze Images",
         btnAnalyzeImagePrompt: "IMAGE PROMPT",
         btnDownloadAll: "Download All",
@@ -311,6 +312,7 @@ const translations = {
         uploadTitle: "Tải Ảnh Lên",
         uploadDrag: "Kéo thả, Nhấn hoặc Dán (Ctrl+V)",
         uploadSketch: "STYLE Reference",
+        uploadSketchDrag: "Kéo thả STYLE Reference vào đây hoặc Alt+V để dán",
         btnAnalyze: "Phân Tích Ảnh",
         btnAnalyzeImagePrompt: "IMAGE PROMPT",
         btnDownloadAll: "Tải Tất Cả",
@@ -1209,6 +1211,7 @@ function updateLanguageUI() {
     setText(lblUpload, t.uploadTitle);
     setText(lblDrag, t.uploadDrag);
     setText(lblUploadSketch, t.uploadSketch);
+    setText(getEl('lbl-sketch-drag'), t.uploadSketchDrag);
     setText(btnAnalyzeText, t.btnAnalyze);
     setText(getEl('btn-analyze-image-prompt-text'), t.btnAnalyzeImagePrompt || 'IMAGE PROMPT');
     setText(getEl('btn-to-sketch-text'), t.btnToSketch);
@@ -4046,6 +4049,120 @@ if (btnSendBanana) {
         setTimeout(() => showStatus(''), 2000);
     });
 }
+
+// --- New Logic: Alt+V Paste to Style Reference ---
+let lastPastedImage: File | null = null;
+document.addEventListener('paste', (e) => {
+    const items = e.clipboardData?.items;
+    if (items) {
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf("image") !== -1) {
+                const blob = items[i].getAsFile();
+                if (blob) {
+                    lastPastedImage = new File([blob], "pasted_image.png", { type: blob.type });
+                    showStatus('Image copied (Alt+V to paste)');
+                }
+            }
+        }
+    }
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.altKey && e.code === 'KeyV') {
+        e.preventDefault();
+        if (lastPastedImage) {
+            handleSketch(lastPastedImage);
+            showStatus('Pasted to STYLE Reference');
+        } else {
+            showStatus('No image in clipboard', true);
+        }
+    }
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+    // --- New Logic: Toggle UI Sections ---
+    const btnToggleUI = getEl<HTMLButtonElement>('btn-toggle-ui');
+    const uiSettingsModal = getEl<HTMLElement>('ui-settings-modal');
+    const closeUiModal = getEl<HTMLButtonElement>('close-ui-modal');
+    const uiToggles = document.querySelectorAll('#ui-toggles input[type="checkbox"]');
+
+    if (btnToggleUI) {
+        btnToggleUI.addEventListener('click', () => {
+            if (uiSettingsModal) uiSettingsModal.classList.remove('hidden');
+        });
+    }
+    if (closeUiModal) {
+        closeUiModal.addEventListener('click', () => {
+            if (uiSettingsModal) uiSettingsModal.classList.add('hidden');
+        });
+    }
+
+    const toggleSectionCallback = (dataIds: string, visible: boolean) => {
+        dataIds.split(' ').forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                if (visible) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            }
+        });
+    };
+
+    const persistVisibility = () => {
+        const state = JSON.parse(localStorage.getItem('ui_visibility') || '{}');
+        const togglesMap: { [key: string]: boolean } = {};
+
+        uiToggles.forEach((cb) => {
+            const checkbox = cb as HTMLInputElement;
+            const ids = checkbox.getAttribute('data-id') || "";
+            const idArray = ids.split(' ');
+            
+            // Init checkbox state
+            if (state[idArray[0]] !== undefined) checkbox.checked = state[idArray[0]];
+            
+            togglesMap[idArray[0]] = checkbox.checked;
+            toggleSectionCallback(ids, checkbox.checked);
+            
+            checkbox.addEventListener('change', () => {
+                toggleSectionCallback(ids, checkbox.checked);
+                idArray.forEach(id => state[id] = checkbox.checked);
+                localStorage.setItem('ui_visibility', JSON.stringify(state));
+                
+                // If we hidden the current tab, try to find a visible one
+                checkActiveTabVisibility();
+            });
+        });
+
+        function checkActiveTabVisibility() {
+            const tabs: { [key: string]: string } = {
+                'analysis': 'tab-analysis',
+                'multiView': 'tab-multi-view',
+                'artistic': 'tab-artistic',
+                'notes': 'tab-notes',
+                'removeLogo': 'tab-remove-logo',
+                'textOverlay': 'tab-text-overlay'
+            };
+
+            const currentTabId = tabs[activeTab];
+            const currentTabEl = document.getElementById(currentTabId);
+            
+            if (currentTabEl && currentTabEl.classList.contains('hidden')) {
+                // Current tab is hidden, find first visible one
+                for (const [key, id] of Object.entries(tabs)) {
+                    const el = document.getElementById(id);
+                    if (el && !el.classList.contains('hidden')) {
+                        activeTab = key;
+                        updateLanguageUI();
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Initial check
+        checkActiveTabVisibility();
+    };
+    persistVisibility();
+});
 
 // Download All Button
 if (downloadAllBtn) {
