@@ -28,7 +28,7 @@ let globalSigBgColor = '#00ff00'; // Default Neon Green
 
 // --- Application State ---
 type Lang = 'en' | 'vi';
-let currentLang: Lang = 'en';
+let currentLang: Lang = 'vi';
 let activeTab: 'analysis' | 'notes' | 'textOverlay' | 'artistic' | 'removeLogo' | 'multiView' = 'analysis';
 
 // --- Logo Removal State ---
@@ -3995,19 +3995,19 @@ if (btnPngInfoPrompt) {
             showStatus('No original image found.', true);
             return;
         }
-        const getEnText = (el: HTMLElement | null, key?: keyof AnalysisResult) => {
-            if (lastAnalysisData && key && lastAnalysisData[key]?.en) return lastAnalysisData[key].en;
+        const getLocalizedText = (el: HTMLElement | null, key?: keyof AnalysisResult) => {
+            if (lastAnalysisData && key && lastAnalysisData[key]?.[currentLang]) return lastAnalysisData[key][currentLang];
             const t = el?.textContent || "";
             return (t === "Waiting for analysis...") ? "" : t;
         };
 
         const bananaData = {
-            mega: getEnText(resPrompt, 'generationPrompt'),
-            lighting: getEnText(resLighting, 'lighting'),
-            scene: getEnText(resContext, 'context'),
-            view: getEnText(resComposition, 'composition'),
-            style: getEnText(resStyle, 'style'),
-            materials: getEnText(resMaterial, 'materials'),
+            mega: getLocalizedText(resPrompt, 'generationPrompt'),
+            lighting: getLocalizedText(resLighting, 'lighting'),
+            scene: getLocalizedText(resContext, 'context'),
+            view: getLocalizedText(resComposition, 'composition'),
+            style: getLocalizedText(resStyle, 'style'),
+            materials: getLocalizedText(resMaterial, 'materials'),
             inpaint: "",
             inpaintEnabled: false,
             cameraProjection: false
@@ -4033,7 +4033,7 @@ if (btnPngInfoPrompt) {
                         const filename = `BananaPro_Info_${carrierFile.name.split('.')[0]}.png`;
                         await saveBlob(finalBlob, filename);
                         
-                        showStatus('Downloaded PNG for Banana Pro!');
+                        showStatus(currentLang === 'en' ? 'Downloaded PNG for Banana Pro!' : 'Đã tải xuống PNG cho Banana Pro!');
                         setTimeout(() => showStatus(''), 2000);
                     }
                 }, "image/png");
@@ -4053,27 +4053,27 @@ if (btnSendBanana) {
             showStatus('No prompt data to copy.', true);
             return;
         }
-        const getEnText = (el: HTMLElement | null, key?: keyof AnalysisResult) => {
-            if (lastAnalysisData && key && lastAnalysisData[key]?.en) return lastAnalysisData[key].en;
+        const getLocalizedText = (el: HTMLElement | null, key?: keyof AnalysisResult) => {
+            if (lastAnalysisData && key && lastAnalysisData[key]?.[currentLang]) return lastAnalysisData[key][currentLang];
             const t = el?.textContent || "";
             return (t === "Waiting for analysis...") ? "" : t;
         };
         const bananaData = {
-            mega: getEnText(resPrompt, 'generationPrompt'),
-            lighting: getEnText(resLighting, 'lighting'),
-            scene: getEnText(resContext, 'context'),
-            view: getEnText(resComposition, 'composition'),
-            style: getEnText(resStyle, 'style'),
-            materials: getEnText(resMaterial, 'materials'),
+            mega: getLocalizedText(resPrompt, 'generationPrompt'),
+            lighting: getLocalizedText(resLighting, 'lighting'),
+            scene: getLocalizedText(resContext, 'context'),
+            view: getLocalizedText(resComposition, 'composition'),
+            style: getLocalizedText(resStyle, 'style'),
+            materials: getLocalizedText(resMaterial, 'materials'),
             inpaint: "",
             inpaintEnabled: false,
             cameraProjection: false
         };
         const success = await copyToClipboard(JSON.stringify(bananaData, null, 2));
         if (success) {
-            showStatus('Copied Data JSON!');
+            showStatus(currentLang === 'en' ? 'Copied Data JSON!' : 'Đã sao chép dữ liệu JSON!');
         } else {
-            showStatus('Failed to copy.', true);
+            showStatus(currentLang === 'en' ? 'Failed to copy.' : 'Sao chép thất bại.', true);
         }
         setTimeout(() => showStatus(''), 2000);
     });
