@@ -1202,15 +1202,24 @@ function updateApiUI() {
     }
 }
 
+// Initial UI Visibility State
+let uiVisibilityState: { [key: string]: boolean } = JSON.parse(localStorage.getItem('ui_visibility') || '{}');
+
+function isLayoutVisible(id: string): boolean {
+    const ids = id.split(' ');
+    // Default to true if not found in state
+    return ids.every(singleId => uiVisibilityState[singleId] !== false);
+}
+
 function updateLanguageUI() {
     const t = translations[currentLang];
     
     // Static Text
     setText(appTitle, t.appTitle);
     setText(appSubtitle, t.appSubtitle);
-    setText(lblUpload, t.uploadTitle);
-    setText(lblDrag, t.uploadDrag);
-    setText(lblUploadSketch, t.uploadSketch);
+    lblUpload && setText(lblUpload, t.uploadTitle);
+    lblDrag && setText(lblDrag, t.uploadDrag);
+    lblUploadSketch && setText(lblUploadSketch, t.uploadSketch);
     setText(getEl('lbl-sketch-drag'), t.uploadSketchDrag);
     setText(btnAnalyzeText, t.btnAnalyze);
     setText(getEl('btn-analyze-image-prompt-text'), t.btnAnalyzeImagePrompt || 'IMAGE PROMPT');
@@ -1279,7 +1288,17 @@ function updateLanguageUI() {
 
     updateApiUI();
 
-    // Tab Logic
+    // Tab Visibility overrides from Layout
+    const sections = {
+        analysis: isLayoutVisible('tab-analysis panel-analysis'),
+        multiView: isLayoutVisible('tab-multi-view panel-multi-view'),
+        artistic: isLayoutVisible('tab-artistic panel-artistic'),
+        notes: isLayoutVisible('tab-notes panel-notes'),
+        removeLogo: isLayoutVisible('tab-remove-logo panel-remove-logo'),
+        textOverlay: isLayoutVisible('tab-text-overlay panel-text-overlay-settings')
+    };
+
+    // Tab Logic - Hide everything first
     setHidden(panelAnalysis, true);
     setHidden(panelNotes, true);
     setHidden(panelArtistic, true);
@@ -1295,9 +1314,15 @@ function updateLanguageUI() {
     setHidden(notesResults, true);
     setHidden(overlayGrid, true);
     setHidden(panelRemoveLogoSidebar, true);
-    
-    // Hide Global Action Bar by default
     setHidden(globalActionsBar, true);
+
+    // Hide tabs themselves based on Layout settings
+    setHidden(tabAnalysis, !isLayoutVisible('tab-analysis'));
+    setHidden(tabMultiView, !isLayoutVisible('tab-multi-view'));
+    setHidden(tabArtistic, !isLayoutVisible('tab-artistic'));
+    setHidden(tabNotes, !isLayoutVisible('tab-notes'));
+    setHidden(tabRemoveLogo, !isLayoutVisible('tab-remove-logo'));
+    setHidden(tabTextOverlay, !isLayoutVisible('tab-text-overlay'));
 
     removeClass(tabAnalysis, 'active');
     removeClass(tabNotes, 'active');
@@ -1306,7 +1331,8 @@ function updateLanguageUI() {
     removeClass(tabArtistic, 'active');
     removeClass(tabRemoveLogo, 'active');
 
-    if (activeTab === 'analysis') {
+    // Show only the active tab if its layout section is visible
+    if (activeTab === 'analysis' && sections.analysis) {
         setHidden(panelAnalysis, false);
         setHidden(panelUploadAnalysis, false);
         setHidden(sketchContainer, false);
@@ -1314,14 +1340,14 @@ function updateLanguageUI() {
         setHidden(globalActionsBar, false);
         addClass(tabAnalysis, 'active');
 
-    } else if (activeTab === 'notes') {
+    } else if (activeTab === 'notes' && sections.notes) {
         setHidden(panelNotes, false);
         setHidden(panelUploadAnalysis, false);
         setHidden(notesResults, false);
         setHidden(globalActionsBar, false);
         addClass(tabNotes, 'active');
     
-    } else if (activeTab === 'artistic') {
+    } else if (activeTab === 'artistic' && sections.artistic) {
         setHidden(panelArtistic, false);
         setHidden(panelUploadAnalysis, false);
         setHidden(artisticResults, false);
@@ -1329,21 +1355,23 @@ function updateLanguageUI() {
         addClass(tabArtistic, 'active');
         renderArtisticResults();
 
-    } else if (activeTab === 'textOverlay') {
+    } else if (activeTab === 'textOverlay' && sections.textOverlay) {
         setHidden(panelTextOverlaySettings, false);
         setHidden(overlayGrid, false);
+        setHidden(globalActionsBar, false);
         addClass(tabTextOverlay, 'active');
         if (overlaySlots.length === 0) initOverlaySlots();
         renderOverlaySlots();
-        setHidden(globalActionsBar, false); // Visible for Text Overlay too
-    } else if (activeTab === 'multiView') {
+        
+    } else if (activeTab === 'multiView' && sections.multiView) {
         setHidden(panelMultiView, false);
         setHidden(panelUploadAnalysis, false);
         setHidden(multiviewResults, false);
         setHidden(globalActionsBar, false);
         addClass(tabMultiView, 'active');
         renderMultiViewResults();
-    } else if (activeTab === 'removeLogo') {
+
+    } else if (activeTab === 'removeLogo' && sections.removeLogo) {
         setHidden(panelRemoveLogo, false);
         setHidden(panelRemoveLogoSidebar, false);
         setHidden(globalActionsBar, false);
@@ -4060,21 +4088,46 @@ document.addEventListener('paste', (e) => {
                 const blob = items[i].getAsFile();
                 if (blob) {
                     lastPastedImage = new File([blob], "pasted_image.png", { type: blob.type });
-                    showStatus('Image copied (Alt+V to paste)');
+                    showStatus(currentLang === 'en' ? 'Image captured (Alt+V to paste into STYLE)' : 'Đã ghi nhận ảnh (Alt+V để dán vào STYLE)');
                 }
             }
         }
     }
 });
 
-document.addEventListener('keydown', (e) => {
+document.addEventListener('keydown', async (e) => {
     if (e.altKey && e.code === 'KeyV') {
         e.preventDefault();
-        if (lastPastedImage) {
-            handleSketch(lastPastedImage);
-            showStatus('Pasted to STYLE Reference');
-        } else {
-            showStatus('No image in clipboard', true);
+        
+        let fileFound = false;
+        try {
+            // Attempt to read from clipboard directly (more reliable for some browsers)
+            const items = await navigator.clipboard.read();
+            for (const item of items) {
+                for (const type of item.types) {
+                    if (type.startsWith('image/')) {
+                        const blob = await item.getType(type);
+                        const file = new File([blob], "pasted_style.png", { type });
+                        handleSketch(file);
+                        showStatus(currentLang === 'en' ? 'Pasted to STYLE Reference' : 'Đã dán vào STYLE Reference');
+                        fileFound = true;
+                        break;
+                    }
+                }
+                if (fileFound) break;
+            }
+        } catch (err) {
+            console.warn("Direct clipboard read failed or permission denied", err);
+        }
+
+        if (!fileFound) {
+            // Fallback to lastPastedImage (set by standard paste event which triggers on Ctrl+V)
+            if (lastPastedImage) {
+                handleSketch(lastPastedImage);
+                showStatus(currentLang === 'en' ? 'Pasted to STYLE Reference (Fallback)' : 'Đã dán vào STYLE Reference (Dự phòng)');
+            } else {
+                showStatus(currentLang === 'en' ? 'No image in clipboard. Try Ctrl+V once to capture, then Alt+V.' : 'Không tìm thấy ảnh. Hãy nhấn Ctrl+V một lần để ghi nhận, sau đó nhấn Alt+V.', true);
+            }
         }
     }
 });
@@ -4109,7 +4162,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const persistVisibility = () => {
         const state = JSON.parse(localStorage.getItem('ui_visibility') || '{}');
-        const togglesMap: { [key: string]: boolean } = {};
+        uiVisibilityState = state;
 
         uiToggles.forEach((cb) => {
             const checkbox = cb as HTMLInputElement;
@@ -4119,16 +4172,17 @@ window.addEventListener('DOMContentLoaded', () => {
             // Init checkbox state
             if (state[idArray[0]] !== undefined) checkbox.checked = state[idArray[0]];
             
-            togglesMap[idArray[0]] = checkbox.checked;
             toggleSectionCallback(ids, checkbox.checked);
             
             checkbox.addEventListener('change', () => {
                 toggleSectionCallback(ids, checkbox.checked);
                 idArray.forEach(id => state[id] = checkbox.checked);
+                uiVisibilityState = state;
                 localStorage.setItem('ui_visibility', JSON.stringify(state));
                 
                 // If we hidden the current tab, try to find a visible one
                 checkActiveTabVisibility();
+                updateLanguageUI();
             });
         });
 
@@ -4150,16 +4204,16 @@ window.addEventListener('DOMContentLoaded', () => {
                 for (const [key, id] of Object.entries(tabs)) {
                     const el = document.getElementById(id);
                     if (el && !el.classList.contains('hidden')) {
-                        activeTab = key;
-                        updateLanguageUI();
+                        activeTab = key as any;
                         break;
                     }
                 }
             }
         }
         
-        // Initial check
+        // Initial check and set default state
         checkActiveTabVisibility();
+        updateLanguageUI();
     };
     persistVisibility();
 });
