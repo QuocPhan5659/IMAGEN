@@ -238,10 +238,10 @@ const translations = {
     en: {
         appTitle: "Architectural AI Analyst",
         appSubtitle: "Deep analysis powered by Gemini Vision",
-        uploadTitle: "Upload Images",
-        uploadDrag: "Drag & Drop, Click or Paste (Ctrl+V)",
+        uploadTitle: "Upload Image",
+        uploadDrag: "DRAG / DROP\nCTRL+V TO PASTE",
         uploadSketch: "STYLE Reference",
-        uploadSketchDrag: "DRAG / DROP\nSHIFT+V / ALT+V TO PASTE",
+        uploadSketchDrag: "DRAG / DROP\nCTRL+V TO PASTE",
         btnAnalyze: "Analyze Images",
         btnAnalyzeImagePrompt: "IMAGE PROMPT",
         btnDownloadAll: "Download All",
@@ -309,11 +309,11 @@ const translations = {
     vi: {
         appTitle: "Trợ Lý Kiến Trúc AI",
         appSubtitle: "Phân tích sâu hỗ trợ bởi Gemini Vision",
-        uploadTitle: "Tải Ảnh Lên",
-        uploadDrag: "Kéo thả, Nhấn hoặc Dán (Ctrl+V)",
+        uploadTitle: "Tải Ảnh",
+        uploadDrag: "KÉO / THẢ\nCTRL+V ĐỂ DÁN",
         uploadSketch: "STYLE Reference",
-        uploadSketchDrag: "KÉO / THẢ\nSHIFT+V / ALT+V ĐỂ DÁN",
-        btnAnalyze: "Phân Tích Ảnh",
+        uploadSketchDrag: "KÉO / THẢ\nCTRL+V ĐỂ DÁN",
+        btnAnalyze: " Phân Tích Ảnh",
         btnAnalyzeImagePrompt: "IMAGE PROMPT",
         btnDownloadAll: "Tải Tất Cả",
         btnLoadPngInfo: "Đọc PNG Info",
@@ -3200,56 +3200,57 @@ function handleFiles(fileList: FileList | null) {
         return;
     }
 
-    currentFiles = [...currentFiles, ...newFiles].slice(0, 10);
+    // Only one file for main area
+    currentFiles = newFiles.slice(0, 1);
     renderPreview(currentFiles);
 }
 
-// Paste Event Listener
-document.addEventListener('paste', async (e) => {
-    // Only handle paste if we have access to clipboard data
-    if (!e.clipboardData) return;
-    
-    const items = e.clipboardData.items;
-    const pastedFiles: File[] = [];
+// Consolidated Paste Listener
+document.addEventListener('paste', async (e: ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
 
     for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (item.type.indexOf('image') !== -1) {
-            const blob = item.getAsFile();
+        if (items[i].type.indexOf('image') !== -1) {
+            const blob = items[i].getAsFile();
             if (blob) {
-                // If in Text Overlay mode, handle differently
-                if (activeTab === 'textOverlay') {
-                    // Find first empty slot or add new
-                    const emptyIndex = overlaySlots.findIndex(s => !s.file);
-                    const file = new File([blob], "pasted_image.png", { type: "image/png" });
-                    
-                    if (emptyIndex !== -1) {
-                        await handleSlotFile(emptyIndex, file);
-                    } else {
-                        // Add new slot
-                        overlaySlots.push(createEmptySlot());
-                        await handleSlotFile(overlaySlots.length - 1, file);
-                        renderOverlaySlots();
-                    }
-                    
-                    showStatus('Pasted image into Text Overlay');
-                    return; 
+                const file = new File([blob], `pasted_${Date.now()}.png`, { type: blob.type });
+                lastPastedImage = file;
+
+                const chkMain = getEl<HTMLInputElement>('chk-paste-main');
+                const chkSketch = getEl<HTMLInputElement>('chk-paste-sketch');
+                
+                let pastedMain = false;
+                let pastedSketch = false;
+
+                if (chkMain && chkMain.checked) {
+                    handleFiles(createFileList([file]));
+                    pastedMain = true;
+                }
+                
+                if (chkSketch && chkSketch.checked) {
+                    handleSketch(file);
+                    pastedSketch = true;
                 }
 
-                // Normal Analysis flow
-                const hasMetadata = await processBlobForMetadata(blob);
-                pastedFiles.push(blob);
-                if (hasMetadata) showStatus('Data loaded from pasted image!');
+                if (pastedMain || pastedSketch) {
+                    e.preventDefault();
+                    let msg = "";
+                    if (pastedMain && pastedSketch) msg = currentLang === 'en' ? 'Pasted to MAIN & STYLE' : 'Đã dán vào MAIN & STYLE';
+                    else if (pastedMain) msg = currentLang === 'en' ? 'Pasted to MAIN' : 'Đã dán vào MAIN';
+                    else if (pastedSketch) msg = currentLang === 'en' ? 'Pasted to STYLE' : 'Đã dán vào STYLE';
+                    showStatus(msg);
+                }
             }
         }
     }
-
-    if (pastedFiles.length > 0 && activeTab !== 'textOverlay') {
-        e.preventDefault(); 
-        currentFiles = [...currentFiles, ...pastedFiles].slice(0, 10);
-        renderPreview(currentFiles);
-    }
 });
+
+function createFileList(files: File[]): FileList {
+    const dataTransfer = new DataTransfer();
+    files.forEach(f => dataTransfer.items.add(f));
+    return dataTransfer.files;
+}
 
 if(dropZone) {
     dropZone.addEventListener('click', (e) => { if((e.target as HTMLElement).tagName !== 'BUTTON') fileInput?.click(); });
@@ -4078,73 +4079,8 @@ if (btnSendBanana) {
     });
 }
 
-// --- New Logic: Alt+V Paste to Style Reference ---
+// --- New Logic: Paste Tracking ---
 let lastPastedImage: File | null = null;
-document.addEventListener('paste', (e) => {
-    const items = e.clipboardData?.items;
-    if (items) {
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].type.indexOf("image") !== -1) {
-                const blob = items[i].getAsFile();
-                if (blob) {
-                    lastPastedImage = new File([blob], "pasted_image.png", { type: blob.type });
-                    showStatus(currentLang === 'en' ? 'Image captured (Alt+V to paste into STYLE)' : 'Đã ghi nhận ảnh (Alt+V để dán vào STYLE)');
-                }
-            }
-        }
-    }
-});
-
-document.addEventListener('keydown', async (e) => {
-    // Avoid triggering if user is typing in an input or textarea
-    const target = e.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-    }
-
-    // Support multiple hotkeys for flexibility (SketchUp compatibility)
-    const isPasteAction = (e.shiftKey && e.code === 'KeyV') || 
-                         (e.altKey && e.code === 'KeyV') || 
-                         (e.ctrlKey && e.shiftKey && e.code === 'KeyV');
-                         
-    if (isPasteAction) {
-        e.preventDefault();
-        await performPasteToStyle();
-    }
-});
-
-async function performPasteToStyle() {
-    let fileFound = false;
-    try {
-        if (navigator.clipboard && navigator.clipboard.read) {
-            const items = await navigator.clipboard.read();
-            for (const item of items) {
-                for (const type of item.types) {
-                    if (type.startsWith('image/')) {
-                        const blob = await item.getType(type);
-                        const file = new File([blob], "pasted_style.png", { type });
-                        handleSketch(file);
-                        showStatus(currentLang === 'en' ? 'Pasted to STYLE Reference' : 'Đã dán vào STYLE Reference');
-                        fileFound = true;
-                        break;
-                    }
-                }
-                if (fileFound) break;
-            }
-        }
-    } catch (err) {
-        console.warn("Direct clipboard read failed or permission denied", err);
-    }
-
-    if (!fileFound) {
-        if (lastPastedImage) {
-            handleSketch(lastPastedImage);
-            showStatus(currentLang === 'en' ? 'Pasted from cache' : 'Đã dán từ bộ nhớ đệm');
-        } else {
-            showStatus(currentLang === 'en' ? 'No image detected. Please Ctrl+V on the page first if hotkeys fail.' : 'Không nhận diện được ảnh. Hãy nhấn Ctrl+V vào trang trước nếu phím tắt lỗi.', true);
-        }
-    }
-}
 
 window.addEventListener('DOMContentLoaded', () => {
     // --- New Logic: Toggle UI Sections ---
@@ -4176,9 +4112,31 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const btnPasteSketch = getEl<HTMLButtonElement>('btn-paste-sketch');
     if (btnPasteSketch) {
-        btnPasteSketch.addEventListener('click', (e) => {
+        btnPasteSketch.addEventListener('click', async (e) => {
             e.stopPropagation();
-            performPasteToStyle();
+            try {
+                if (navigator.clipboard && navigator.clipboard.read) {
+                    const clipboardItems = await navigator.clipboard.read();
+                    for (const item of clipboardItems) {
+                        for (const type of item.types) {
+                            if (type.startsWith('image/')) {
+                                const blob = await item.getType(type);
+                                const file = new File([blob], "pasted_style.png", { type });
+                                handleSketch(file);
+                                showStatus(currentLang === 'en' ? 'Pasted to STYLE' : 'Đã dán vào STYLE');
+                                return;
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                if (lastPastedImage) {
+                    handleSketch(lastPastedImage);
+                    showStatus(currentLang === 'en' ? 'Pasted from cache' : 'Đã dán từ bộ nhớ');
+                } else {
+                    showStatus(currentLang === 'en' ? 'No image detected. Use Ctrl+V.' : 'Không nhận diện được ảnh. Hãy dùng Ctrl+V.', true);
+                }
+            }
         });
     }
 
