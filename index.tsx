@@ -241,7 +241,7 @@ const translations = {
         uploadTitle: "Upload Images",
         uploadDrag: "Drag & Drop, Click or Paste (Ctrl+V)",
         uploadSketch: "STYLE Reference",
-        uploadSketchDrag: "Drag STYLE Reference Here or Alt+V to paste",
+        uploadSketchDrag: "DRAG / DROP\nSHIFT+V / ALT+V TO PASTE",
         btnAnalyze: "Analyze Images",
         btnAnalyzeImagePrompt: "IMAGE PROMPT",
         btnDownloadAll: "Download All",
@@ -312,7 +312,7 @@ const translations = {
         uploadTitle: "Tải Ảnh Lên",
         uploadDrag: "Kéo thả, Nhấn hoặc Dán (Ctrl+V)",
         uploadSketch: "STYLE Reference",
-        uploadSketchDrag: "Kéo thả STYLE Reference vào đây hoặc Alt+V để dán",
+        uploadSketchDrag: "KÉO / THẢ\nSHIFT+V / ALT+V ĐỂ DÁN",
         btnAnalyze: "Phân Tích Ảnh",
         btnAnalyzeImagePrompt: "IMAGE PROMPT",
         btnDownloadAll: "Tải Tất Cả",
@@ -4096,12 +4096,27 @@ document.addEventListener('paste', (e) => {
 });
 
 document.addEventListener('keydown', async (e) => {
-    if (e.altKey && e.code === 'KeyV') {
+    // Avoid triggering if user is typing in an input or textarea
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+    }
+
+    // Support multiple hotkeys for flexibility (SketchUp compatibility)
+    const isPasteAction = (e.shiftKey && e.code === 'KeyV') || 
+                         (e.altKey && e.code === 'KeyV') || 
+                         (e.ctrlKey && e.shiftKey && e.code === 'KeyV');
+                         
+    if (isPasteAction) {
         e.preventDefault();
-        
-        let fileFound = false;
-        try {
-            // Attempt to read from clipboard directly (more reliable for some browsers)
+        await performPasteToStyle();
+    }
+});
+
+async function performPasteToStyle() {
+    let fileFound = false;
+    try {
+        if (navigator.clipboard && navigator.clipboard.read) {
             const items = await navigator.clipboard.read();
             for (const item of items) {
                 for (const type of item.types) {
@@ -4116,21 +4131,20 @@ document.addEventListener('keydown', async (e) => {
                 }
                 if (fileFound) break;
             }
-        } catch (err) {
-            console.warn("Direct clipboard read failed or permission denied", err);
         }
+    } catch (err) {
+        console.warn("Direct clipboard read failed or permission denied", err);
+    }
 
-        if (!fileFound) {
-            // Fallback to lastPastedImage (set by standard paste event which triggers on Ctrl+V)
-            if (lastPastedImage) {
-                handleSketch(lastPastedImage);
-                showStatus(currentLang === 'en' ? 'Pasted to STYLE Reference (Fallback)' : 'Đã dán vào STYLE Reference (Dự phòng)');
-            } else {
-                showStatus(currentLang === 'en' ? 'No image in clipboard. Try Ctrl+V once to capture, then Alt+V.' : 'Không tìm thấy ảnh. Hãy nhấn Ctrl+V một lần để ghi nhận, sau đó nhấn Alt+V.', true);
-            }
+    if (!fileFound) {
+        if (lastPastedImage) {
+            handleSketch(lastPastedImage);
+            showStatus(currentLang === 'en' ? 'Pasted from cache' : 'Đã dán từ bộ nhớ đệm');
+        } else {
+            showStatus(currentLang === 'en' ? 'No image detected. Please Ctrl+V on the page first if hotkeys fail.' : 'Không nhận diện được ảnh. Hãy nhấn Ctrl+V vào trang trước nếu phím tắt lỗi.', true);
         }
     }
-});
+}
 
 window.addEventListener('DOMContentLoaded', () => {
     // --- New Logic: Toggle UI Sections ---
@@ -4159,6 +4173,14 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     };
+
+    const btnPasteSketch = getEl<HTMLButtonElement>('btn-paste-sketch');
+    if (btnPasteSketch) {
+        btnPasteSketch.addEventListener('click', (e) => {
+            e.stopPropagation();
+            performPasteToStyle();
+        });
+    }
 
     const persistVisibility = () => {
         const state = JSON.parse(localStorage.getItem('ui_visibility') || '{}');
